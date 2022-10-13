@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+  <title>macroTutorial.nim</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🐳</text></svg>">
+  <meta content="text/html; charset=utf-8" http-equiv="content-type">
+  <meta content="width=device-width, initial-scale=1" name="viewport">
+  <link rel='stylesheet' href='https://unpkg.com/normalize.css'>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/kognise/water.css@latest/dist/light.min.css">
+  <link rel='stylesheet' href='https://cdn.jsdelivr.net/gh/pietroppeter/nimib/assets/atom-one-light.css'>
+  <style>
+.nb-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.nb-small {
+  font-size: 0.8rem;
+}
+button.nb-small {
+  float: right;
+  padding: 2px;
+  padding-right: 5px;
+  padding-left: 5px;
+}
+section#source {
+  display:none
+}
+</style>
+  
+</head>
+<body>
+<header>
+<div class="nb-box">
+  <span><a href=".">🏡</a></span>
+  <span><code>macroTutorial.nim</code></span>
+  <span></span>
+</div>
+<hr>
+</header><main>
+<h1>Nim Metaprogramming (Macros) Tutorial</h1>
+<p>This tutorial is designed to be a step-by-step introduction to the metaprogramming features of the Nim Language.
+There already many resources on the Web, but I strive to provide more thorough details on the development process and gather all the infos of these different resources.</p>
+<h2>Existing resources</h2>
+<p>The links provided open in the same tab by default. You surely want to press <code>Ctrl</code> while you click, in order to open in a new tab (and not lose this tutorial page in a history mess).</p>
+<p>First, there are three official resources:</p>
+<ol>
+<li><a href="https://nim-lang.org/docs/tut3.html">Nim Tutorial (Part III)</a></li>
+<li><a href="https://nim-lang.org/docs/manual.html#macros">Manual section about macros</a></li>
+<li><a href="https://nim-lang.org/docs/macros.html">The Standard Documentation of the std/macros library</a>
+The 1. and 2. documentations are complementary learning resources while the last one will be your up-to-date exhaustive reference.</li>
+</ol>
+<p>Many developers have written their macro's tutorial:</p>
+<ol>
+<li><a href="https://dev.to/beef331/demystification-of-macros-in-nim-13n8">Jason Beetham a.k.a ElegantBeef's dev.to tutorial</a>. This tutorial contains a lot of good first examples.</li>
+<li><a href="https://www.youtube.com/watch?v=GJpn6SfR_1M">Pattern matching (sadly outdated) in macros by DevOnDuty</a></li>
+<li><a href="https://internet-of-tomohiro.netlify.app/nim/faq.en.html#macro">Tomohiro's FAQ section about macros</a></li>
+<li><a href="https://flyx.org/nimyaml-making-of/">The Making of NimYAML's article of flyx</a></li>
+</ol>
+<p>There are plentiful of posts in the forum that are good references:</p>
+<ol>
+<li><a href="https://forum.nim-lang.org/t/2587">What is &quot;Metaprogramming&quot; paradigm used for ?</a></li>
+<li><a href="https://forum.nim-lang.org/t/9470">Custom macro inserts macro help</a></li>
+<li><a href="https://forum.nim-lang.org/t/9498">See generated code after template processing</a></li>
+<li>etc … Please use the forum search bar with keywords like <code>macro</code>, <code>metaprogramming</code>, <code>generics</code>, <code>template</code>, …</li>
+</ol>
+<p>Last but no least, there are three Nim books:</p>
+<ol>
+<li><a href="https://book.picheta.me">Nim In Action, ed. Manning</a> and <a href="https://github.com/dom96/nim-in-action-code">github repo</a></li>
+<li><a href="https://www.amazon.fr/dp/B0B4R7B9YX">Mastering Nim, auto-published by A. Rumpf/Araq, Nim's creator</a>. (This link is NOT affiliated)</li>
+<li><a href="https://ssalewski.de/nimprogramming.html#_macros_and_meta_programming">Nim Programming Book, by S.Salewski</a></li>
+</ol>
+<p>Let us start with introduction to <code>template</code> and <code>untyped</code> parameters. Another form of metaprogramming is done with <code>generics</code>, but these are not explained in the scope of this tutorial.</p>
+<h2>Templates</h2>
+<p>We can see <em>templates</em> as procedures that generate code. Usually, it also takes code as parameters. The input code is always given as an <code>untyped</code> parameter.
+Templates are designed to be an efficient copy-paste mechanism, very like <code>#define</code> macros in C language family (C++, C# as well).
+We can add an (already existing in fact) boolean operator, to simplify expressions.
+Notice we use <em>stropping</em> to overwrite the already existing operator.</p>
+<pre><code class="nim hljs"><span class="hljs-comment">## Example from std/manual</span>
+<span class="hljs-keyword">template</span> `!=` (a, b: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
+  <span class="hljs-keyword">not</span> (a == b)
+
+doAssert(<span class="hljs-number">4</span> != <span class="hljs-number">5</span>)</code></pre>
+<p>We can easily repeat code under a custom block. Here duplicate, just duplicate code and repeat takes an additional parameter, an int, as a generalisation of the <code>duplicate</code> template.</p>
+<pre><code class="nim hljs"><span class="hljs-keyword">template</span> duplicate(statements: <span class="hljs-built_in">untyped</span>) =
+  statements
+  statements
+
+duplicate:
+  <span class="hljs-keyword">echo</span> <span class="hljs-number">5</span></code></pre><pre><samp>5
+5</samp></pre>
+<pre><code class="nim hljs"><span class="hljs-comment">## Example from Nim In Action</span>
+<span class="hljs-keyword">from</span> std/os <span class="hljs-keyword">import</span> sleep
+<span class="hljs-keyword">template</span> repeat(count: <span class="hljs-built_in">int</span>, statements: <span class="hljs-built_in">untyped</span>) =
+  <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-number">0</span> ..&lt; count:
+    statements
+
+repeat <span class="hljs-number">5</span>:
+  <span class="hljs-keyword">echo</span>(<span class="hljs-string">&quot;Hello Templates!&quot;</span>)
+  sleep(<span class="hljs-number">1000</span>)</code></pre><pre><samp>Hello Templates!
+Hello Templates!
+Hello Templates!
+Hello Templates!
+Hello Templates!</samp></pre>
+<p>In standard Nim, there are very few restricted keywords and special control-flow mechanisms, but nothing restrains us from creating a doWhile construct. And this is very simple.</p>
+<pre><code class="nim hljs"><span class="hljs-keyword">template</span> doWhile(conditional, loop: <span class="hljs-built_in">untyped</span>) =
+  loop
+  <span class="hljs-keyword">while</span> conditional:
+    loop
+
+<span class="hljs-keyword">var</span> myInt = <span class="hljs-number">5</span>
+doWhile myInt &gt;= <span class="hljs-number">6</span>:
+    <span class="hljs-keyword">echo</span> myInt
+    <span class="hljs-keyword">if</span> myInt <span class="hljs-keyword">mod</span> <span class="hljs-number">2</span> == <span class="hljs-number">1</span>:
+      myInt *= <span class="hljs-number">3</span>
+      myInt.inc
+    <span class="hljs-keyword">else</span>:
+      myInt = myInt <span class="hljs-keyword">div</span> <span class="hljs-number">2</span></code></pre><pre><samp>5
+16
+8</samp></pre>
+<h2>Macros</h2>
+<p>Macros can be seen as an empowered template procedure.
+Instead of simply taking untyped blocks and reuse them as lego bricks to return a code, we can parse our untyped parameter and do something conditionnaly to informations given in these parameters.</p>
+</main>
+<footer>
+<hr>
+<div class="nb-box">
+  <span><span class="nb-small">made with <a href="https://pietroppeter.github.io/nimib/">nimib 🐳</a></span></span>
+  <span></span>
+  <span><button class="nb-small" id="show" onclick="toggleSourceDisplay()">Show Source</button></span>
+</div>
+</footer>
+<section id="source">
+<pre><code class="nim hljs"><span class="hljs-keyword">import</span> strformat, strutils
+<span class="hljs-keyword">import</span> nimib
+
+nbInit
+
+nbText: <span class="hljs-string">&quot;&quot;&quot;
+# Nim Metaprogramming (Macros) Tutorial
+This tutorial is designed to be a step-by-step introduction to the metaprogramming features of the Nim Language.
+There already many resources on the Web, but I strive to provide more thorough details on the development process and gather all the infos of these different resources.
+
+## Existing resources
+The links provided open in the same tab by default. You surely want to press `Ctrl` while you click, in order to open in a new tab (and not lose this tutorial page in a history mess).
+
+First, there are three official resources:
+  1. [Nim Tutorial (Part III)](https://nim-lang.org/docs/tut3.html)
+  2. [Manual section about macros](https://nim-lang.org/docs/manual.html#macros)
+  3. [The Standard Documentation of the std/macros library](https://nim-lang.org/docs/macros.html)
+The 1. and 2. documentations are complementary learning resources while the last one will be your up-to-date exhaustive reference.
+
+Many developers have written their macro's tutorial:
+  1. [Jason Beetham a.k.a ElegantBeef's dev.to tutorial](https://dev.to/beef331/demystification-of-macros-in-nim-13n8). This tutorial contains a lot of good first examples.
+  2. [Pattern matching (sadly outdated) in macros by DevOnDuty](https://www.youtube.com/watch?v=GJpn6SfR_1M)
+  3. [Tomohiro's FAQ section about macros](https://internet-of-tomohiro.netlify.app/nim/faq.en.html#macro)
+  4. [The Making of NimYAML's article of flyx](https://flyx.org/nimyaml-making-of/)
+
+There are plentiful of posts in the forum that are good references:
+  1. [What is &quot;Metaprogramming&quot; paradigm used for ?](https://forum.nim-lang.org/t/2587)
+  2. [Custom macro inserts macro help](https://forum.nim-lang.org/t/9470)
+  3. [See generated code after template processing](https://forum.nim-lang.org/t/9498)
+  4. etc … Please use the forum search bar with keywords like `macro`, `metaprogramming`, `generics`, `template`, …
+
+Last but no least, there are three Nim books:
+  1. [Nim In Action, ed. Manning](https://book.picheta.me) and [github repo](https://github.com/dom96/nim-in-action-code)
+  2. [Mastering Nim, auto-published by A. Rumpf/Araq, Nim's creator](https://www.amazon.fr/dp/B0B4R7B9YX). (This link is NOT affiliated)
+  3. [Nim Programming Book, by S.Salewski](https://ssalewski.de/nimprogramming.html#_macros_and_meta_programming)
+
+Let us start with introduction to `template` and `untyped` parameters. Another form of metaprogramming is done with `generics`, but these are not explained in the scope of this tutorial.
+&quot;&quot;&quot;</span>
+
+nbText: <span class="hljs-string">&quot;&quot;&quot;
+## Templates
+We can see *templates* as procedures that generate code. Usually, it also takes code as parameters. The input code is always given as an `untyped` parameter.
+Templates are designed to be an efficient copy-paste mechanism, very like `#define` macros in C language family (C++, C# as well).
+We can add an (already existing in fact) boolean operator, to simplify expressions.
+Notice we use *stropping* to overwrite the already existing operator.
+&quot;&quot;&quot;</span>
+nbCode:
+  <span class="hljs-comment">## Example from std/manual</span>
+  <span class="hljs-keyword">template</span> `!=` (a, b: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
+    <span class="hljs-keyword">not</span> (a == b)
+
+  doAssert(<span class="hljs-number">4</span> != <span class="hljs-number">5</span>)
+
+nbText: <span class="hljs-string">&quot;&quot;&quot;
+We can easily repeat code under a custom block. Here duplicate, just duplicate code and repeat takes an additional parameter, an int, as a generalisation of the `duplicate` template.
+&quot;&quot;&quot;</span>
+
+nbCode:
+  <span class="hljs-keyword">template</span> duplicate(statements: <span class="hljs-built_in">untyped</span>) =
+    statements
+    statements
+
+  duplicate:
+    <span class="hljs-keyword">echo</span> <span class="hljs-number">5</span>
+
+nbCode:
+  <span class="hljs-comment">## Example from Nim In Action</span>
+  <span class="hljs-keyword">from</span> std/os <span class="hljs-keyword">import</span> sleep
+  <span class="hljs-keyword">template</span> repeat(count: <span class="hljs-built_in">int</span>, statements: <span class="hljs-built_in">untyped</span>) =
+    <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-number">0</span> ..&lt; count:
+      statements
+
+  repeat <span class="hljs-number">5</span>:
+    <span class="hljs-keyword">echo</span>(<span class="hljs-string">&quot;Hello Templates!&quot;</span>)
+    sleep(<span class="hljs-number">1000</span>)
+
+nbText: <span class="hljs-string">&quot;&quot;&quot;
+In standard Nim, there are very few restricted keywords and special control-flow mechanisms, but nothing restrains us from creating a doWhile construct. And this is very simple.
+&quot;&quot;&quot;</span>
+
+nbCode:
+  <span class="hljs-keyword">template</span> doWhile(conditional, loop: <span class="hljs-built_in">untyped</span>) =
+    loop
+    <span class="hljs-keyword">while</span> conditional:
+      loop
+  
+  <span class="hljs-keyword">var</span> myInt = <span class="hljs-number">5</span>
+  doWhile myInt &gt;= <span class="hljs-number">6</span>:
+      <span class="hljs-keyword">echo</span> myInt
+      <span class="hljs-keyword">if</span> myInt <span class="hljs-keyword">mod</span> <span class="hljs-number">2</span> == <span class="hljs-number">1</span>:
+        myInt *= <span class="hljs-number">3</span>
+        myInt.inc
+      <span class="hljs-keyword">else</span>:
+        myInt = myInt <span class="hljs-keyword">div</span> <span class="hljs-number">2</span>
+
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+## Macros
+Macros can be seen as an empowered template procedure.
+Instead of simply taking untyped blocks and reuse them as lego bricks to return a code, we can parse our untyped parameter and do something conditionnaly to informations given in these parameters.
+&quot;&quot;&quot;</span>
+<span class="hljs-comment"># nbCode:</span>
+<span class="hljs-comment">#   template `discard`(statements: untyped) =</span>
+<span class="hljs-comment">#     result = nil</span>
+
+<span class="hljs-comment">#   `discard`:</span>
+<span class="hljs-comment">#     while true:</span>
+<span class="hljs-comment">#       echo &quot;If you do not discard me, you'll never get out!&quot;</span>
+
+nbSave
+</code></pre>
+</section><script>
+function toggleSourceDisplay() {
+  var btn = document.getElementById("show")
+  var source = document.getElementById("source");
+  if (btn.innerHTML=="Show Source") {
+    btn.innerHTML = "Hide Source";
+    source.style.display = "block";
+  } else {
+    btn.innerHTML = "Show Source";
+    source.style.display = "none";
+  }
+}
+</script></body>
+</html>
