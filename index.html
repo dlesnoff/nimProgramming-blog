@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en-us">
 <head>
-  <title>macroTutorial.nim</title>
+  <title>index.nim</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🐳</text></svg>">
   <meta content="text/html; charset=utf-8" http-equiv="content-type">
   <meta content="width=device-width, initial-scale=1" name="viewport">
@@ -33,17 +33,17 @@ section#source {
 <header>
 <div class="nb-box">
   <span><a href=".">🏡</a></span>
-  <span><code>macroTutorial.nim</code></span>
-  <span></span>
+  <span><code>index.nim</code></span>
+  <span><a href="https://github.com/dlesnoff/nimMacros.github.io"><svg aria-hidden="true" width="1.2em" height="1.2em" style="vertical-align: middle;" preserveAspectRatio="xMidYMid meet" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59c.4.07.55-.17.55-.38c0-.19-.01-.82-.01-1.49c-2.01.37-2.53-.49-2.69-.94c-.09-.23-.48-.94-.82-1.13c-.28-.15-.68-.52-.01-.53c.63-.01 1.08.58 1.23.82c.72 1.21 1.87.87 2.33.66c.07-.52.28-.87.51-1.07c-1.78-.2-3.64-.89-3.64-3.95c0-.87.31-1.59.82-2.15c-.08-.2-.36-1.02.08-2.12c0 0 .67-.21 2.2.82c.64-.18 1.32-.27 2-.27c.68 0 1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82c.44 1.1.16 1.92.08 2.12c.51.56.82 1.27.82 2.15c0 3.07-1.87 3.75-3.65 3.95c.29.25.54.73.54 1.48c0 1.07-.01 1.93-.01 2.2c0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" fill="#000"></path></svg></a></span>
 </div>
 <hr>
 </header><main>
 <h1>Nim Metaprogramming (Macros) Tutorial</h1>
-<p>This tutorial is designed to be a step-by-step introduction to the metaprogramming features of the Nim Language.
-There already many resources on the Web, but I strive to provide more thorough details on the development process and gather all the infos of these different resources.</p>
+<p>This tutorial aims to be a step-by-step introduction to the metaprogramming features of the Nim Language.
+There are already many resources on the Web, but I strive to provide more thorough details on the development process all in one place.</p>
 <h2>Existing resources</h2>
-<p>The links provided open in the same tab by default. You surely want to press <code>Ctrl</code> while you click, in order to open in a new tab (and not lose this tutorial page in a history mess).</p>
-<p>First, there are three official resources:</p>
+<p>Press <code>Ctrl</code> + <code>Click</code> to open following links in a new tab.</p>
+<p>First, there are three official resources at the Nim's website:</p>
 <ol>
 <li><a href="https://nim-lang.org/docs/tut3.html">Nim Tutorial (Part III)</a></li>
 <li><a href="https://nim-lang.org/docs/manual.html#macros">Manual section about macros</a></li>
@@ -70,18 +70,29 @@ The 1. and 2. documentations are complementary learning resources while the last
 <li><a href="https://www.amazon.fr/dp/B0B4R7B9YX">Mastering Nim, auto-published by A. Rumpf/Araq, Nim's creator</a>. (This link is NOT affiliated)</li>
 <li><a href="https://ssalewski.de/nimprogramming.html#_macros_and_meta_programming">Nim Programming Book, by S.Salewski</a></li>
 </ol>
+<p>We can also count many projects that are macro- or template-based:</p>
+<ol>
+<li>
+<p><a href="https://github.com/treeform/genny">genny</a> and <a href="https://github.com/treeform/genny">benchy</a>. Benchy is a template based library that benchmarks your code snippet under bench blocks. Genny is used to export a Nim library to other languages (C, C++, Node, Python, Zig).
+In general, treeform projects source code are good Nim references</p>
+</li>
+<li>
+<p>My favorite macro : the <a href="https://github.com/mratsim/Arraymancer/blob/68786e147a94069a96f069bab327d67afdaa5a3e/src/arraymancer/nn/nn_dsl.nim">neural network domain specific language (DSL) of the tensor library Arraymancer</a>
+Do not just look at the header of procedures to determine if it is a macro or not. Often a macro relies on a lot of smaller procedures.</p>
+</li>
+</ol>
 <p>Let us start with introduction to <code>template</code> and <code>untyped</code> parameters. Another form of metaprogramming is done with <code>generics</code>, but these are not explained in the scope of this tutorial.</p>
 <h2>Templates</h2>
-<p>We can see <em>templates</em> as procedures that generate code. Usually, it also takes code as parameters. The input code is always given as an <code>untyped</code> parameter.
-Templates are designed to be an efficient copy-paste mechanism, very like <code>#define</code> macros in C language family (C++, C# as well).
-We can add an (already existing in fact) boolean operator, to simplify expressions.
-Notice we use <em>stropping</em> to overwrite the already existing operator.</p>
+<p>We can see <em>templates</em> as procedures that modify code through a copy-paste mechanism. Pieces of code are given to (and outputted by) the template with a special type : <code>untyped</code>.
+For those familiar with <a href="https://gcc.gnu.org/onlinedocs/cpp/">preprocessing</a> in the C family of languages (C, C++, C#), it does the same than the <code>#define</code> or <code>#if</code>, <code>#endif</code> macros and much more.</p>
+<p>Nim's language defines boolean operator like <code>!=</code> with templates. You can even look at Nim's source code, that's almost the same code. See the <a href="https://nim-lang.org/docs/system.html#%21%3D.t%2Cuntyped%2Cuntyped">documentation</a>.</p>
 <pre><code class="nim hljs"><span class="hljs-comment">## Example from std/manual</span>
 <span class="hljs-keyword">template</span> `!=` (a, b: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
   <span class="hljs-keyword">not</span> (a == b)
 
 doAssert(<span class="hljs-number">4</span> != <span class="hljs-number">5</span>)</code></pre>
-<p>We can easily repeat code under a custom block. Here duplicate, just duplicate code and repeat takes an additional parameter, an int, as a generalisation of the <code>duplicate</code> template.</p>
+<p>We can easily repeat code under a custom block. Here duplicate, just duplicate code and repeat takes an additional parameter, an int, as a generalisation of the <code>duplicate</code> template.
+Notice that duplicate is not smart. It will repeat any assignment twice in the code's block.</p>
 <pre><code class="nim hljs"><span class="hljs-keyword">template</span> duplicate(statements: <span class="hljs-built_in">untyped</span>) =
   statements
   statements
@@ -118,9 +129,20 @@ doWhile myInt &gt;= <span class="hljs-number">6</span>:
       myInt = myInt <span class="hljs-keyword">div</span> <span class="hljs-number">2</span></code></pre><pre><samp>5
 16
 8</samp></pre>
+<p>We can not do certain things with template, like not returning any code.</p>
+<pre><code class="nim hljs"><span class="hljs-keyword">template</span> `<span class="hljs-keyword">discard</span>`(statements: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
+  <span class="hljs-keyword">discard</span> <span class="hljs-literal">nil</span> <span class="hljs-comment"># Cheat here</span>
+
+`<span class="hljs-keyword">discard</span>`:
+  <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;Test the discard template, if you see this message, it has failed. If not, well …&quot;</span></code></pre>
 <h2>Macros</h2>
 <p>Macros can be seen as an empowered template procedure.
-Instead of simply taking untyped blocks and reuse them as lego bricks to return a code, we can parse our untyped parameter and do something conditionnaly to informations given in these parameters.</p>
+Instead of simply taking untyped blocks and reuse them as lego bricks to return a code, we can parse our untyped parameter and do something conditionally to informations given in these parameters.</p>
+<pre><code class="nim hljs"><span class="hljs-keyword">macro</span> discard2(statements: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
+  <span class="hljs-literal">result</span> = newStmtList()
+discard2:
+  <span class="hljs-keyword">while</span> <span class="hljs-literal">true</span>:
+    <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;If you do not discard me, you'll never get out!&quot;</span></code></pre>
 </main>
 <footer>
 <hr>
@@ -136,15 +158,16 @@ Instead of simply taking untyped blocks and reuse them as lego bricks to return 
 
 nbInit
 
+<span class="hljs-keyword">import</span> std/[macros]
 nbText: <span class="hljs-string">&quot;&quot;&quot;
 # Nim Metaprogramming (Macros) Tutorial
-This tutorial is designed to be a step-by-step introduction to the metaprogramming features of the Nim Language.
-There already many resources on the Web, but I strive to provide more thorough details on the development process and gather all the infos of these different resources.
+This tutorial aims to be a step-by-step introduction to the metaprogramming features of the Nim Language.
+There are already many resources on the Web, but I strive to provide more thorough details on the development process all in one place.
 
 ## Existing resources
-The links provided open in the same tab by default. You surely want to press `Ctrl` while you click, in order to open in a new tab (and not lose this tutorial page in a history mess).
+Press `Ctrl` + `Click` to open following links in a new tab.
 
-First, there are three official resources:
+First, there are three official resources at the Nim's website:
   1. [Nim Tutorial (Part III)](https://nim-lang.org/docs/tut3.html)
   2. [Manual section about macros](https://nim-lang.org/docs/manual.html#macros)
   3. [The Standard Documentation of the std/macros library](https://nim-lang.org/docs/macros.html)
@@ -167,15 +190,22 @@ Last but no least, there are three Nim books:
   2. [Mastering Nim, auto-published by A. Rumpf/Araq, Nim's creator](https://www.amazon.fr/dp/B0B4R7B9YX). (This link is NOT affiliated)
   3. [Nim Programming Book, by S.Salewski](https://ssalewski.de/nimprogramming.html#_macros_and_meta_programming)
 
+We can also count many projects that are macro- or template-based:
+  1. [genny](https://github.com/treeform/genny) and [benchy](https://github.com/treeform/genny). Benchy is a template based library that benchmarks your code snippet under bench blocks. Genny is used to export a Nim library to other languages (C, C++, Node, Python, Zig).
+  In general, treeform projects source code are good Nim references
+  2. My favorite macro : the [neural network domain specific language (DSL) of the tensor library Arraymancer](https://github.com/mratsim/Arraymancer/blob/68786e147a94069a96f069bab327d67afdaa5a3e/src/arraymancer/nn/nn_dsl.nim)
+Do not just look at the header of procedures to determine if it is a macro or not. Often a macro relies on a lot of smaller procedures.
+
 Let us start with introduction to `template` and `untyped` parameters. Another form of metaprogramming is done with `generics`, but these are not explained in the scope of this tutorial.
 &quot;&quot;&quot;</span>
 
 nbText: <span class="hljs-string">&quot;&quot;&quot;
 ## Templates
-We can see *templates* as procedures that generate code. Usually, it also takes code as parameters. The input code is always given as an `untyped` parameter.
-Templates are designed to be an efficient copy-paste mechanism, very like `#define` macros in C language family (C++, C# as well).
-We can add an (already existing in fact) boolean operator, to simplify expressions.
-Notice we use *stropping* to overwrite the already existing operator.
+We can see *templates* as procedures that modify code through a copy-paste mechanism. Pieces of code are given to (and outputted by) the template with a special type : `untyped`. 
+For those familiar with [preprocessing](https://gcc.gnu.org/onlinedocs/cpp/) in the C family of languages (C, C++, C#), it does the same than the `#define` or `#if`, `#endif` macros and much more.
+&quot;&quot;&quot;</span>
+nbText: <span class="hljs-string">&quot;&quot;&quot;
+Nim's language defines boolean operator like `!=` with templates. You can even look at Nim's source code, that's almost the same code. See the [documentation](https://nim-lang.org/docs/system.html#%21%3D.t%2Cuntyped%2Cuntyped).
 &quot;&quot;&quot;</span>
 nbCode:
   <span class="hljs-comment">## Example from std/manual</span>
@@ -186,6 +216,7 @@ nbCode:
 
 nbText: <span class="hljs-string">&quot;&quot;&quot;
 We can easily repeat code under a custom block. Here duplicate, just duplicate code and repeat takes an additional parameter, an int, as a generalisation of the `duplicate` template.
+Notice that duplicate is not smart. It will repeat any assignment twice in the code's block.
 &quot;&quot;&quot;</span>
 
 nbCode:
@@ -227,17 +258,27 @@ nbCode:
         myInt = myInt <span class="hljs-keyword">div</span> <span class="hljs-number">2</span>
 
 nbText:<span class="hljs-string">&quot;&quot;&quot;
+We can not do certain things with template, like not returning any code.
+&quot;&quot;&quot;</span>
+
+nbCode:
+  <span class="hljs-keyword">template</span> `<span class="hljs-keyword">discard</span>`(statements: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
+    <span class="hljs-keyword">discard</span> <span class="hljs-literal">nil</span> <span class="hljs-comment"># Cheat here</span>
+
+  `<span class="hljs-keyword">discard</span>`:
+    <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;Test the discard template, if you see this message, it has failed. If not, well …&quot;</span>
+
+nbText:<span class="hljs-string">&quot;&quot;&quot;
 ## Macros
 Macros can be seen as an empowered template procedure.
-Instead of simply taking untyped blocks and reuse them as lego bricks to return a code, we can parse our untyped parameter and do something conditionnaly to informations given in these parameters.
+Instead of simply taking untyped blocks and reuse them as lego bricks to return a code, we can parse our untyped parameter and do something conditionally to informations given in these parameters.
 &quot;&quot;&quot;</span>
-<span class="hljs-comment"># nbCode:</span>
-<span class="hljs-comment">#   template `discard`(statements: untyped) =</span>
-<span class="hljs-comment">#     result = nil</span>
-
-<span class="hljs-comment">#   `discard`:</span>
-<span class="hljs-comment">#     while true:</span>
-<span class="hljs-comment">#       echo &quot;If you do not discard me, you'll never get out!&quot;</span>
+nbCode:
+  <span class="hljs-keyword">macro</span> discard2(statements: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
+    <span class="hljs-literal">result</span> = newStmtList()
+  discard2:
+    <span class="hljs-keyword">while</span> <span class="hljs-literal">true</span>:
+      <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;If you do not discard me, you'll never get out!&quot;</span>
 
 nbSave
 </code></pre>
