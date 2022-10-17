@@ -211,8 +211,26 @@ nbCode:
         a: float32
 
 nbText:"""
+StmtList
+  TypeSection
+    TypeDef
+      Ident "Thing"
+      Empty
+      ObjectTy
+        Empty
+        Empty
+        RecList
+          IdentDefs
+            Ident "a"
+            Ident "float32"
+            Empty
+"""
+
+nbText:"""
+We have to get outputs as much complex as possible (while keeping the information to the minimum to easily read the AST).
+
 It is not easy (if even possible) to list all the possible types.
-By adding some other informations we get a better picture of the general AST of a type.
+Yet by adding some other informations we can get a better picture of the general AST of a type.
 """
 
 nbCode:
@@ -221,6 +239,34 @@ nbCode:
       Thing {.packed.} = object of RootObj
         a: float32
         b: string
+
+nbText:"""
+StmtList
+  TypeSection
+    TypeDef
+      PragmaExpr
+        Ident "Thing"
+        Pragma
+          Ident "packed"
+      Empty
+      ObjectTy
+        Empty
+        OfInherit
+          Ident "RootObj"
+        RecList
+          IdentDefs
+            Ident "a"
+            Ident "float32"
+            Empty
+          IdentDefs
+            Ident "b"
+            Ident "string"
+            Empty
+"""
+
+nbText:"""
+Notice how the name of the type went under the PragmaExpr section. We have to be careful about this when trying to parse the type.
+"""
 
 nbText:"""
 A macro does three steps in this order:
@@ -318,4 +364,12 @@ nbCode:
           Thing {.packed.} = object
             oneChar: char
             myStr: string
+
+
+nbText:"""
+Trying to parse a type ourselve is risky, since there are numerous easily forgettable possibilities (due to pragma expressions, cyclic types, and many kind of types: object, enum, type alias, etc..., case of fields, branching and conditionals inside the object, … ).
+
+There is actually already a function to do so:
+"""
+
 nbSave
