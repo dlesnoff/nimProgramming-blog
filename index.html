@@ -81,7 +81,16 @@ In general, treeform projects source code are good Nim references</p>
 Do not just look at the header of procedures to determine if it is a macro or not. Often a macro relies on a lot of smaller procedures.</p>
 </li>
 </ol>
-<p>Let us start with introduction to <code>template</code> and <code>untyped</code> parameters. Another form of metaprogramming is done with <code>generics</code>, but these are not explained in the scope of this tutorial.</p>
+<h2>Introduction</h2>
+<p>There are four kind/levels of procedures:</p>
+<ol>
+<li>ordinary proc/iterator</li>
+<li>generic proc/iterator</li>
+<li>template</li>
+<li>macro
+The higher the number, the more meta we get. It is recommended to program one's procedure with the lowest level of metaprogramming possible.</li>
+</ol>
+<p>Let us start with <code>template</code>s and <code>untyped</code> parameters. I do not <code>present</code> generics in this tutorial.</p>
 <h2>Templates</h2>
 <p>We can see <em>templates</em> as procedures that modify code through a copy-paste mechanism. Pieces of code are given to (and outputted by) the template with a special type : <code>untyped</code>.
 For those familiar with <a href="https://gcc.gnu.org/onlinedocs/cpp/">preprocessing</a> in the C family of languages (C, C++, C#), it does the same than the <code>#define</code> or <code>#if</code>, <code>#endif</code> macros and much more.</p>
@@ -108,13 +117,21 @@ duplicate:
 
 repeat <span class="hljs-number">5</span>:
   <span class="hljs-keyword">echo</span>(<span class="hljs-string">&quot;Hello Templates!&quot;</span>)
-  sleep(<span class="hljs-number">1000</span>)</code></pre><pre><samp>Hello Templates!
+  sleep(<span class="hljs-number">100</span>)</code></pre><pre><samp>Hello Templates!
 Hello Templates!
 Hello Templates!
 Hello Templates!
 Hello Templates!</samp></pre>
-<p>In standard Nim, there are very few restricted keywords and special control-flow mechanisms, but nothing restrains us from creating a doWhile construct. And this is very simple.</p>
-<pre><code class="nim hljs"><span class="hljs-keyword">template</span> doWhile(conditional, loop: <span class="hljs-built_in">untyped</span>) =
+<p>In Nim, there are few restricted keywords and special control-flow mechanisms, as to incite us to create our own constructs (and keep the language simple). Nothing restrains us from defining a <code>doWhile</code> construct.</p>
+<pre><code class="nim hljs"><span class="hljs-keyword">proc</span> nextSyracuseTerm(term: <span class="hljs-keyword">var</span> <span class="hljs-built_in">int</span>) =
+  <span class="hljs-comment">## This sequence should resolve to the cyclic sequence 1, 4, 2, 1, ...</span>
+  <span class="hljs-keyword">if</span> term <span class="hljs-keyword">mod</span> <span class="hljs-number">2</span> == <span class="hljs-number">1</span>:
+    term *= <span class="hljs-number">3</span>
+    term.inc
+  <span class="hljs-keyword">else</span>:
+    term = term <span class="hljs-keyword">div</span> <span class="hljs-number">2</span>
+
+<span class="hljs-keyword">template</span> doWhile(conditional, loop: <span class="hljs-built_in">untyped</span>) =
   loop
   <span class="hljs-keyword">while</span> conditional:
     loop
@@ -122,14 +139,23 @@ Hello Templates!</samp></pre>
 <span class="hljs-keyword">var</span> myInt = <span class="hljs-number">5</span>
 doWhile myInt &gt;= <span class="hljs-number">6</span>:
     <span class="hljs-keyword">echo</span> myInt
-    <span class="hljs-keyword">if</span> myInt <span class="hljs-keyword">mod</span> <span class="hljs-number">2</span> == <span class="hljs-number">1</span>:
-      myInt *= <span class="hljs-number">3</span>
-      myInt.inc
-    <span class="hljs-keyword">else</span>:
-      myInt = myInt <span class="hljs-keyword">div</span> <span class="hljs-number">2</span></code></pre><pre><samp>5
+    nextSyracuseTerm(myInt)</code></pre><pre><samp>5
 16
 8</samp></pre>
-<p>We can not do certain things with template, like not returning any code.</p>
+<p>Notice though that the end result is fairly different than C++ code</p>
+<pre><code class="language-cpp">int i = 0;
+do{
+  printf(&quot;Hello World&quot;);
+  i += 1;
+}while(i &lt; 10);
+</code></pre>
+<p>The instructions and the conditional appear before the <code>while</code> whereas this doWhile Nim construct will have the conditional after the <code>doWhile</code>:</p>
+<pre><code class="language-nim">var i: int = 0 # superfluous type annotation
+doWhile i &lt; 10:
+  echo &quot;Hello World!&quot;
+  i.inc
+</code></pre>
+<p>Though powerful, templates are still limited. As an example, I didn't achieve to make a discard template (that ta disabling a code.</p>
 <pre><code class="nim hljs"><span class="hljs-keyword">template</span> `<span class="hljs-keyword">discard</span>`(statements: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
   <span class="hljs-keyword">discard</span> <span class="hljs-literal">nil</span> <span class="hljs-comment"># Cheat here</span>
 
@@ -143,6 +169,160 @@ Instead of simply taking untyped blocks and reuse them as lego bricks to return 
 discard2:
   <span class="hljs-keyword">while</span> <span class="hljs-literal">true</span>:
     <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;If you do not discard me, you'll never get out!&quot;</span></code></pre>
+<h3>AST Manipulation</h3>
+<p>In Nim, the code is read and transformed in an internal intermediate representation called an Abstract Syntax Tree (AST) (refer to the <a href="">manual AST section</a></p>
+<pre><code class="nim hljs">dumpTree:
+  <span class="hljs-keyword">type</span>
+    myObject {.packed.} = <span class="hljs-keyword">ref</span> <span class="hljs-keyword">object</span> <span class="hljs-keyword">of</span> <span class="hljs-type">RootObj</span>
+      left: <span class="hljs-built_in">seq</span>[myObject]
+      right: <span class="hljs-built_in">seq</span>[myObject]</code></pre>
+<pre><code class="language-raw">StmtList
+  TypeSection
+    TypeDef
+      PragmaExpr
+        Ident &quot;myObject&quot;
+        Pragma
+          Ident &quot;packed&quot;
+      Empty
+      RefTy
+        ObjectTy
+          Empty
+          OfInherit
+            Ident &quot;RootObj&quot;
+          RecList
+            IdentDefs
+              Ident &quot;left&quot;
+              BracketExpr
+                Ident &quot;seq&quot;
+                Ident &quot;myObject&quot;
+              Empty
+            IdentDefs
+              Ident &quot;right&quot;
+              BracketExpr
+                Ident &quot;seq&quot;
+                Ident &quot;myObject&quot;
+              Empty
+</code></pre>
+<p>I present down my first macro as an example.
+I want to print the memory layout of a given type.
+My goal is to find misaligned fields making useless unocuppied memory.
+We should be able in the future to automatically swap the fields to remove the holes (or at least propose a fixed type).
+The first step is to look at the AST of the input code we want to parse.</p>
+<pre><code class="nim hljs">dumpTree:
+  <span class="hljs-keyword">type</span>
+    <span class="hljs-type">Thing</span> = <span class="hljs-keyword">object</span>
+      a: <span class="hljs-built_in">float32</span></code></pre>
+<p>It is not easy (if even possible) to list all the possible types.
+By adding some other informations we get a better picture of the general AST of a type.</p>
+<pre><code class="nim hljs">dumpTree:
+  <span class="hljs-keyword">type</span>
+    <span class="hljs-type">Thing</span> {.packed.} = <span class="hljs-keyword">object</span> <span class="hljs-keyword">of</span> <span class="hljs-type">RootObj</span>
+      a: <span class="hljs-built_in">float32</span>
+      b: <span class="hljs-built_in">string</span></code></pre>
+<p>A macro does three steps in this order:
+0. Check that the node is of the expected kind.</p>
+<ol>
+<li>Get properties of the input AST node (Maybe by going through node child's Ident).</li>
+<li>Form AST output in function of these input node's properties.</li>
+<li>Go through the node's child.</li>
+</ol>
+<p>A good macro is necessary complex enough to require a long docstring with thorough details.
+We begin by running the type definition.</p>
+<pre><code class="nim hljs"><span class="hljs-keyword">macro</span> typeMemoryRepr(typedef: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
+  <span class="hljs-comment">## This macro takes a type definition as an argument and:</span>
+  <span class="hljs-comment">## * defines the type (outputs typedef as is)</span>
+  <span class="hljs-comment">## * initializes a variable of this type</span>
+  <span class="hljs-comment">## * echoes the size of the variable</span>
+  <span class="hljs-comment">## * echoes the address of the variable</span>
+  <span class="hljs-comment">## Then, for each field:</span>
+  <span class="hljs-comment">## * echoes the size of the variable field</span>
+  <span class="hljs-comment">## * echoes the address of the variable field</span>
+
+  <span class="hljs-comment"># Parse the type definition to find the TypeDef section's node</span>
+  <span class="hljs-literal">result</span> = quote <span class="hljs-keyword">do</span>:
+    `typedef`
+  <span class="hljs-keyword">for</span> statement <span class="hljs-keyword">in</span> typedef:
+    <span class="hljs-keyword">if</span> statement.kind == nnkTypeSection:
+      <span class="hljs-keyword">let</span> typeSection = statement
+      <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-number">0</span> ..&lt; typeSection.len:
+        <span class="hljs-keyword">if</span> typeSection[i].kind == nnkTypeDef:
+          <span class="hljs-keyword">var</span> tnode = typeSection[i]
+          <span class="hljs-comment"># The name of the type is the first Ident child. We can get the ident's string with strVal or repr</span>
+          <span class="hljs-keyword">let</span> nameOfType = typeSection[i].findChild(it.kind == nnkIdent)
+
+          <span class="hljs-comment">## Generation of AST:</span>
+          <span class="hljs-comment"># We create a variable of the given type definition (hopefully not already defined) name for the &quot;myTypenameVar&quot;</span>
+          <span class="hljs-keyword">let</span> nameOfTestVariable = <span class="hljs-string">&quot;my&quot;</span> &amp; nameOfType.strVal.capitalizeAscii() &amp; <span class="hljs-string">&quot;Var&quot;</span>
+          <span class="hljs-keyword">let</span> testVariable = newIdentNode(nameOfTestVariable)
+          <span class="hljs-literal">result</span> = <span class="hljs-literal">result</span>.add(
+          quote <span class="hljs-keyword">do</span>:
+            <span class="hljs-keyword">var</span> `testVariable`:`nameOfType` <span class="hljs-comment"># instanciate type defined in typedef</span>
+            <span class="hljs-keyword">echo</span> `testVariable`.sizeof <span class="hljs-comment"># echo the total size</span>
+            <span class="hljs-keyword">echo</span> `testVariable`.<span class="hljs-keyword">addr</span>.repr <span class="hljs-comment"># gives the address in memory</span>
+          )
+          <span class="hljs-comment"># myTypeVar.field[i] memory size and address in memory</span>
+          tnode = tnode[<span class="hljs-number">2</span>][<span class="hljs-number">2</span>] <span class="hljs-comment"># The third child of the third child is the fields's AST</span>
+          <span class="hljs-keyword">assert</span> tnode.kind == nnkRecList
+          <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-number">0</span> ..&lt; tnode.len:
+            <span class="hljs-comment"># myTypeVar.field[i].sizeof</span>
+            <span class="hljs-literal">result</span> = <span class="hljs-literal">result</span>.add(newStmtList(nnkCommand.newTree(
+              newIdentNode(<span class="hljs-string">&quot;echo&quot;</span>),
+              nnkDotExpr.newTree(
+                nnkDotExpr.newTree(
+                  newIdentNode(nameOfTestVariable),
+                  newIdentNode(tnode[i][<span class="hljs-number">0</span>].strVal) <span class="hljs-comment"># The name of the field is the first ident</span>
+                  ),
+                  newIdentNode(<span class="hljs-string">&quot;sizeof&quot;</span>)
+              )
+              )))
+            <span class="hljs-comment"># myTypeVar.field[i].addr.repr</span>
+
+            <span class="hljs-literal">result</span> = <span class="hljs-literal">result</span>.add(newStmtList(nnkCommand.newTree(
+              newIdentNode(<span class="hljs-string">&quot;echo&quot;</span>),
+              nnkDotExpr.newTree(
+                nnkDotExpr.newTree(
+                  nnkDotExpr.newTree(
+                    newIdentNode(nameOfTestVariable),
+                    newIdentNode(tnode[i][<span class="hljs-number">0</span>].strVal)
+                  ),
+                  newIdentNode(<span class="hljs-string">&quot;addr&quot;</span>)
+                ),
+                newIdentNode(<span class="hljs-string">&quot;repr&quot;</span>)
+              )
+              )))
+  <span class="hljs-keyword">echo</span> <span class="hljs-literal">result</span>.repr
+
+<span class="hljs-keyword">when</span> isMainModule:
+  typeMemoryRepr:
+    <span class="hljs-keyword">type</span>
+      <span class="hljs-type">Thing</span> = <span class="hljs-keyword">object</span> <span class="hljs-keyword">of</span> <span class="hljs-type">RootObj</span>
+        a: <span class="hljs-built_in">float32</span>
+        b: <span class="hljs-built_in">uint64</span>
+        c: <span class="hljs-built_in">char</span>
+    <span class="hljs-keyword">type</span>
+      <span class="hljs-type">Thing2</span> = <span class="hljs-keyword">object</span>
+        oneChar: <span class="hljs-built_in">char</span>
+        myStr: <span class="hljs-built_in">string</span>
+  <span class="hljs-keyword">when</span> <span class="hljs-literal">false</span>: <span class="hljs-comment"># erroneous code</span>
+    <span class="hljs-comment"># type with pragmas aren't supported yet</span>
+    typeMemoryRepr:
+      <span class="hljs-keyword">type</span>
+        <span class="hljs-type">Thing</span> {.packed.} = <span class="hljs-keyword">object</span>
+          oneChar: <span class="hljs-built_in">char</span>
+          myStr: <span class="hljs-built_in">string</span></code></pre><pre><samp>32
+ptr Thing(a: 0.0, b: 0, c: '\0')
+4
+ptr 0.0
+8
+ptr 0
+1
+ptr '\0'
+24
+ptr Thing2(oneChar: '\0', myStr: &quot;&quot;)
+1
+ptr '\0'
+16
+ptr &quot;&quot;</samp></pre>
 </main>
 <footer>
 <hr>
@@ -196,7 +376,14 @@ We can also count many projects that are macro- or template-based:
   2. My favorite macro : the [neural network domain specific language (DSL) of the tensor library Arraymancer](https://github.com/mratsim/Arraymancer/blob/68786e147a94069a96f069bab327d67afdaa5a3e/src/arraymancer/nn/nn_dsl.nim)
 Do not just look at the header of procedures to determine if it is a macro or not. Often a macro relies on a lot of smaller procedures.
 
-Let us start with introduction to `template` and `untyped` parameters. Another form of metaprogramming is done with `generics`, but these are not explained in the scope of this tutorial.
+## Introduction
+There are four kind/levels of procedures:
+  1. ordinary proc/iterator
+  2. generic proc/iterator
+  3. template
+  4. macro
+The higher the number, the more meta we get. It is recommended to program one's procedure with the lowest level of metaprogramming possible. 
+Let us start with `template`s and `untyped` parameters. I do not `present` generics in this tutorial.
 &quot;&quot;&quot;</span>
 
 nbText: <span class="hljs-string">&quot;&quot;&quot;
@@ -236,13 +423,21 @@ nbCode:
 
   repeat <span class="hljs-number">5</span>:
     <span class="hljs-keyword">echo</span>(<span class="hljs-string">&quot;Hello Templates!&quot;</span>)
-    sleep(<span class="hljs-number">1000</span>)
+    sleep(<span class="hljs-number">100</span>)
 
 nbText: <span class="hljs-string">&quot;&quot;&quot;
-In standard Nim, there are very few restricted keywords and special control-flow mechanisms, but nothing restrains us from creating a doWhile construct. And this is very simple.
+In Nim, there are few restricted keywords and special control-flow mechanisms, as to incite us to create our own constructs (and keep the language simple). Nothing restrains us from defining a `doWhile` construct.
 &quot;&quot;&quot;</span>
 
 nbCode:
+  <span class="hljs-keyword">proc</span> nextSyracuseTerm(term: <span class="hljs-keyword">var</span> <span class="hljs-built_in">int</span>) =
+    <span class="hljs-comment">## This sequence should resolve to the cyclic sequence 1, 4, 2, 1, ...</span>
+    <span class="hljs-keyword">if</span> term <span class="hljs-keyword">mod</span> <span class="hljs-number">2</span> == <span class="hljs-number">1</span>:
+      term *= <span class="hljs-number">3</span>
+      term.inc
+    <span class="hljs-keyword">else</span>:
+      term = term <span class="hljs-keyword">div</span> <span class="hljs-number">2</span>
+
   <span class="hljs-keyword">template</span> doWhile(conditional, loop: <span class="hljs-built_in">untyped</span>) =
     loop
     <span class="hljs-keyword">while</span> conditional:
@@ -251,14 +446,28 @@ nbCode:
   <span class="hljs-keyword">var</span> myInt = <span class="hljs-number">5</span>
   doWhile myInt &gt;= <span class="hljs-number">6</span>:
       <span class="hljs-keyword">echo</span> myInt
-      <span class="hljs-keyword">if</span> myInt <span class="hljs-keyword">mod</span> <span class="hljs-number">2</span> == <span class="hljs-number">1</span>:
-        myInt *= <span class="hljs-number">3</span>
-        myInt.inc
-      <span class="hljs-keyword">else</span>:
-        myInt = myInt <span class="hljs-keyword">div</span> <span class="hljs-number">2</span>
+      nextSyracuseTerm(myInt)
 
 nbText:<span class="hljs-string">&quot;&quot;&quot;
-We can not do certain things with template, like not returning any code.
+Notice though that the end result is fairly different than C++ code
+```cpp
+int i = 0;
+do{
+  printf(&quot;Hello World&quot;);
+  i += 1;
+}while(i &lt; 10);
+```
+The instructions and the conditional appear before the `while` whereas this doWhile Nim construct will have the conditional after the `doWhile`:
+```nim
+var i: int = 0 # superfluous type annotation
+doWhile i &lt; 10:
+  echo &quot;Hello World!&quot;
+  i.inc
+```
+&quot;&quot;&quot;</span>
+  
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+Though powerful, templates are still limited. As an example, I didn't achieve to make a discard template (that ta disabling a code.
 &quot;&quot;&quot;</span>
 
 nbCode:
@@ -280,6 +489,170 @@ nbCode:
     <span class="hljs-keyword">while</span> <span class="hljs-literal">true</span>:
       <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;If you do not discard me, you'll never get out!&quot;</span>
 
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+### AST Manipulation
+In Nim, the code is read and transformed in an internal intermediate representation called an Abstract Syntax Tree (AST) (refer to the [manual AST section]()
+&quot;&quot;&quot;</span>
+
+nbCode:
+  dumpTree:
+    <span class="hljs-keyword">type</span>
+      myObject {.packed.} = <span class="hljs-keyword">ref</span> <span class="hljs-keyword">object</span> <span class="hljs-keyword">of</span> <span class="hljs-type">RootObj</span>
+        left: <span class="hljs-built_in">seq</span>[myObject]
+        right: <span class="hljs-built_in">seq</span>[myObject]
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+```raw
+StmtList
+  TypeSection
+    TypeDef
+      PragmaExpr
+        Ident &quot;myObject&quot;
+        Pragma
+          Ident &quot;packed&quot;
+      Empty
+      RefTy
+        ObjectTy
+          Empty
+          OfInherit
+            Ident &quot;RootObj&quot;
+          RecList
+            IdentDefs
+              Ident &quot;left&quot;
+              BracketExpr
+                Ident &quot;seq&quot;
+                Ident &quot;myObject&quot;
+              Empty
+            IdentDefs
+              Ident &quot;right&quot;
+              BracketExpr
+                Ident &quot;seq&quot;
+                Ident &quot;myObject&quot;
+              Empty
+```
+&quot;&quot;&quot;</span>
+
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+I present down my first macro as an example.
+I want to print the memory layout of a given type.
+My goal is to find misaligned fields making useless unocuppied memory.
+We should be able in the future to automatically swap the fields to remove the holes (or at least propose a fixed type).
+The first step is to look at the AST of the input code we want to parse.
+&quot;&quot;&quot;</span>
+
+nbCode:
+  dumpTree:
+    <span class="hljs-keyword">type</span>
+      <span class="hljs-type">Thing</span> = <span class="hljs-keyword">object</span>
+        a: <span class="hljs-built_in">float32</span>
+
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+It is not easy (if even possible) to list all the possible types.
+By adding some other informations we get a better picture of the general AST of a type.
+&quot;&quot;&quot;</span>
+
+nbCode:
+  dumpTree:
+    <span class="hljs-keyword">type</span>
+      <span class="hljs-type">Thing</span> {.packed.} = <span class="hljs-keyword">object</span> <span class="hljs-keyword">of</span> <span class="hljs-type">RootObj</span>
+        a: <span class="hljs-built_in">float32</span>
+        b: <span class="hljs-built_in">string</span>
+
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+A macro does three steps in this order:
+  0. Check that the node is of the expected kind.
+  1. Get properties of the input AST node (Maybe by going through node child's Ident).
+  2. Form AST output in function of these input node's properties.
+  3. Go through the node's child.
+&quot;&quot;&quot;</span>
+
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+A good macro is necessary complex enough to require a long docstring with thorough details.
+We begin by running the type definition.
+&quot;&quot;&quot;</span>
+
+nbCode:
+  <span class="hljs-keyword">macro</span> typeMemoryRepr(typedef: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
+    <span class="hljs-comment">## This macro takes a type definition as an argument and:</span>
+    <span class="hljs-comment">## * defines the type (outputs typedef as is)</span>
+    <span class="hljs-comment">## * initializes a variable of this type</span>
+    <span class="hljs-comment">## * echoes the size of the variable</span>
+    <span class="hljs-comment">## * echoes the address of the variable</span>
+    <span class="hljs-comment">## Then, for each field:</span>
+    <span class="hljs-comment">## * echoes the size of the variable field</span>
+    <span class="hljs-comment">## * echoes the address of the variable field</span>
+
+    <span class="hljs-comment"># Parse the type definition to find the TypeDef section's node</span>
+    <span class="hljs-literal">result</span> = quote <span class="hljs-keyword">do</span>:
+      `typedef`
+    <span class="hljs-keyword">for</span> statement <span class="hljs-keyword">in</span> typedef:
+      <span class="hljs-keyword">if</span> statement.kind == nnkTypeSection:
+        <span class="hljs-keyword">let</span> typeSection = statement
+        <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-number">0</span> ..&lt; typeSection.len:
+          <span class="hljs-keyword">if</span> typeSection[i].kind == nnkTypeDef:
+            <span class="hljs-keyword">var</span> tnode = typeSection[i]
+            <span class="hljs-comment"># The name of the type is the first Ident child. We can get the ident's string with strVal or repr</span>
+            <span class="hljs-keyword">let</span> nameOfType = typeSection[i].findChild(it.kind == nnkIdent)
+
+            <span class="hljs-comment">## Generation of AST:</span>
+            <span class="hljs-comment"># We create a variable of the given type definition (hopefully not already defined) name for the &quot;myTypenameVar&quot;</span>
+            <span class="hljs-keyword">let</span> nameOfTestVariable = <span class="hljs-string">&quot;my&quot;</span> &amp; nameOfType.strVal.capitalizeAscii() &amp; <span class="hljs-string">&quot;Var&quot;</span>
+            <span class="hljs-keyword">let</span> testVariable = newIdentNode(nameOfTestVariable)
+            <span class="hljs-literal">result</span> = <span class="hljs-literal">result</span>.add(
+            quote <span class="hljs-keyword">do</span>:
+              <span class="hljs-keyword">var</span> `testVariable`:`nameOfType` <span class="hljs-comment"># instanciate type defined in typedef</span>
+              <span class="hljs-keyword">echo</span> `testVariable`.sizeof <span class="hljs-comment"># echo the total size</span>
+              <span class="hljs-keyword">echo</span> `testVariable`.<span class="hljs-keyword">addr</span>.repr <span class="hljs-comment"># gives the address in memory</span>
+            )
+            <span class="hljs-comment"># myTypeVar.field[i] memory size and address in memory</span>
+            tnode = tnode[<span class="hljs-number">2</span>][<span class="hljs-number">2</span>] <span class="hljs-comment"># The third child of the third child is the fields's AST</span>
+            <span class="hljs-keyword">assert</span> tnode.kind == nnkRecList
+            <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-number">0</span> ..&lt; tnode.len:
+              <span class="hljs-comment"># myTypeVar.field[i].sizeof</span>
+              <span class="hljs-literal">result</span> = <span class="hljs-literal">result</span>.add(newStmtList(nnkCommand.newTree(
+                newIdentNode(<span class="hljs-string">&quot;echo&quot;</span>),
+                nnkDotExpr.newTree(
+                  nnkDotExpr.newTree(
+                    newIdentNode(nameOfTestVariable),
+                    newIdentNode(tnode[i][<span class="hljs-number">0</span>].strVal) <span class="hljs-comment"># The name of the field is the first ident</span>
+                    ),
+                    newIdentNode(<span class="hljs-string">&quot;sizeof&quot;</span>)
+                )
+                )))
+              <span class="hljs-comment"># myTypeVar.field[i].addr.repr</span>
+
+              <span class="hljs-literal">result</span> = <span class="hljs-literal">result</span>.add(newStmtList(nnkCommand.newTree(
+                newIdentNode(<span class="hljs-string">&quot;echo&quot;</span>),
+                nnkDotExpr.newTree(
+                  nnkDotExpr.newTree(
+                    nnkDotExpr.newTree(
+                      newIdentNode(nameOfTestVariable),
+                      newIdentNode(tnode[i][<span class="hljs-number">0</span>].strVal)
+                    ),
+                    newIdentNode(<span class="hljs-string">&quot;addr&quot;</span>)
+                  ),
+                  newIdentNode(<span class="hljs-string">&quot;repr&quot;</span>)
+                )
+                )))
+    <span class="hljs-keyword">echo</span> <span class="hljs-literal">result</span>.repr
+
+  <span class="hljs-keyword">when</span> isMainModule:
+    typeMemoryRepr:
+      <span class="hljs-keyword">type</span>
+        <span class="hljs-type">Thing</span> = <span class="hljs-keyword">object</span> <span class="hljs-keyword">of</span> <span class="hljs-type">RootObj</span>
+          a: <span class="hljs-built_in">float32</span>
+          b: <span class="hljs-built_in">uint64</span>
+          c: <span class="hljs-built_in">char</span>
+      <span class="hljs-keyword">type</span>
+        <span class="hljs-type">Thing2</span> = <span class="hljs-keyword">object</span>
+          oneChar: <span class="hljs-built_in">char</span>
+          myStr: <span class="hljs-built_in">string</span>
+    <span class="hljs-keyword">when</span> <span class="hljs-literal">false</span>: <span class="hljs-comment"># erroneous code</span>
+      <span class="hljs-comment"># type with pragmas aren't supported yet</span>
+      typeMemoryRepr:
+        <span class="hljs-keyword">type</span>
+          <span class="hljs-type">Thing</span> {.packed.} = <span class="hljs-keyword">object</span>
+            oneChar: <span class="hljs-built_in">char</span>
+            myStr: <span class="hljs-built_in">string</span>
 nbSave
 </code></pre>
 </section><script>
