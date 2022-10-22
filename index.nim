@@ -1,24 +1,30 @@
-import strformat, strutils
+import std/[strutils]
 import nimib
 
 nbInit
+nb.darkMode
 
 import std/[macros]
-nbText: """
-# Nim Metaprogramming (Macros) Tutorial
-This tutorial aims to be a step-by-step introduction to the metaprogramming features of the Nim Language.
-There are already many resources on the Web, but I strive to provide more thorough details on the development process all in one place.
+nbText: hlMd"""
+Nim Metaprogramming (Macros) Tutorial
+#####################################
 
-## Existing resources
+This tutorial aims to be a _step-by-step_ introduction to the metaprogramming features of the Nim Language and to provide as much detail as possible to kickstart your project.
+There are already many resources on the Web, but I strive to provide more thorough details on the development process all in one place. I still encourage you to code and try things on your behalf.
+You will probably learn faster by yourself.
+
+## Existing resources / References / Bibliography
 Press `Ctrl` + `Click` to open following links in a new tab.
 
 First, there are three official resources at the Nim's website:
+  0. [Nim by Example](https://nim-by-example.github.io/macros/)
   1. [Nim Tutorial (Part III)](https://nim-lang.org/docs/tut3.html)
   2. [Manual section about macros](https://nim-lang.org/docs/manual.html#macros)
   3. [The Standard Documentation of the std/macros library](https://nim-lang.org/docs/macros.html)
-The 1. and 2. documentations are complementary learning resources while the last one will be your up-to-date exhaustive reference.
+The 1. and 2. documentations are complementary learning resources while the last one will be your up-to-date exhaustive reference. It provides dumped AST for all the nodes.
 
 Many developers have written their macro's tutorial:
+  0. [Nim in Y minutes](https://learnxinyminutes.com/docs/nim/)
   1. [Jason Beetham a.k.a ElegantBeef's dev.to tutorial](https://dev.to/beef331/demystification-of-macros-in-nim-13n8). This tutorial contains a lot of good first examples.
   2. [Pattern matching (sadly outdated) in macros by DevOnDuty](https://www.youtube.com/watch?v=GJpn6SfR_1M)
   3. [Tomohiro's FAQ section about macros](https://internet-of-tomohiro.netlify.app/nim/faq.en.html#macro)
@@ -32,14 +38,16 @@ There are plentiful of posts in the forum that are good references:
 
 Last but no least, there are three Nim books:
   1. [Nim In Action, ed. Manning](https://book.picheta.me) and [github repo](https://github.com/dom96/nim-in-action-code)
-  2. [Mastering Nim, auto-published by A. Rumpf/Araq, Nim's creator](https://www.amazon.fr/dp/B0B4R7B9YX). (This link is NOT affiliated)
+  2. [Mastering Nim, auto-published by A. Rumpf/Araq, Nim's creator](https://www.amazon.fr/dp/B0B4R7B9YX).
   3. [Nim Programming Book, by S.Salewski](https://ssalewski.de/nimprogramming.html#_macros_and_meta_programming)
 
 We can also count many projects that are macro- or template-based:
   1. [genny](https://github.com/treeform/genny) and [benchy](https://github.com/treeform/genny). Benchy is a template based library that benchmarks your code snippet under bench blocks. Genny is used to export a Nim library to other languages (C, C++, Node, Python, Zig).
   In general, treeform projects source code are good Nim references
-  2. My favorite macro : the [neural network domain specific language (DSL) of the tensor library Arraymancer](https://github.com/mratsim/Arraymancer/blob/68786e147a94069a96f069bab327d67afdaa5a3e/src/arraymancer/nn/nn_dsl.nim)
-Do not just look at the header of procedures to determine if it is a macro or not. Often a macro relies on a lot of smaller procedures.
+  2. My favorite DSL : the [neural network domain specific language (DSL) of the tensor library Arraymancer](https://github.com/mratsim/Arraymancer/blob/68786e147a94069a96f069bab327d67afdaa5a3e/src/arraymancer/nn/nn_dsl.nim)
+  3. [Jester](https://github.com/dom96/jester) library is a really nice HTML DSL, where each block defines a route in your web application.
+  4. [nimib](https://pietroppeter.github.io/nimib/) with which this blog post has been written, has been developed with a macro DSL too.
+  5. The most complex macro system that I know of apart from genny for the moment is the Nim4UE(https://github.com/jmgomez/NimForUE). You can develop Nim code for the Unreal Engine 5 game engine. The macro system parses your procs and outputs DLL for UE.
 
 ## Introduction
 There are four kind/levels of procedures:
@@ -56,6 +64,7 @@ nbText: """
 We can see *templates* as procedures that modify code through a copy-paste mechanism. Pieces of code are given to (and outputted by) the template with a special type : `untyped`. 
 For those familiar with [preprocessing](https://gcc.gnu.org/onlinedocs/cpp/) in the C family of languages (C, C++, C#), it does the same than the `#define` or `#if`, `#endif` macros and much more.
 """
+
 nbText: """
 Nim's language defines boolean operator like `!=` with templates. You can even look at Nim's source code, that's almost the same code. See the [documentation](https://nim-lang.org/docs/system.html#%21%3D.t%2Cuntyped%2Cuntyped).
 """
@@ -113,7 +122,7 @@ nbCode:
       echo myInt
       nextSyracuseTerm(myInt)
 
-nbText:"""
+nbText:hlMd"""
 Notice though that the end result is fairly different than C++ code
 ```cpp
 int i = 0;
@@ -144,19 +153,20 @@ nbCode:
 
 nbText:"""
 ## Macros
-Macros can be seen as an empowered template procedure.
+Macros can be seen as an empowered template procedure. While template substitute code, macros do introspection.
 Instead of simply taking untyped blocks and reuse them as lego bricks to return a code, we can parse our untyped parameter and do something conditionally to informations given in these parameters.
+We can also inject variables into scopes.
 """
 nbCode:
-  macro discard2(statements: untyped): untyped =
+  macro throwAway(statements: untyped): untyped =
     result = newStmtList()
-  discard2:
+  throwAway:
     while true:
-      echo "If you do not discard me, you'll never get out!"
+      echo "If you do not throw me, I'll spam you indefinitely!"
 
 nbText:"""
 ### AST Manipulation
-In Nim, the code is read and transformed in an internal intermediate representation called an Abstract Syntax Tree (AST) (refer to the [manual AST section]()
+In Nim, the code is read and transformed in an internal intermediate representation called an Abstract Syntax Tree (AST). To get a representation of the AST corresponding to a code, we can use the `macro` `dumpTree`.
 """
 
 nbCode:
@@ -165,7 +175,9 @@ nbCode:
       myObject {.packed.} = ref object of RootObj
         left: seq[myObject]
         right: seq[myObject]
+
 nbText:"""
+This output is given with the
 ```raw
 StmtList
   TypeSection
@@ -211,6 +223,7 @@ nbCode:
         a: float32
 
 nbText:"""
+```raw
 StmtList
   TypeSection
     TypeDef
@@ -224,12 +237,43 @@ StmtList
             Ident "a"
             Ident "float32"
             Empty
+```
 """
 
 nbText:"""
-We have to get outputs as much complex as possible (while keeping the information to the minimum to easily read the AST).
 
-It is not easy (if even possible) to list all the possible types.
+"""
+
+nbText:"""
+We have to get outputs as much complex as possible to detect edge cases, while keeping the information to the minimum to easily read the AST and locate errors.
+I present here first some samples of type definition on which I will run my macro.
+"""
+
+nbText:hlMd"""
+```nim
+  when defined(typeMemoryRepr):
+    typeMemoryRepr:
+      type
+        Thing2 = object
+          oneChar: char
+          myStr: string
+      type
+        Thing = object of RootObj
+          a: float32
+          b: uint64
+          c: char
+    when false: # erroneous code
+      # type with pragmas aren't supported yet
+      typeMemoryRepr:
+        type
+          Thing {.packed.} = object
+            oneChar: char
+            myStr: string
+```
+"""
+
+nbText:"""
+It is not easy (if even possible) to list all possible types.
 Yet by adding some other informations we can get a better picture of the general AST of a type.
 """
 
@@ -346,24 +390,6 @@ nbCode:
                 )))
     echo result.repr
 
-  when isMainModule:
-    typeMemoryRepr:
-      type
-        Thing = object of RootObj
-          a: float32
-          b: uint64
-          c: char
-      type
-        Thing2 = object
-          oneChar: char
-          myStr: string
-    when false: # erroneous code
-      # type with pragmas aren't supported yet
-      typeMemoryRepr:
-        type
-          Thing {.packed.} = object
-            oneChar: char
-            myStr: string
 
 
 nbText:"""
