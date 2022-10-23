@@ -6,8 +6,8 @@ nb.darkMode
 
 import std/[macros]
 nbText: hlMd"""
-Nim Metaprogramming (Macros) Tutorial
-#####################################
+Nim Metaprogramming / Macro Tutorial
+-------------------------------------
 
 This tutorial aims to be a _step-by-step_ introduction to the metaprogramming features of the Nim Language and to provide as much detail as possible to kickstart your project.
 There are already many resources on the Web, but I strive to provide more thorough details on the development process all in one place. I still encourage you to code and try things on your behalf.
@@ -17,18 +17,18 @@ You will probably learn faster by yourself.
 Press `Ctrl` + `Click` to open following links in a new tab.
 
 First, there are three official resources at the Nim's website:
-  0. [Nim by Example](https://nim-by-example.github.io/macros/)
-  1. [Nim Tutorial (Part III)](https://nim-lang.org/docs/tut3.html)
-  2. [Manual section about macros](https://nim-lang.org/docs/manual.html#macros)
-  3. [The Standard Documentation of the std/macros library](https://nim-lang.org/docs/macros.html)
-The 1. and 2. documentations are complementary learning resources while the last one will be your up-to-date exhaustive reference. It provides dumped AST for all the nodes.
+  1. [Nim by Example](https://nim-by-example.github.io/macros/)
+  2. [Nim Tutorial (Part III)](https://nim-lang.org/docs/tut3.html)
+  3. [Manual section about macros](https://nim-lang.org/docs/manual.html#macros)
+  4. [The Standard Documentation of the std/macros library](https://nim-lang.org/docs/macros.html)
+The 2. and 3. documentations are complementary learning resources while the last one will be your up-to-date exhaustive reference. It provides dumped AST for all the nodes.
 
 Many developers have written their macro's tutorial:
-  0. [Nim in Y minutes](https://learnxinyminutes.com/docs/nim/)
-  1. [Jason Beetham a.k.a ElegantBeef's dev.to tutorial](https://dev.to/beef331/demystification-of-macros-in-nim-13n8). This tutorial contains a lot of good first examples.
-  2. [Pattern matching (sadly outdated) in macros by DevOnDuty](https://www.youtube.com/watch?v=GJpn6SfR_1M)
-  3. [Tomohiro's FAQ section about macros](https://internet-of-tomohiro.netlify.app/nim/faq.en.html#macro)
-  4. [The Making of NimYAML's article of flyx](https://flyx.org/nimyaml-making-of/)
+  1. [Nim in Y minutes](https://learnxinyminutes.com/docs/nim/)
+  2. [Jason Beetham a.k.a ElegantBeef's dev.to tutorial](https://dev.to/beef331/demystification-of-macros-in-nim-13n8). This tutorial contains a lot of good first examples.
+  3. [Pattern matching (sadly outdated) in macros by DevOnDuty](https://www.youtube.com/watch?v=GJpn6SfR_1M)
+  4. [Tomohiro's FAQ section about macros](https://internet-of-tomohiro.netlify.app/nim/faq.en.html#macro)
+  5. [The Making of NimYAML's article of flyx](https://flyx.org/nimyaml-making-of/)
 
 There are plentiful of posts in the forum that are good references:
   1. [What is "Metaprogramming" paradigm used for ?](https://forum.nim-lang.org/t/2587)
@@ -47,7 +47,7 @@ We can also count many projects that are macro- or template-based:
   2. My favorite DSL : the [neural network domain specific language (DSL) of the tensor library Arraymancer](https://github.com/mratsim/Arraymancer/blob/68786e147a94069a96f069bab327d67afdaa5a3e/src/arraymancer/nn/nn_dsl.nim)
   3. [Jester](https://github.com/dom96/jester) library is a really nice HTML DSL, where each block defines a route in your web application.
   4. [nimib](https://pietroppeter.github.io/nimib/) with which this blog post has been written, has been developed with a macro DSL too.
-  5. The most complex macro system that I know of apart from genny for the moment is the Nim4UE(https://github.com/jmgomez/NimForUE). You can develop Nim code for the Unreal Engine 5 game engine. The macro system parses your procs and outputs DLL for UE.
+  5. The most complex macro system that I know of apart from genny for the moment is the [Nim4UE](https://github.com/jmgomez/NimForUE). You can develop Nim code for the Unreal Engine 5 game engine. The macro system parses your procs and outputs DLL for UE.
 
 ## Introduction
 There are four kind/levels of procedures:
@@ -139,17 +139,33 @@ doWhile i < 10:
   i.inc
 ```
 """
-  
+
 nbText:"""
-Though powerful, templates are still limited. As an example, I didn't achieve to make a discard template (that ta disabling a code.
+Another example is benchmarking code in Nim. It suffices to put our bench code inside a special block.
 """
 
 nbCode:
-  template `discard`(statements: untyped): untyped =
-    discard nil # Cheat here
+  import std/times
+  template benchmark(benchmarkName: string, code: untyped) =
+    block:
+      let t0 = epochTime()
+      code
+      let elapsed = epochTime() - t0
+      let elapsedStr = elapsed.formatFloat(format = ffDecimal, precision = 3)
+      echo "CPU Time [", benchmarkName, "] ", elapsedStr, "s"
 
-  `discard`:
-    echo "Test the discard template, if you see this message, it has failed. If not, well …"
+  benchmark "test1":
+    sleep(100)
+
+# nbText:"""
+# Though powerful, templates are still limited. As an example, I didn't achieve to make a throwAway template (that does not run a code).
+# """
+
+# nbCode:
+#   template throwAway(statements: untyped): untyped = discard nil
+
+#   throwAway:
+#     echo "Test the discard template, if you see this message, it has failed. If not, well …"
 
 nbText:"""
 ## Macros
@@ -285,6 +301,7 @@ nbCode:
         b: string
 
 nbText:"""
+```nim
 StmtList
   TypeSection
     TypeDef
@@ -306,6 +323,7 @@ StmtList
             Ident "b"
             Ident "string"
             Empty
+```
 """
 
 nbText:"""

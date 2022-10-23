@@ -1,13 +1,16 @@
 import nimib, nimib / [paths, gits], os, strutils, strformat
 
 nbInit
+nb.darkMode
 
 var
   listOfDrafts: string = ""
   link: string = ""
 
 for file in walkDirRec(nbHomeDir):
+  # echo getFileInfo(file).id.repr
   if not file.endswith(".html") or file.name.startsWith("index") or (not file.isGitTracked):
+    # echo file.repr, " ", file.isGitTracked
     continue
   link = file.relPath.replace(r"\", "/") # TODO: fix this hack. 
   echo "adding link: ", link
