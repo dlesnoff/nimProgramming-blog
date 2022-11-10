@@ -43,18 +43,17 @@ section#source {
 <hr>
 </header><main>
 <h2>Nim Metaprogramming / Macro Tutorial</h2>
-<p>This tutorial aims to be a <em>step-by-step</em> introduction to the metaprogramming features of the Nim Language and to provide as much detail as possible to kickstart your project.
-There are already many resources on the Web, but I strive to provide more thorough details on the development process all in one place. I still encourage you to code and try things on your behalf.
-You will probably learn faster by yourself.</p>
+<p>This tutorial aims to be a <em>step-by-step</em> introduction to the metaprogramming features of the Nim Language and to provide as much detail as possible to kickstart your craziest projects.
+There are already many resources on the Web, but I strive to provide more thorough details on the development process and to gather them all in one place. You are encouraged to code along and modify examples.</p>
 <h2>Existing resources / References / Bibliography</h2>
 <p>Press <code>Ctrl</code> + <code>Click</code> to open following links in a new tab.</p>
-<p>First, there are three official resources at the Nim's website:</p>
+<p>First, there are four official resources at the Nim's website:</p>
 <ol>
 <li><a href="https://nim-by-example.github.io/macros/">Nim by Example</a></li>
 <li><a href="https://nim-lang.org/docs/tut3.html">Nim Tutorial (Part III)</a></li>
 <li><a href="https://nim-lang.org/docs/manual.html#macros">Manual section about macros</a></li>
 <li><a href="https://nim-lang.org/docs/macros.html">The Standard Documentation of the std/macros library</a>
-The 2. and 3. documentations are complementary learning resources while the last one will be your up-to-date exhaustive reference. It provides dumped AST for all the nodes.</li>
+The 2. and 3. documentations are complementary learning resources while the last one will be your up-to-date exhaustive reference. It provides dumped AST (explained later) for all the nodes.</li>
 </ol>
 <p>Many developers have written their macro's tutorial:</p>
 <ol>
@@ -69,7 +68,7 @@ The 2. and 3. documentations are complementary learning resources while the last
 <li><a href="https://forum.nim-lang.org/t/2587">What is &quot;Metaprogramming&quot; paradigm used for ?</a></li>
 <li><a href="https://forum.nim-lang.org/t/9470">Custom macro inserts macro help</a></li>
 <li><a href="https://forum.nim-lang.org/t/9498">See generated code after template processing</a></li>
-<li>etc … Please use the forum search bar with keywords like <code>macro</code>, <code>metaprogramming</code>, <code>generics</code>, <code>template</code>, …</li>
+<li>etc … Please use the forum search bar with specific keywords like <code>macro</code>, <code>metaprogramming</code>, <code>generics</code>, <code>template</code>, …</li>
 </ol>
 <p>Last but no least, there are three Nim books:</p>
 <ol>
@@ -84,7 +83,8 @@ The 2. and 3. documentations are complementary learning resources while the last
 In general, treeform projects source code are good Nim references</p>
 </li>
 <li>
-<p>My favorite DSL : the <a href="https://github.com/mratsim/Arraymancer/blob/68786e147a94069a96f069bab327d67afdaa5a3e/src/arraymancer/nn/nn_dsl.nim">neural network domain specific language (DSL) of the tensor library Arraymancer</a></p>
+<p>My favorite DSL : the <a href="https://github.com/mratsim/Arraymancer/blob/68786e147a94069a96f069bab327d67afdaa5a3e/src/arraymancer/nn/nn_dsl.nim">neural network domain specific language (DSL) of the tensor library Arraymancer</a>
+<a href="https://github.com/mratsim/">mratsim</a> develops this library, and made <a href="https://forum.nim-lang.org/t/9551#62851">a list of all his DSL</a> in the forum.</p>
 </li>
 <li>
 <p><a href="https://github.com/dom96/jester">Jester</a> library is a really nice HTML DSL, where each block defines a route in your web application.</p>
@@ -301,29 +301,94 @@ Yet by adding some other informations we can get a better picture of the general
             Empty
 </code></pre>
 <p>Notice how the name of the type went under the PragmaExpr section. We have to be careful about this when trying to parse the type.</p>
-<p>A macro does three steps in this order:
-0. Check that the node is of the expected kind.</p>
+<p>A macro does always the same steps:</p>
 <ol>
-<li>Get properties of the input AST node (Maybe by going through node child's Ident).</li>
+<li>Search for a node of a specific kind, inside the input AST or check that the given node is of the expected kind.</li>
+<li>Fetch properties of the selected node.</li>
 <li>Form AST output in function of these input node's properties.</li>
-<li>Go through the node's child.</li>
+<li>Continue exploring the AST.</li>
 </ol>
-<p>A good macro is necessary complex enough to require a long docstring with thorough details.
-We begin by running the type definition.</p>
+<p>Your macros will require a long docstring and many comments both with thorough details.</p>
+<p>I present now my macro <code>typeMemoryRepr</code> inspired from the <a href="https://zevv.nl/nim-memory/">nim memory guide</a> on memory representation.
+In this guide, we manually print types fields address, to get an idea of the memory layout and the space taken by each variable and its fields.</p>
+<pre><code class="language-nim">type Thing = object
+  a: uint32
+  b: uint8
+  c: uint16
+
+var t: Thing
+
+echo &quot;size t.a &quot;, t.a.sizeof
+echo &quot;size t.b &quot;, t.b.sizeof
+echo &quot;size t.c &quot;, t.c.sizeof
+echo &quot;size t   &quot;, t.sizeof
+
+echo &quot;addr t.a &quot;, t.a.addr.repr
+echo &quot;addr t.b &quot;, t.b.addr.repr
+echo &quot;addr t.c &quot;, t.c.addr.repr
+echo &quot;addr t   &quot;, t.addr.repr
+</code></pre>
+<p>All these echo's are redundant and have to be changed each time we change the type field. For types with more than four or five fields, this becomes not manageable.</p>
+<p>I have split this macro into different procedures.
+The <code>echoSizeVarFieldStmt</code> will take the name of a variable, let us say <code>a</code> and of its field <code>field</code> and return the code:</p>
+<pre><code class="language-nim">echo a.field.sizeof
+</code></pre>
+<p>We create a NimNode of kind <code>StmtList</code> (a statement list), that contains <code>IdentNode</code>s.
+The first <code>IdentNode</code> is the command <code>echo</code>.
+We do not represent spaces in the AST. Each term separated by a dot is an Ident and part of a <code>nnkDotExpr</code>.</p>
+<p>It suffices to output the above code under a <code>dumpTree</code> block, to understand the AST we have to generate.</p>
+<pre><code class="language-nim">dumpTree:
+  echo a.field.sizeof
+</code></pre>
+<pre><code class="nim hljs"><span class="hljs-keyword">proc</span> echoSizeVarFieldStmt(variable: <span class="hljs-built_in">string</span>, nameOfField: <span class="hljs-built_in">string</span>): <span class="hljs-type">NimNode</span> =
+  <span class="hljs-comment">## quote do:</span>
+  <span class="hljs-comment">##   echo `variable`.`nameOfField`.sizeof</span>
+  newStmtList(nnkCommand.newTree(
+            newIdentNode(<span class="hljs-string">&quot;echo&quot;</span>),
+            nnkDotExpr.newTree(
+              nnkDotExpr.newTree(
+                newIdentNode(variable),
+                newIdentNode(nameOfField) <span class="hljs-comment"># The name of the field is the first ident</span>
+                ),
+                newIdentNode(<span class="hljs-string">&quot;sizeof&quot;</span>)
+            )
+            ))</code></pre>
+<p>The <code>echoAddressVarFieldStmt</code> will take the name of a variable, let us say <code>a</code> and of its field <code>field</code> and return its address:</p>
+<pre><code class="language-nim">echo a.field.addr.repr
+</code></pre>
+<pre><code class="nim hljs"><span class="hljs-keyword">proc</span> echoAddressVarFieldStmt(variable: <span class="hljs-built_in">string</span>, nameOfField: <span class="hljs-built_in">string</span>): <span class="hljs-type">NimNode</span> =
+  <span class="hljs-comment">## quote do:</span>
+  <span class="hljs-comment">##   echo `variable`.`nameOfField`.addr.repr</span>
+  newStmtList(nnkCommand.newTree(
+              newIdentNode(<span class="hljs-string">&quot;echo&quot;</span>),
+              nnkDotExpr.newTree(
+                nnkDotExpr.newTree(
+                  nnkDotExpr.newTree(
+                    newIdentNode(variable),
+                    newIdentNode(nameOfField)
+                  ),
+                  newIdentNode(<span class="hljs-string">&quot;addr&quot;</span>)
+                ),
+                newIdentNode(<span class="hljs-string">&quot;repr&quot;</span>)
+              )
+              ))</code></pre>
 <pre><code class="nim hljs"><span class="hljs-keyword">macro</span> typeMemoryRepr(typedef: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
   <span class="hljs-comment">## This macro takes a type definition as an argument and:</span>
   <span class="hljs-comment">## * defines the type (outputs typedef as is)</span>
   <span class="hljs-comment">## * initializes a variable of this type</span>
-  <span class="hljs-comment">## * echoes the size of the variable</span>
-  <span class="hljs-comment">## * echoes the address of the variable</span>
+  <span class="hljs-comment">## * echoes the size and address of the variable</span>
   <span class="hljs-comment">## Then, for each field:</span>
-  <span class="hljs-comment">## * echoes the size of the variable field</span>
-  <span class="hljs-comment">## * echoes the address of the variable field</span>
+  <span class="hljs-comment">## * echoes the size and address of the variable field</span>
 
-  <span class="hljs-comment"># Parse the type definition to find the TypeDef section's node</span>
+  <span class="hljs-comment"># We begin by running the type definition.</span>
   <span class="hljs-literal">result</span> = quote <span class="hljs-keyword">do</span>:
     `typedef`
+
+  <span class="hljs-comment"># Parse the type definition to find the TypeDef section's node</span>
+  <span class="hljs-comment"># We create the output's AST along parsing.</span>
+  <span class="hljs-comment"># We will receive a statement list as the root of the AST </span>
   <span class="hljs-keyword">for</span> statement <span class="hljs-keyword">in</span> typedef:
+    <span class="hljs-comment"># We select only the type section in the StmtList</span>
     <span class="hljs-keyword">if</span> statement.kind == nnkTypeSection:
       <span class="hljs-keyword">let</span> typeSection = statement
       <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-number">0</span> ..&lt; typeSection.len:
@@ -338,7 +403,7 @@ We begin by running the type definition.</p>
           <span class="hljs-keyword">let</span> testVariable = newIdentNode(nameOfTestVariable)
           <span class="hljs-literal">result</span> = <span class="hljs-literal">result</span>.add(
           quote <span class="hljs-keyword">do</span>:
-            <span class="hljs-keyword">var</span> `testVariable`:`nameOfType` <span class="hljs-comment"># instanciate type defined in typedef</span>
+            <span class="hljs-keyword">var</span> `testVariable`:`nameOfType` <span class="hljs-comment"># instanciate variable with type defined in typedef</span>
             <span class="hljs-keyword">echo</span> `testVariable`.sizeof <span class="hljs-comment"># echo the total size</span>
             <span class="hljs-keyword">echo</span> `testVariable`.<span class="hljs-keyword">addr</span>.repr <span class="hljs-comment"># gives the address in memory</span>
           )
@@ -347,32 +412,22 @@ We begin by running the type definition.</p>
           <span class="hljs-keyword">assert</span> tnode.kind == nnkRecList
           <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-number">0</span> ..&lt; tnode.len:
             <span class="hljs-comment"># myTypeVar.field[i].sizeof</span>
-            <span class="hljs-literal">result</span> = <span class="hljs-literal">result</span>.add(newStmtList(nnkCommand.newTree(
-              newIdentNode(<span class="hljs-string">&quot;echo&quot;</span>),
-              nnkDotExpr.newTree(
-                nnkDotExpr.newTree(
-                  newIdentNode(nameOfTestVariable),
-                  newIdentNode(tnode[i][<span class="hljs-number">0</span>].strVal) <span class="hljs-comment"># The name of the field is the first ident</span>
-                  ),
-                  newIdentNode(<span class="hljs-string">&quot;sizeof&quot;</span>)
-              )
-              )))
+            <span class="hljs-literal">result</span> = <span class="hljs-literal">result</span>.add(echoSizeVarFieldStmt(nameOfTestVariable, tnode[i][<span class="hljs-number">0</span>].strVal))
             <span class="hljs-comment"># myTypeVar.field[i].addr.repr</span>
+            <span class="hljs-literal">result</span> = <span class="hljs-literal">result</span>.add(echoAddressVarFieldStmt(nameOfTestVariable, tnode[i][<span class="hljs-number">0</span>].strVal))
 
-            <span class="hljs-literal">result</span> = <span class="hljs-literal">result</span>.add(newStmtList(nnkCommand.newTree(
-              newIdentNode(<span class="hljs-string">&quot;echo&quot;</span>),
-              nnkDotExpr.newTree(
-                nnkDotExpr.newTree(
-                  nnkDotExpr.newTree(
-                    newIdentNode(nameOfTestVariable),
-                    newIdentNode(tnode[i][<span class="hljs-number">0</span>].strVal)
-                  ),
-                  newIdentNode(<span class="hljs-string">&quot;addr&quot;</span>)
-                ),
-                newIdentNode(<span class="hljs-string">&quot;repr&quot;</span>)
-              )
-              )))
   <span class="hljs-keyword">echo</span> <span class="hljs-literal">result</span>.repr</code></pre>
+<pre><code class="nim hljs">typeMemoryRepr:
+  <span class="hljs-keyword">type</span>
+    <span class="hljs-type">Thing</span> = <span class="hljs-keyword">object</span> <span class="hljs-keyword">of</span> <span class="hljs-type">RootObj</span>
+      a: <span class="hljs-built_in">float32</span>
+      b: <span class="hljs-built_in">string</span></code></pre><pre class="nb-output"><samp>24
+ptr 0x5641db2c7dc0 --&gt; [a = 0.0,
+b = &quot;&quot;]
+4
+ptr 0x5641db2c7dc8 --&gt; 0.0
+8
+ptr 0x5641db2c7dd0 --&gt; &quot;&quot;</samp></pre>
 <p>Trying to parse a type ourselve is risky, since there are numerous easily forgettable possibilities (due to pragma expressions, cyclic types, and many kind of types: object, enum, type alias, etc..., case of fields, branching and conditionals inside the object, … ).</p>
 <p>There is actually already a function to do so:</p>
 </main>
@@ -396,19 +451,18 @@ nbText: <span class="hljs-string">hlMd&quot;&quot;&quot;
 Nim Metaprogramming / Macro Tutorial
 -------------------------------------
 
-This tutorial aims to be a _step-by-step_ introduction to the metaprogramming features of the Nim Language and to provide as much detail as possible to kickstart your project.
-There are already many resources on the Web, but I strive to provide more thorough details on the development process all in one place. I still encourage you to code and try things on your behalf.
-You will probably learn faster by yourself.
+This tutorial aims to be a _step-by-step_ introduction to the metaprogramming features of the Nim Language and to provide as much detail as possible to kickstart your craziest projects.
+There are already many resources on the Web, but I strive to provide more thorough details on the development process and to gather them all in one place. You are encouraged to code along and modify examples.
 
 ## Existing resources / References / Bibliography
 Press `Ctrl` + `Click` to open following links in a new tab.
 
-First, there are three official resources at the Nim's website:
+First, there are four official resources at the Nim's website:
   1. [Nim by Example](https://nim-by-example.github.io/macros/)
   2. [Nim Tutorial (Part III)](https://nim-lang.org/docs/tut3.html)
   3. [Manual section about macros](https://nim-lang.org/docs/manual.html#macros)
   4. [The Standard Documentation of the std/macros library](https://nim-lang.org/docs/macros.html)
-The 2. and 3. documentations are complementary learning resources while the last one will be your up-to-date exhaustive reference. It provides dumped AST for all the nodes.
+The 2. and 3. documentations are complementary learning resources while the last one will be your up-to-date exhaustive reference. It provides dumped AST (explained later) for all the nodes.
 
 Many developers have written their macro's tutorial:
   1. [Nim in Y minutes](https://learnxinyminutes.com/docs/nim/)
@@ -421,7 +475,7 @@ There are plentiful of posts in the forum that are good references:
   1. [What is &quot;Metaprogramming&quot; paradigm used for ?](https://forum.nim-lang.org/t/2587)
   2. [Custom macro inserts macro help](https://forum.nim-lang.org/t/9470)
   3. [See generated code after template processing](https://forum.nim-lang.org/t/9498)
-  4. etc … Please use the forum search bar with keywords like `macro`, `metaprogramming`, `generics`, `template`, …
+  4. etc … Please use the forum search bar with specific keywords like `macro`, `metaprogramming`, `generics`, `template`, …
 
 Last but no least, there are three Nim books:
   1. [Nim In Action, ed. Manning](https://book.picheta.me) and [github repo](https://github.com/dom96/nim-in-action-code)
@@ -432,6 +486,7 @@ We can also count many projects that are macro- or template-based:
   1. [genny](https://github.com/treeform/genny) and [benchy](https://github.com/treeform/genny). Benchy is a template based library that benchmarks your code snippet under bench blocks. Genny is used to export a Nim library to other languages (C, C++, Node, Python, Zig).
   In general, treeform projects source code are good Nim references
   2. My favorite DSL : the [neural network domain specific language (DSL) of the tensor library Arraymancer](https://github.com/mratsim/Arraymancer/blob/68786e147a94069a96f069bab327d67afdaa5a3e/src/arraymancer/nn/nn_dsl.nim)
+  [mratsim](https://github.com/mratsim/) develops this library, and made [a list of all his DSL](https://forum.nim-lang.org/t/9551#62851) in the forum.
   3. [Jester](https://github.com/dom96/jester) library is a really nice HTML DSL, where each block defines a route in your web application.
   4. [nimib](https://pietroppeter.github.io/nimib/) with which this blog post has been written, has been developed with a macro DSL too.
   5. The most complex macro system that I know of apart from genny for the moment is the [Nim4UE](https://github.com/jmgomez/NimForUE). You can develop Nim code for the Unreal Engine 5 game engine. The macro system parses your procs and outputs DLL for UE.
@@ -718,33 +773,116 @@ Notice how the name of the type went under the PragmaExpr section. We have to be
 &quot;&quot;&quot;</span>
 
 nbText:<span class="hljs-string">&quot;&quot;&quot;
-A macro does three steps in this order:
-  0. Check that the node is of the expected kind.
-  1. Get properties of the input AST node (Maybe by going through node child's Ident).
-  2. Form AST output in function of these input node's properties.
-  3. Go through the node's child.
+A macro does always the same steps:
+
+  1. Search for a node of a specific kind, inside the input AST or check that the given node is of the expected kind.
+  2. Fetch properties of the selected node.
+  3. Form AST output in function of these input node's properties.
+  4. Continue exploring the AST.
 &quot;&quot;&quot;</span>
 
 nbText:<span class="hljs-string">&quot;&quot;&quot;
-A good macro is necessary complex enough to require a long docstring with thorough details.
-We begin by running the type definition.
+Your macros will require a long docstring and many comments both with thorough details.
+
+I present now my macro `typeMemoryRepr` inspired from the [nim memory guide](https://zevv.nl/nim-memory/) on memory representation.
+In this guide, we manually print types fields address, to get an idea of the memory layout and the space taken by each variable and its fields.
+
+```nim
+type Thing = object
+  a: uint32
+  b: uint8
+  c: uint16
+
+var t: Thing
+
+echo &quot;size t.a &quot;, t.a.sizeof
+echo &quot;size t.b &quot;, t.b.sizeof
+echo &quot;size t.c &quot;, t.c.sizeof
+echo &quot;size t   &quot;, t.sizeof
+
+echo &quot;addr t.a &quot;, t.a.addr.repr
+echo &quot;addr t.b &quot;, t.b.addr.repr
+echo &quot;addr t.c &quot;, t.c.addr.repr
+echo &quot;addr t   &quot;, t.addr.repr
+```
+
+All these echo's are redundant and have to be changed each time we change the type field. For types with more than four or five fields, this becomes not manageable.
+
+I have split this macro into different procedures.
+The `echoSizeVarFieldStmt` will take the name of a variable, let us say `a` and of its field `field` and return the code:
+```nim
+echo a.field.sizeof
+```
+We create a NimNode of kind `StmtList` (a statement list), that contains `IdentNode`s.
+The first `IdentNode` is the command `echo`.
+We do not represent spaces in the AST. Each term separated by a dot is an Ident and part of a `nnkDotExpr`.
+
+It suffices to output the above code under a `dumpTree` block, to understand the AST we have to generate.
+```nim
+dumpTree:
+  echo a.field.sizeof
+```
 &quot;&quot;&quot;</span>
+
+nbCode:
+  <span class="hljs-keyword">proc</span> echoSizeVarFieldStmt(variable: <span class="hljs-built_in">string</span>, nameOfField: <span class="hljs-built_in">string</span>): <span class="hljs-type">NimNode</span> =
+    <span class="hljs-comment">## quote do:</span>
+    <span class="hljs-comment">##   echo `variable`.`nameOfField`.sizeof</span>
+    newStmtList(nnkCommand.newTree(
+              newIdentNode(<span class="hljs-string">&quot;echo&quot;</span>),
+              nnkDotExpr.newTree(
+                nnkDotExpr.newTree(
+                  newIdentNode(variable),
+                  newIdentNode(nameOfField) <span class="hljs-comment"># The name of the field is the first ident</span>
+                  ),
+                  newIdentNode(<span class="hljs-string">&quot;sizeof&quot;</span>)
+              )
+              ))
+
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+The `echoAddressVarFieldStmt` will take the name of a variable, let us say `a` and of its field `field` and return its address:
+```nim
+echo a.field.addr.repr
+```
+&quot;&quot;&quot;</span>
+
+nbCode:
+  <span class="hljs-keyword">proc</span> echoAddressVarFieldStmt(variable: <span class="hljs-built_in">string</span>, nameOfField: <span class="hljs-built_in">string</span>): <span class="hljs-type">NimNode</span> =
+    <span class="hljs-comment">## quote do:</span>
+    <span class="hljs-comment">##   echo `variable`.`nameOfField`.addr.repr</span>
+    newStmtList(nnkCommand.newTree(
+                newIdentNode(<span class="hljs-string">&quot;echo&quot;</span>),
+                nnkDotExpr.newTree(
+                  nnkDotExpr.newTree(
+                    nnkDotExpr.newTree(
+                      newIdentNode(variable),
+                      newIdentNode(nameOfField)
+                    ),
+                    newIdentNode(<span class="hljs-string">&quot;addr&quot;</span>)
+                  ),
+                  newIdentNode(<span class="hljs-string">&quot;repr&quot;</span>)
+                )
+                ))
+
 
 nbCode:
   <span class="hljs-keyword">macro</span> typeMemoryRepr(typedef: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
     <span class="hljs-comment">## This macro takes a type definition as an argument and:</span>
     <span class="hljs-comment">## * defines the type (outputs typedef as is)</span>
     <span class="hljs-comment">## * initializes a variable of this type</span>
-    <span class="hljs-comment">## * echoes the size of the variable</span>
-    <span class="hljs-comment">## * echoes the address of the variable</span>
+    <span class="hljs-comment">## * echoes the size and address of the variable</span>
     <span class="hljs-comment">## Then, for each field:</span>
-    <span class="hljs-comment">## * echoes the size of the variable field</span>
-    <span class="hljs-comment">## * echoes the address of the variable field</span>
+    <span class="hljs-comment">## * echoes the size and address of the variable field</span>
 
-    <span class="hljs-comment"># Parse the type definition to find the TypeDef section's node</span>
+    <span class="hljs-comment"># We begin by running the type definition.</span>
     <span class="hljs-literal">result</span> = quote <span class="hljs-keyword">do</span>:
       `typedef`
+
+    <span class="hljs-comment"># Parse the type definition to find the TypeDef section's node</span>
+    <span class="hljs-comment"># We create the output's AST along parsing.</span>
+    <span class="hljs-comment"># We will receive a statement list as the root of the AST </span>
     <span class="hljs-keyword">for</span> statement <span class="hljs-keyword">in</span> typedef:
+      <span class="hljs-comment"># We select only the type section in the StmtList</span>
       <span class="hljs-keyword">if</span> statement.kind == nnkTypeSection:
         <span class="hljs-keyword">let</span> typeSection = statement
         <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-number">0</span> ..&lt; typeSection.len:
@@ -759,7 +897,7 @@ nbCode:
             <span class="hljs-keyword">let</span> testVariable = newIdentNode(nameOfTestVariable)
             <span class="hljs-literal">result</span> = <span class="hljs-literal">result</span>.add(
             quote <span class="hljs-keyword">do</span>:
-              <span class="hljs-keyword">var</span> `testVariable`:`nameOfType` <span class="hljs-comment"># instanciate type defined in typedef</span>
+              <span class="hljs-keyword">var</span> `testVariable`:`nameOfType` <span class="hljs-comment"># instanciate variable with type defined in typedef</span>
               <span class="hljs-keyword">echo</span> `testVariable`.sizeof <span class="hljs-comment"># echo the total size</span>
               <span class="hljs-keyword">echo</span> `testVariable`.<span class="hljs-keyword">addr</span>.repr <span class="hljs-comment"># gives the address in memory</span>
             )
@@ -768,34 +906,18 @@ nbCode:
             <span class="hljs-keyword">assert</span> tnode.kind == nnkRecList
             <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-number">0</span> ..&lt; tnode.len:
               <span class="hljs-comment"># myTypeVar.field[i].sizeof</span>
-              <span class="hljs-literal">result</span> = <span class="hljs-literal">result</span>.add(newStmtList(nnkCommand.newTree(
-                newIdentNode(<span class="hljs-string">&quot;echo&quot;</span>),
-                nnkDotExpr.newTree(
-                  nnkDotExpr.newTree(
-                    newIdentNode(nameOfTestVariable),
-                    newIdentNode(tnode[i][<span class="hljs-number">0</span>].strVal) <span class="hljs-comment"># The name of the field is the first ident</span>
-                    ),
-                    newIdentNode(<span class="hljs-string">&quot;sizeof&quot;</span>)
-                )
-                )))
+              <span class="hljs-literal">result</span> = <span class="hljs-literal">result</span>.add(echoSizeVarFieldStmt(nameOfTestVariable, tnode[i][<span class="hljs-number">0</span>].strVal))
               <span class="hljs-comment"># myTypeVar.field[i].addr.repr</span>
+              <span class="hljs-literal">result</span> = <span class="hljs-literal">result</span>.add(echoAddressVarFieldStmt(nameOfTestVariable, tnode[i][<span class="hljs-number">0</span>].strVal))
 
-              <span class="hljs-literal">result</span> = <span class="hljs-literal">result</span>.add(newStmtList(nnkCommand.newTree(
-                newIdentNode(<span class="hljs-string">&quot;echo&quot;</span>),
-                nnkDotExpr.newTree(
-                  nnkDotExpr.newTree(
-                    nnkDotExpr.newTree(
-                      newIdentNode(nameOfTestVariable),
-                      newIdentNode(tnode[i][<span class="hljs-number">0</span>].strVal)
-                    ),
-                    newIdentNode(<span class="hljs-string">&quot;addr&quot;</span>)
-                  ),
-                  newIdentNode(<span class="hljs-string">&quot;repr&quot;</span>)
-                )
-                )))
     <span class="hljs-keyword">echo</span> <span class="hljs-literal">result</span>.repr
 
-
+nbCode:
+  typeMemoryRepr:
+    <span class="hljs-keyword">type</span>
+      <span class="hljs-type">Thing</span> = <span class="hljs-keyword">object</span> <span class="hljs-keyword">of</span> <span class="hljs-type">RootObj</span>
+        a: <span class="hljs-built_in">float32</span>
+        b: <span class="hljs-built_in">string</span>
 
 nbText:<span class="hljs-string">&quot;&quot;&quot;
 Trying to parse a type ourselve is risky, since there are numerous easily forgettable possibilities (due to pragma expressions, cyclic types, and many kind of types: object, enum, type alias, etc..., case of fields, branching and conditionals inside the object, … ).

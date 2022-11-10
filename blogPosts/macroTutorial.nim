@@ -9,19 +9,18 @@ nbText: hlMd"""
 Nim Metaprogramming / Macro Tutorial
 -------------------------------------
 
-This tutorial aims to be a _step-by-step_ introduction to the metaprogramming features of the Nim Language and to provide as much detail as possible to kickstart your project.
-There are already many resources on the Web, but I strive to provide more thorough details on the development process all in one place. I still encourage you to code and try things on your behalf.
-You will probably learn faster by yourself.
+This tutorial aims to be a _step-by-step_ introduction to the metaprogramming features of the Nim Language and to provide as much detail as possible to kickstart your craziest projects.
+There are already many resources on the Web, but I strive to provide more thorough details on the development process and to gather them all in one place. You are encouraged to code along and modify examples.
 
 ## Existing resources / References / Bibliography
 Press `Ctrl` + `Click` to open following links in a new tab.
 
-First, there are three official resources at the Nim's website:
+First, there are four official resources at the Nim's website:
   1. [Nim by Example](https://nim-by-example.github.io/macros/)
   2. [Nim Tutorial (Part III)](https://nim-lang.org/docs/tut3.html)
   3. [Manual section about macros](https://nim-lang.org/docs/manual.html#macros)
   4. [The Standard Documentation of the std/macros library](https://nim-lang.org/docs/macros.html)
-The 2. and 3. documentations are complementary learning resources while the last one will be your up-to-date exhaustive reference. It provides dumped AST for all the nodes.
+The 2. and 3. documentations are complementary learning resources while the last one will be your up-to-date exhaustive reference. It provides dumped AST (explained later) for all the nodes.
 
 Many developers have written their macro's tutorial:
   1. [Nim in Y minutes](https://learnxinyminutes.com/docs/nim/)
@@ -34,7 +33,7 @@ There are plentiful of posts in the forum that are good references:
   1. [What is "Metaprogramming" paradigm used for ?](https://forum.nim-lang.org/t/2587)
   2. [Custom macro inserts macro help](https://forum.nim-lang.org/t/9470)
   3. [See generated code after template processing](https://forum.nim-lang.org/t/9498)
-  4. etc … Please use the forum search bar with keywords like `macro`, `metaprogramming`, `generics`, `template`, …
+  4. etc … Please use the forum search bar with specific keywords like `macro`, `metaprogramming`, `generics`, `template`, …
 
 Last but no least, there are three Nim books:
   1. [Nim In Action, ed. Manning](https://book.picheta.me) and [github repo](https://github.com/dom96/nim-in-action-code)
@@ -45,6 +44,7 @@ We can also count many projects that are macro- or template-based:
   1. [genny](https://github.com/treeform/genny) and [benchy](https://github.com/treeform/genny). Benchy is a template based library that benchmarks your code snippet under bench blocks. Genny is used to export a Nim library to other languages (C, C++, Node, Python, Zig).
   In general, treeform projects source code are good Nim references
   2. My favorite DSL : the [neural network domain specific language (DSL) of the tensor library Arraymancer](https://github.com/mratsim/Arraymancer/blob/68786e147a94069a96f069bab327d67afdaa5a3e/src/arraymancer/nn/nn_dsl.nim)
+  [mratsim](https://github.com/mratsim/) develops this library, and made [a list of all his DSL](https://forum.nim-lang.org/t/9551#62851) in the forum.
   3. [Jester](https://github.com/dom96/jester) library is a really nice HTML DSL, where each block defines a route in your web application.
   4. [nimib](https://pietroppeter.github.io/nimib/) with which this blog post has been written, has been developed with a macro DSL too.
   5. The most complex macro system that I know of apart from genny for the moment is the [Nim4UE](https://github.com/jmgomez/NimForUE). You can develop Nim code for the Unreal Engine 5 game engine. The macro system parses your procs and outputs DLL for UE.
@@ -331,33 +331,116 @@ Notice how the name of the type went under the PragmaExpr section. We have to be
 """
 
 nbText:"""
-A macro does three steps in this order:
-  0. Check that the node is of the expected kind.
-  1. Get properties of the input AST node (Maybe by going through node child's Ident).
-  2. Form AST output in function of these input node's properties.
-  3. Go through the node's child.
+A macro does always the same steps:
+
+  1. Search for a node of a specific kind, inside the input AST or check that the given node is of the expected kind.
+  2. Fetch properties of the selected node.
+  3. Form AST output in function of these input node's properties.
+  4. Continue exploring the AST.
 """
 
 nbText:"""
-A good macro is necessary complex enough to require a long docstring with thorough details.
-We begin by running the type definition.
+Your macros will require a long docstring and many comments both with thorough details.
+
+I present now my macro `typeMemoryRepr` inspired from the [nim memory guide](https://zevv.nl/nim-memory/) on memory representation.
+In this guide, we manually print types fields address, to get an idea of the memory layout and the space taken by each variable and its fields.
+
+```nim
+type Thing = object
+  a: uint32
+  b: uint8
+  c: uint16
+
+var t: Thing
+
+echo "size t.a ", t.a.sizeof
+echo "size t.b ", t.b.sizeof
+echo "size t.c ", t.c.sizeof
+echo "size t   ", t.sizeof
+
+echo "addr t.a ", t.a.addr.repr
+echo "addr t.b ", t.b.addr.repr
+echo "addr t.c ", t.c.addr.repr
+echo "addr t   ", t.addr.repr
+```
+
+All these echo's are redundant and have to be changed each time we change the type field. For types with more than four or five fields, this becomes not manageable.
+
+I have split this macro into different procedures.
+The `echoSizeVarFieldStmt` will take the name of a variable, let us say `a` and of its field `field` and return the code:
+```nim
+echo a.field.sizeof
+```
+We create a NimNode of kind `StmtList` (a statement list), that contains `IdentNode`s.
+The first `IdentNode` is the command `echo`.
+We do not represent spaces in the AST. Each term separated by a dot is an Ident and part of a `nnkDotExpr`.
+
+It suffices to output the above code under a `dumpTree` block, to understand the AST we have to generate.
+```nim
+dumpTree:
+  echo a.field.sizeof
+```
 """
+
+nbCode:
+  proc echoSizeVarFieldStmt(variable: string, nameOfField: string): NimNode =
+    ## quote do:
+    ##   echo `variable`.`nameOfField`.sizeof
+    newStmtList(nnkCommand.newTree(
+              newIdentNode("echo"),
+              nnkDotExpr.newTree(
+                nnkDotExpr.newTree(
+                  newIdentNode(variable),
+                  newIdentNode(nameOfField) # The name of the field is the first ident
+                  ),
+                  newIdentNode("sizeof")
+              )
+              ))
+
+nbText:"""
+The `echoAddressVarFieldStmt` will take the name of a variable, let us say `a` and of its field `field` and return its address:
+```nim
+echo a.field.addr.repr
+```
+"""
+
+nbCode:
+  proc echoAddressVarFieldStmt(variable: string, nameOfField: string): NimNode =
+    ## quote do:
+    ##   echo `variable`.`nameOfField`.addr.repr
+    newStmtList(nnkCommand.newTree(
+                newIdentNode("echo"),
+                nnkDotExpr.newTree(
+                  nnkDotExpr.newTree(
+                    nnkDotExpr.newTree(
+                      newIdentNode(variable),
+                      newIdentNode(nameOfField)
+                    ),
+                    newIdentNode("addr")
+                  ),
+                  newIdentNode("repr")
+                )
+                ))
+
 
 nbCode:
   macro typeMemoryRepr(typedef: untyped): untyped =
     ## This macro takes a type definition as an argument and:
     ## * defines the type (outputs typedef as is)
     ## * initializes a variable of this type
-    ## * echoes the size of the variable
-    ## * echoes the address of the variable
+    ## * echoes the size and address of the variable
     ## Then, for each field:
-    ## * echoes the size of the variable field
-    ## * echoes the address of the variable field
+    ## * echoes the size and address of the variable field
 
-    # Parse the type definition to find the TypeDef section's node
+    # We begin by running the type definition.
     result = quote do:
       `typedef`
+
+    # Parse the type definition to find the TypeDef section's node
+    # We create the output's AST along parsing.
+    # We will receive a statement list as the root of the AST 
     for statement in typedef:
+      # We select only the type section in the StmtList
       if statement.kind == nnkTypeSection:
         let typeSection = statement
         for i in 0 ..< typeSection.len:
@@ -372,7 +455,7 @@ nbCode:
             let testVariable = newIdentNode(nameOfTestVariable)
             result = result.add(
             quote do:
-              var `testVariable`:`nameOfType` # instanciate type defined in typedef
+              var `testVariable`:`nameOfType` # instanciate variable with type defined in typedef
               echo `testVariable`.sizeof # echo the total size
               echo `testVariable`.addr.repr # gives the address in memory
             )
@@ -381,34 +464,18 @@ nbCode:
             assert tnode.kind == nnkRecList
             for i in 0 ..< tnode.len:
               # myTypeVar.field[i].sizeof
-              result = result.add(newStmtList(nnkCommand.newTree(
-                newIdentNode("echo"),
-                nnkDotExpr.newTree(
-                  nnkDotExpr.newTree(
-                    newIdentNode(nameOfTestVariable),
-                    newIdentNode(tnode[i][0].strVal) # The name of the field is the first ident
-                    ),
-                    newIdentNode("sizeof")
-                )
-                )))
+              result = result.add(echoSizeVarFieldStmt(nameOfTestVariable, tnode[i][0].strVal))
               # myTypeVar.field[i].addr.repr
+              result = result.add(echoAddressVarFieldStmt(nameOfTestVariable, tnode[i][0].strVal))
 
-              result = result.add(newStmtList(nnkCommand.newTree(
-                newIdentNode("echo"),
-                nnkDotExpr.newTree(
-                  nnkDotExpr.newTree(
-                    nnkDotExpr.newTree(
-                      newIdentNode(nameOfTestVariable),
-                      newIdentNode(tnode[i][0].strVal)
-                    ),
-                    newIdentNode("addr")
-                  ),
-                  newIdentNode("repr")
-                )
-                )))
     echo result.repr
 
-
+nbCode:
+  typeMemoryRepr:
+    type
+      Thing = object of RootObj
+        a: float32
+        b: string
 
 nbText:"""
 Trying to parse a type ourselve is risky, since there are numerous easily forgettable possibilities (due to pragma expressions, cyclic types, and many kind of types: object, enum, type alias, etc..., case of fields, branching and conditionals inside the object, … ).
