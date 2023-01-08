@@ -1,0 +1,55 @@
+%!pdflatex % -o %<.pdf && convert -verbose -density 150 -trim %<.pdf -quality 100 -flatten -sharpen 0x1.0 %<.jpg && nohup feh %<.jpg &                                                                                                            
+\documentclass{standalone}
+\usepackage{tikz}
+\usetikzlibrary{trees}
+\begin{document}
+\tikzstyle{every node}=[draw=black, rectangle, fill=teal]
+\tikzstyle{Ident}=[thick, fill=orange]
+\begin{tikzpicture}[%
+  sibling distance=25mm,
+  level 6/.style={sibling distance=50mm},
+  level 7/.style={sibling distance=57mm},
+  level 8/.style={sibling distance=20mm},
+  edge from parent fork down
+]
+  \node {StmtList}
+    child { node {TypeSection}
+      child { node{TypeDef}
+        child { node {PragmaExpr}
+          child { node [Ident] {"myObject"}}
+          child { node {Pragma}  
+            child { node [Ident] {"packed"} }
+          }
+        }
+        child { node {Empty}}
+        child { node {Refty}
+          child { node {ObjectTy}
+            child { node {Empty}
+              child { node {OfInherit}
+                child { node [Ident] {"RootObj"} }
+              }
+              child { node {RecList}
+                child { node {IdentDefs}
+                  child { node [Ident] {"left"} }
+                  child { node {BracketExpr}
+                    child { node [Ident] {"seq"} }
+                    child { node [Ident] {"myObject"} }
+                  }
+                  child { node {Empty} }
+                }
+                child { node {IdentDefs}
+                  child { node [Ident] {"right"} }
+                  child { node {BracketExpr}
+                    child { node [Ident] {"seq"} }
+                    child { node [Ident] {"myObject"} }
+                  }
+                  child { node {Empty} }
+                }
+              }
+            }
+          }
+        }
+      }
+    };
+\end{tikzpicture}
+\end{document}

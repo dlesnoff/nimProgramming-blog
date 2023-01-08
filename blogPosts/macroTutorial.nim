@@ -1,66 +1,54 @@
-import std/[strutils]
+import std/[strutils, macros]
 import nimib
 
 nbInit
-nb.darkMode
+# nb.darkMode
 
-import std/[macros]
+# a custom text block that shows markdown source
+template nbTextWithSource*(body: untyped) =
+  newNbBlock("nbTextWithSource", false, nb, nb.blk, body):
+    nb.blk.output = body
+  nb.blk.context["code"] = body
+
+nb.renderPlans["nbTextWithSource"] = @["mdOutputToHtml"]
+nb.partials["nbTextWithSource"] = """{{&outputToHtml}}
+<pre><code class=\"language-markdown\">{{code}}</code></pre>"""
+
+# how to add a ToC
+var nbToc: NbBlock
+
+template addToc =
+  newNbBlock("nbText", false, nb, nbToc, ""):
+    nbToc.output = "## Table of Contents:\n\n"
+
+template nbSection(name:string) =
+  let anchorName = name.toLower.replace(" ", "-")
+  nbText "<a name = \"" & anchorName & "\"></a>\n# " & name & "\n\n---"
+  # see below, but any number works for a numbered list
+  nbToc.output.add "1. <a href=\"#" & anchorName & "\">" & name & "</a>\n" 
+
 nbText: hlMd"""
-Nim Metaprogramming / Macro Tutorial
--------------------------------------
+# Nim Metaprogramming / Macro Tutorial
 
 This tutorial aims to be a _step-by-step_ introduction to the metaprogramming features of the Nim Language and to provide as much detail as possible to kickstart your craziest projects.
 There are already many resources on the Web, but I strive to provide more thorough details on the development process and to gather them all in one place. You are encouraged to code along and modify examples.
+"""
 
-## Existing resources / References / Bibliography
-Press `Ctrl` + `Click` to open following links in a new tab.
+addToc()
 
-First, there are four official resources at the Nim's website:
-  1. [Nim by Example](https://nim-by-example.github.io/macros/)
-  2. [Nim Tutorial (Part III)](https://nim-lang.org/docs/tut3.html)
-  3. [Manual section about macros](https://nim-lang.org/docs/manual.html#macros)
-  4. [The Standard Documentation of the std/macros library](https://nim-lang.org/docs/macros.html)
-The 2. and 3. documentations are complementary learning resources while the last one will be your up-to-date exhaustive reference. It provides dumped AST (explained later) for all the nodes.
-
-Many developers have written their macro's tutorial:
-  1. [Nim in Y minutes](https://learnxinyminutes.com/docs/nim/)
-  2. [Jason Beetham a.k.a ElegantBeef's dev.to tutorial](https://dev.to/beef331/demystification-of-macros-in-nim-13n8). This tutorial contains a lot of good first examples.
-  3. [Pattern matching (sadly outdated) in macros by DevOnDuty](https://www.youtube.com/watch?v=GJpn6SfR_1M)
-  4. [Tomohiro's FAQ section about macros](https://internet-of-tomohiro.netlify.app/nim/faq.en.html#macro)
-  5. [The Making of NimYAML's article of flyx](https://flyx.org/nimyaml-making-of/)
-
-There are plentiful of posts in the forum that are good references:
-  1. [What is "Metaprogramming" paradigm used for ?](https://forum.nim-lang.org/t/2587)
-  2. [Custom macro inserts macro help](https://forum.nim-lang.org/t/9470)
-  3. [See generated code after template processing](https://forum.nim-lang.org/t/9498)
-  4. etc … Please use the forum search bar with specific keywords like `macro`, `metaprogramming`, `generics`, `template`, …
-
-Last but no least, there are three Nim books:
-  1. [Nim In Action, ed. Manning](https://book.picheta.me) and [github repo](https://github.com/dom96/nim-in-action-code)
-  2. [Mastering Nim, auto-published by A. Rumpf/Araq, Nim's creator](https://www.amazon.fr/dp/B0B4R7B9YX).
-  3. [Nim Programming Book, by S.Salewski](https://ssalewski.de/nimprogramming.html#_macros_and_meta_programming)
-
-We can also count many projects that are macro- or template-based:
-  1. [genny](https://github.com/treeform/genny) and [benchy](https://github.com/treeform/genny). Benchy is a template based library that benchmarks your code snippet under bench blocks. Genny is used to export a Nim library to other languages (C, C++, Node, Python, Zig).
-  In general, treeform projects source code are good Nim references
-  2. My favorite DSL : the [neural network domain specific language (DSL) of the tensor library Arraymancer](https://github.com/mratsim/Arraymancer/blob/68786e147a94069a96f069bab327d67afdaa5a3e/src/arraymancer/nn/nn_dsl.nim)
-  [mratsim](https://github.com/mratsim/) develops this library, and made [a list of all his DSL](https://forum.nim-lang.org/t/9551#62851) in the forum.
-  3. [Jester](https://github.com/dom96/jester) library is a really nice HTML DSL, where each block defines a route in your web application.
-  4. [nimib](https://pietroppeter.github.io/nimib/) with which this blog post has been written, has been developed with a macro DSL too.
-  5. The most complex macro system that I know of apart from genny for the moment is the [Nim4UE](https://github.com/jmgomez/NimForUE). You can develop Nim code for the Unreal Engine 5 game engine. The macro system parses your procs and outputs DLL for UE.
-
-## Introduction
+nbSection "Introduction"
+nbText: hlMd"""
 There are four kind/levels of procedures:
   1. ordinary proc/iterator
   2. generic proc/iterator
   3. template
   4. macro
 The higher the number, the more meta we get. It is recommended to program one's procedure with the lowest level of metaprogramming possible. 
-Let us start with `template`s and `untyped` parameters. I do not `present` generics in this tutorial.
+Let us start with `template`s and `untyped` parameters. I do not present generics in this tutorial.
 """
 
+nbSection "Templates"
 nbText: """
-## Templates
 We can see *templates* as procedures that modify code through a copy-paste mechanism. Pieces of code are given to (and outputted by) the template with a special type : `untyped`. 
 For those familiar with [preprocessing](https://gcc.gnu.org/onlinedocs/cpp/) in the C family of languages (C, C++, C#), it does the same than the `#define` or `#if`, `#endif` macros and much more.
 """
@@ -167,8 +155,8 @@ nbCode:
 #   throwAway:
 #     echo "Test the discard template, if you see this message, it has failed. If not, well …"
 
+nbSection "Macros"
 nbText:"""
-## Macros
 Macros can be seen as an empowered template procedure. While template substitute code, macros do introspection.
 Instead of simply taking untyped blocks and reuse them as lego bricks to return a code, we can parse our untyped parameter and do something conditionally to informations given in these parameters.
 We can also inject variables into scopes.
@@ -222,7 +210,10 @@ StmtList
                 Ident "myObject"
               Empty
 ```
+We can better visualize the AST with the following picture.
 """
+
+nbImage(url="ASTtree.jpg", caption="Nim's Abstract Syntax Tree visualized with a tree")
 
 nbText:"""
 I present down my first macro as an example.
@@ -483,4 +474,42 @@ Trying to parse a type ourselve is risky, since there are numerous easily forget
 There is actually already a function to do so:
 """
 
+nbSection "Existing resources / References / Bibliography"
+nbText: """
+Press `Ctrl` + `Click` to open following links in a new tab.
+
+First, there are four official resources at the Nim's website:
+  1. [Nim by Example](https://nim-by-example.github.io/macros/)
+  2. [Nim Tutorial (Part III)](https://nim-lang.org/docs/tut3.html)
+  3. [Manual section about macros](https://nim-lang.org/docs/manual.html#macros)
+  4. [The Standard Documentation of the std/macros library](https://nim-lang.org/docs/macros.html)
+The 2. and 3. documentations are complementary learning resources while the last one will be your up-to-date exhaustive reference. It provides dumped AST (explained later) for all the nodes.
+
+Many developers have written their macro's tutorial:
+  1. [Nim in Y minutes](https://learnxinyminutes.com/docs/nim/)
+  2. [Jason Beetham a.k.a ElegantBeef's dev.to tutorial](https://dev.to/beef331/demystification-of-macros-in-nim-13n8). This tutorial contains a lot of good first examples.
+  3. [Pattern matching (sadly outdated) in macros by DevOnDuty](https://www.youtube.com/watch?v=GJpn6SfR_1M)
+  4. [Tomohiro's FAQ section about macros](https://internet-of-tomohiro.netlify.app/nim/faq.en.html#macro)
+  5. [The Making of NimYAML's article of flyx](https://flyx.org/nimyaml-making-of/)
+
+There are plentiful of posts in the forum that are good references:
+  1. [What is "Metaprogramming" paradigm used for ?](https://forum.nim-lang.org/t/2587)
+  2. [Custom macro inserts macro help](https://forum.nim-lang.org/t/9470)
+  3. [See generated code after template processing](https://forum.nim-lang.org/t/9498)
+  4. etc … Please use the forum search bar with specific keywords like `macro`, `metaprogramming`, `generics`, `template`, …
+
+Last but no least, there are three Nim books:
+  1. [Nim In Action, ed. Manning](https://book.picheta.me) and [github repo](https://github.com/dom96/nim-in-action-code)
+  2. [Mastering Nim, auto-published by A. Rumpf/Araq, Nim's creator](https://www.amazon.fr/dp/B0B4R7B9YX).
+  3. [Nim Programming Book, by S.Salewski](https://ssalewski.de/nimprogramming.html#_macros_and_meta_programming)
+
+We can also count many projects that are macro- or template-based:
+  1. [genny](https://github.com/treeform/genny) and [benchy](https://github.com/treeform/genny). Benchy is a template based library that benchmarks your code snippet under bench blocks. Genny is used to export a Nim library to other languages (C, C++, Node, Python, Zig).
+  In general, treeform projects source code are good Nim references
+  2. My favorite DSL : the [neural network domain specific language (DSL) of the tensor library Arraymancer](https://github.com/mratsim/Arraymancer/blob/68786e147a94069a96f069bab327d67afdaa5a3e/src/arraymancer/nn/nn_dsl.nim)
+  [mratsim](https://github.com/mratsim/) develops this library, and made [a list of all his DSL](https://forum.nim-lang.org/t/9551#62851) in the forum.
+  3. [Jester](https://github.com/dom96/jester) library is a really nice HTML DSL, where each block defines a route in your web application.
+  4. [nimib](https://pietroppeter.github.io/nimib/) with which this blog post has been written, has been developed with a macro DSL too.
+  5. The most complex macro system that I know of apart from genny for the moment is the [Nim4UE](https://github.com/jmgomez/NimForUE). You can develop Nim code for the Unreal Engine 5 game engine. The macro system parses your procs and outputs DLL for UE.
+"""
 nbSave
