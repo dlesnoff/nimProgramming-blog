@@ -2,7 +2,6 @@ import std/[strutils, macros]
 import nimib
 
 nbInit
-# nb.darkMode
 
 # a custom text block that shows markdown source
 template nbTextWithSource*(body: untyped) =
@@ -88,47 +87,63 @@ nbCode:
     sleep(100)
 
 nbText: """
-In Nim, there are few restricted keywords and special control-flow mechanisms, as to incite us to create our own constructs (and keep the language simple). Nothing restrains us from defining a `doWhile` construct.
-"""
+#### Do-While keyword
+In Nim, there are few restricted keywords and special control-flow mechanisms, as to incite us to create our own constructs (and keep the language simple). Nothing restrains us from defining a `doWhile` construct similar to languages like `C` or `Javascript`.
 
+For those only knowing Nim, this construct enables to run a loop once before testing the condition.
+
+This C code always print `Hello World` at least once independantly from the start value of the variable `i`.
+```cpp
+int i = 10;
+do{
+  printf("Hello World");
+  i += 1;
+}while(i < 10);
+```
+"""
+# Keep this code in case I want to use it for other examples
+# I don't want people to learn about the Syracuse sequence in addition 
+# to learning metaprogramming stuff !
+#
+# proc nextSyracuseTerm(term: var int) =
+#   ## This sequence should resolve to the cyclic sequence 1, 4, 2, 1, ...
+#   if term mod 2 == 1:
+#     term *= 3
+#     term.inc
+#   else:
+#     term = term div 2
+#
 nbCode:
-  proc nextSyracuseTerm(term: var int) =
-    ## This sequence should resolve to the cyclic sequence 1, 4, 2, 1, ...
-    if term mod 2 == 1:
-      term *= 3
-      term.inc
-    else:
-      term = term div 2
 
   template doWhile(conditional, loop: untyped) =
     loop
     while conditional:
       loop
   
-  var myInt = 5
-  doWhile myInt >= 6:
-      echo myInt
-      nextSyracuseTerm(myInt)
+  var i = 10
+  doWhile i < 10:
+      echo "Hello World"
+      i.inc
 
 nbText:hlMd"""
-Notice though that the end result is fairly different than C++ code
-```cpp
-int i = 0;
-do{
-  printf("Hello World");
-  i += 1;
-}while(i < 10);
-```
-The instructions and the conditional appear before the `while` whereas this doWhile Nim construct will have the conditional after the `doWhile`:
-```nim
-var i: int = 0 # superfluous type annotation
-doWhile i < 10:
-  echo "Hello World!"
-  i.inc
-```
+Notice though that _syntaxically_ the resulting source code is fairly different than the C++ code.
+
+In the C source code, appear in this order:
+  1. the `do` keyword
+  2. the block of instruction
+  3. the `while` keyword
+  4. the conditional (boolean expression)
+
+In Nim, we have in this order:
+  1. the `doWhile` indent
+  2. the conditional
+  3. block of instruction
+
+There is no way to modify Nim's syntax as to match C's syntax.
 """
 
 nbText:"""
+#### Benchmark example
 Another example is benchmarking code in Nim. It suffices to put our bench code inside a special block.
 """
 
@@ -136,24 +151,24 @@ nbCode:
   import std/times
   template benchmark(benchmarkName: string, code: untyped) =
     block:
-      let t0 = epochTime()
+      let t0 = cpuTime()
       code
-      let elapsed = epochTime() - t0
+      let elapsed = cpuTime() - t0
       let elapsedStr = elapsed.formatFloat(format = ffDecimal, precision = 3)
       echo "CPU Time [", benchmarkName, "] ", elapsedStr, "s"
 
   benchmark "test1":
     sleep(100)
 
-# nbText:"""
-# Though powerful, templates are still limited. As an example, I didn't achieve to make a throwAway template (that does not run a code).
-# """
+nbText:"""
+The code inside the `benchmark` code block will be enclosed by our template code.
 
-# nbCode:
-#   template throwAway(statements: untyped): untyped = discard nil
+Since the code replacement is done at compile time, this transformation does not add additional runtime to our benchmarked code.
+On the contrary, a function or procedure for benchmarking would have add runtime due to the nested function calls.
 
-#   throwAway:
-#     echo "Test the discard template, if you see this message, it has failed. If not, well …"
+EDIT: I used `epochTime` that has been superseded by `cpuTime` for benchmarking.
+An alternative would be to use `monotimes.getMonoTime`.
+"""
 
 nbSection "Macros"
 nbText:"""
@@ -471,10 +486,10 @@ nbCode:
 nbText:"""
 Trying to parse a type ourselve is risky, since there are numerous easily forgettable possibilities (due to pragma expressions, cyclic types, and many kind of types: object, enum, type alias, etc..., case of fields, branching and conditionals inside the object, … ).
 
-There is actually already a function to do so:
+There is actually already a function to do so and this will be the object of a future release of this tutorial.
 """
 
-nbSection "Existing resources / References / Bibliography"
+nbSection "References and Bibliography"
 nbText: """
 Press `Ctrl` + `Click` to open following links in a new tab.
 
@@ -508,8 +523,8 @@ We can also count many projects that are macro- or template-based:
   In general, treeform projects source code are good Nim references
   2. My favorite DSL : the [neural network domain specific language (DSL) of the tensor library Arraymancer](https://github.com/mratsim/Arraymancer/blob/68786e147a94069a96f069bab327d67afdaa5a3e/src/arraymancer/nn/nn_dsl.nim)
   [mratsim](https://github.com/mratsim/) develops this library, and made [a list of all his DSL](https://forum.nim-lang.org/t/9551#62851) in the forum.
-  3. [Jester](https://github.com/dom96/jester) library is a really nice HTML DSL, where each block defines a route in your web application.
-  4. [nimib](https://pietroppeter.github.io/nimib/) with which this blog post has been written, has been developed with a macro DSL too.
-  5. The most complex macro system that I know of apart from genny for the moment is the [Nim4UE](https://github.com/jmgomez/NimForUE). You can develop Nim code for the Unreal Engine 5 game engine. The macro system parses your procs and outputs DLL for UE.
+  3. [Jester](https://github.com/dom96/jester) library is a HTML DSL, where each block defines a route in your web application.
+  4. [nimib](https://pietroppeter.github.io/nimib/) with which this blog post has been written.
+  5. [Nim4UE](https://github.com/jmgomez/NimForUE). You can develop Nim code for the Unreal Engine 5 game engine. The macro system parses your procs and outputs DLL for UE.
 """
 nbSave

@@ -1,7 +1,7 @@
 import nimib, nimib / [paths, gits], os, strutils, strformat
 
 nbInit
-nb.darkMode
+# nb.darkMode
 
 var
   listOfDrafts: string = ""

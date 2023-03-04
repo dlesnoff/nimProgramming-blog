@@ -50,7 +50,7 @@ There are already many resources on the Web, but I strive to provide more thorou
 <li><a href="#introduction">Introduction</a></li>
 <li><a href="#templates">Templates</a></li>
 <li><a href="#macros">Macros</a></li>
-<li><a href="#existing-resources-/-references-/-bibliography">Existing resources / References / Bibliography</a></li>
+<li><a href="#references-and-bibliography">References and Bibliography</a></li>
 </ol>
 <p><a name = "introduction"></a></p>
 <h1>Introduction</h1>
@@ -97,51 +97,58 @@ Hello Templates!
 Hello Templates!
 Hello Templates!
 Hello Templates!</samp></pre>
-<p>In Nim, there are few restricted keywords and special control-flow mechanisms, as to incite us to create our own constructs (and keep the language simple). Nothing restrains us from defining a <code>doWhile</code> construct.</p>
-<pre><code class="nim hljs"><span class="hljs-keyword">proc</span> nextSyracuseTerm(term: <span class="hljs-keyword">var</span> <span class="hljs-built_in">int</span>) =
-  <span class="hljs-comment">## This sequence should resolve to the cyclic sequence 1, 4, 2, 1, ...</span>
-  <span class="hljs-keyword">if</span> term <span class="hljs-keyword">mod</span> <span class="hljs-number">2</span> == <span class="hljs-number">1</span>:
-    term *= <span class="hljs-number">3</span>
-    term.inc
-  <span class="hljs-keyword">else</span>:
-    term = term <span class="hljs-keyword">div</span> <span class="hljs-number">2</span>
-
-<span class="hljs-keyword">template</span> doWhile(conditional, loop: <span class="hljs-built_in">untyped</span>) =
-  loop
-  <span class="hljs-keyword">while</span> conditional:
-    loop
-
-<span class="hljs-keyword">var</span> myInt = <span class="hljs-number">5</span>
-doWhile myInt &gt;= <span class="hljs-number">6</span>:
-    <span class="hljs-keyword">echo</span> myInt
-    nextSyracuseTerm(myInt)</code></pre><pre class="nb-output"><samp>5
-16
-8</samp></pre>
-<p>Notice though that the end result is fairly different than C++ code</p>
-<pre><code class="language-cpp">int i = 0;
+<h4>Do-While keyword</h4>
+<p>In Nim, there are few restricted keywords and special control-flow mechanisms, as to incite us to create our own constructs (and keep the language simple). Nothing restrains us from defining a <code>doWhile</code> construct similar to languages like <code>C</code> or <code>Javascript</code>.</p>
+<p>For those only knowing Nim, this construct enables to run a loop once before testing the condition.</p>
+<p>This C code always print <code>Hello World</code> at least once independantly from the start value of the variable <code>i</code>.</p>
+<pre><code class="language-cpp">int i = 10;
 do{
   printf(&quot;Hello World&quot;);
   i += 1;
 }while(i &lt; 10);
 </code></pre>
-<p>The instructions and the conditional appear before the <code>while</code> whereas this doWhile Nim construct will have the conditional after the <code>doWhile</code>:</p>
-<pre><code class="language-nim">var i: int = 0 # superfluous type annotation
-doWhile i &lt; 10:
-  echo &quot;Hello World!&quot;
-  i.inc
-</code></pre>
+<pre><code class="nim hljs"><span class="hljs-keyword">template</span> doWhile(conditional, loop: <span class="hljs-built_in">untyped</span>) =
+  loop
+  <span class="hljs-keyword">while</span> conditional:
+    loop
+
+<span class="hljs-keyword">var</span> i = <span class="hljs-number">10</span>
+doWhile i &lt; <span class="hljs-number">10</span>:
+    <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;Hello World&quot;</span>
+    i.inc</code></pre><pre class="nb-output"><samp>Hello World</samp></pre>
+<p>Notice though that <em>syntaxically</em> the resulting source code is fairly different than the C++ code.</p>
+<p>In the C source code, appear in this order:</p>
+<ol>
+<li>the <code>do</code> keyword</li>
+<li>the block of instruction</li>
+<li>the <code>while</code> keyword</li>
+<li>the conditional (boolean expression)</li>
+</ol>
+<p>In Nim, we have in this order:</p>
+<ol>
+<li>the <code>doWhile</code> indent</li>
+<li>the conditional</li>
+<li>block of instruction</li>
+</ol>
+<p>There is no way to modify Nim's syntax as to match C's syntax.</p>
+<h4>Benchmark example</h4>
 <p>Another example is benchmarking code in Nim. It suffices to put our bench code inside a special block.</p>
 <pre><code class="nim hljs"><span class="hljs-keyword">import</span> std/times
 <span class="hljs-keyword">template</span> benchmark(benchmarkName: <span class="hljs-built_in">string</span>, code: <span class="hljs-built_in">untyped</span>) =
   <span class="hljs-keyword">block</span>:
-    <span class="hljs-keyword">let</span> t0 = epochTime()
+    <span class="hljs-keyword">let</span> t0 = cpuTime()
     code
-    <span class="hljs-keyword">let</span> elapsed = epochTime() - t0
+    <span class="hljs-keyword">let</span> elapsed = cpuTime() - t0
     <span class="hljs-keyword">let</span> elapsedStr = elapsed.formatFloat(format = ffDecimal, precision = <span class="hljs-number">3</span>)
     <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;CPU Time [&quot;</span>, benchmarkName, <span class="hljs-string">&quot;] &quot;</span>, elapsedStr, <span class="hljs-string">&quot;s&quot;</span>
 
 benchmark <span class="hljs-string">&quot;test1&quot;</span>:
-  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output"><samp>CPU Time [test1] 0.100s</samp></pre>
+  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output"><samp>CPU Time [test1] 0.000s</samp></pre>
+<p>The code inside the <code>benchmark</code> code block will be enclosed by our template code.</p>
+<p>Since the code replacement is done at compile time, this transformation does not add additional runtime to our benchmarked code.
+On the contrary, a function or procedure for benchmarking would have add runtime due to the nested function calls.</p>
+<p>EDIT: I used <code>epochTime</code> that has been superseded by <code>cpuTime</code> for benchmarking.
+An alternative would be to use <code>monotimes.getMonoTime</code>.</p>
 <p><a name = "macros"></a></p>
 <h1>Macros</h1>
 <hr />
@@ -389,16 +396,16 @@ We do not represent spaces in the AST. Each term separated by a dot is an Ident 
     <span class="hljs-type">Thing</span> = <span class="hljs-keyword">object</span> <span class="hljs-keyword">of</span> <span class="hljs-type">RootObj</span>
       a: <span class="hljs-built_in">float32</span>
       b: <span class="hljs-built_in">string</span></code></pre><pre class="nb-output"><samp>24
-ptr 0x55862ade6e10 --&gt; [a = 0.0,
+ptr 0x5647ad96be10 --&gt; [a = 0.0,
 b = &quot;&quot;]
 4
-ptr 0x55862ade6e18 --&gt; 0.0
+ptr 0x5647ad96be18 --&gt; 0.0
 8
-ptr 0x55862ade6e20 --&gt; &quot;&quot;</samp></pre>
+ptr 0x5647ad96be20 --&gt; &quot;&quot;</samp></pre>
 <p>Trying to parse a type ourselve is risky, since there are numerous easily forgettable possibilities (due to pragma expressions, cyclic types, and many kind of types: object, enum, type alias, etc..., case of fields, branching and conditionals inside the object, … ).</p>
-<p>There is actually already a function to do so:</p>
-<p><a name = "existing-resources-/-references-/-bibliography"></a></p>
-<h1>Existing resources / References / Bibliography</h1>
+<p>There is actually already a function to do so and this will be the object of a future release of this tutorial.</p>
+<p><a name = "references-and-bibliography"></a></p>
+<h1>References and Bibliography</h1>
 <hr />
 <p>Press <code>Ctrl</code> + <code>Click</code> to open following links in a new tab.</p>
 <p>First, there are four official resources at the Nim's website:</p>
@@ -441,13 +448,13 @@ In general, treeform projects source code are good Nim references</p>
 <a href="https://github.com/mratsim/">mratsim</a> develops this library, and made <a href="https://forum.nim-lang.org/t/9551#62851">a list of all his DSL</a> in the forum.</p>
 </li>
 <li>
-<p><a href="https://github.com/dom96/jester">Jester</a> library is a really nice HTML DSL, where each block defines a route in your web application.</p>
+<p><a href="https://github.com/dom96/jester">Jester</a> library is a HTML DSL, where each block defines a route in your web application.</p>
 </li>
 <li>
-<p><a href="https://pietroppeter.github.io/nimib/">nimib</a> with which this blog post has been written, has been developed with a macro DSL too.</p>
+<p><a href="https://pietroppeter.github.io/nimib/">nimib</a> with which this blog post has been written.</p>
 </li>
 <li>
-<p>The most complex macro system that I know of apart from genny for the moment is the <a href="https://github.com/jmgomez/NimForUE">Nim4UE</a>. You can develop Nim code for the Unreal Engine 5 game engine. The macro system parses your procs and outputs DLL for UE.</p>
+<p><a href="https://github.com/jmgomez/NimForUE">Nim4UE</a>. You can develop Nim code for the Unreal Engine 5 game engine. The macro system parses your procs and outputs DLL for UE.</p>
 </li>
 </ol>
 </main>
@@ -464,7 +471,6 @@ In general, treeform projects source code are good Nim references</p>
 <span class="hljs-keyword">import</span> nimib
 
 nbInit
-<span class="hljs-comment"># nb.darkMode</span>
 
 <span class="hljs-comment"># a custom text block that shows markdown source</span>
 <span class="hljs-keyword">template</span> nbTextWithSource*(body: <span class="hljs-built_in">untyped</span>) =
@@ -550,47 +556,63 @@ nbCode:
     sleep(<span class="hljs-number">100</span>)
 
 nbText: <span class="hljs-string">&quot;&quot;&quot;
-In Nim, there are few restricted keywords and special control-flow mechanisms, as to incite us to create our own constructs (and keep the language simple). Nothing restrains us from defining a `doWhile` construct.
-&quot;&quot;&quot;</span>
+#### Do-While keyword
+In Nim, there are few restricted keywords and special control-flow mechanisms, as to incite us to create our own constructs (and keep the language simple). Nothing restrains us from defining a `doWhile` construct similar to languages like `C` or `Javascript`.
 
+For those only knowing Nim, this construct enables to run a loop once before testing the condition.
+
+This C code always print `Hello World` at least once independantly from the start value of the variable `i`.
+```cpp
+int i = 10;
+do{
+  printf(&quot;Hello World&quot;);
+  i += 1;
+}while(i &lt; 10);
+```
+&quot;&quot;&quot;</span>
+<span class="hljs-comment"># Keep this code in case I want to use it for other examples</span>
+<span class="hljs-comment"># I don't want people to learn about the Syracuse sequence in addition </span>
+<span class="hljs-comment"># to learning metaprogramming stuff !</span>
+<span class="hljs-comment">#</span>
+<span class="hljs-comment"># proc nextSyracuseTerm(term: var int) =</span>
+<span class="hljs-comment">#   ## This sequence should resolve to the cyclic sequence 1, 4, 2, 1, ...</span>
+<span class="hljs-comment">#   if term mod 2 == 1:</span>
+<span class="hljs-comment">#     term *= 3</span>
+<span class="hljs-comment">#     term.inc</span>
+<span class="hljs-comment">#   else:</span>
+<span class="hljs-comment">#     term = term div 2</span>
+<span class="hljs-comment">#</span>
 nbCode:
-  <span class="hljs-keyword">proc</span> nextSyracuseTerm(term: <span class="hljs-keyword">var</span> <span class="hljs-built_in">int</span>) =
-    <span class="hljs-comment">## This sequence should resolve to the cyclic sequence 1, 4, 2, 1, ...</span>
-    <span class="hljs-keyword">if</span> term <span class="hljs-keyword">mod</span> <span class="hljs-number">2</span> == <span class="hljs-number">1</span>:
-      term *= <span class="hljs-number">3</span>
-      term.inc
-    <span class="hljs-keyword">else</span>:
-      term = term <span class="hljs-keyword">div</span> <span class="hljs-number">2</span>
 
   <span class="hljs-keyword">template</span> doWhile(conditional, loop: <span class="hljs-built_in">untyped</span>) =
     loop
     <span class="hljs-keyword">while</span> conditional:
       loop
   
-  <span class="hljs-keyword">var</span> myInt = <span class="hljs-number">5</span>
-  doWhile myInt &gt;= <span class="hljs-number">6</span>:
-      <span class="hljs-keyword">echo</span> myInt
-      nextSyracuseTerm(myInt)
+  <span class="hljs-keyword">var</span> i = <span class="hljs-number">10</span>
+  doWhile i &lt; <span class="hljs-number">10</span>:
+      <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;Hello World&quot;</span>
+      i.inc
 
 nbText:<span class="hljs-string">hlMd&quot;&quot;&quot;
-Notice though that the end result is fairly different than C++ code
-```cpp
-int i = 0;
-do{
-  printf(&quot;Hello World&quot;);
-  i += 1;
-}while(i &lt; 10);
-```
-The instructions and the conditional appear before the `while` whereas this doWhile Nim construct will have the conditional after the `doWhile`:
-```nim
-var i: int = 0 # superfluous type annotation
-doWhile i &lt; 10:
-  echo &quot;Hello World!&quot;
-  i.inc
-```
+Notice though that _syntaxically_ the resulting source code is fairly different than the C++ code.
+
+In the C source code, appear in this order:
+  1. the `do` keyword
+  2. the block of instruction
+  3. the `while` keyword
+  4. the conditional (boolean expression)
+
+In Nim, we have in this order:
+  1. the `doWhile` indent
+  2. the conditional
+  3. block of instruction
+
+There is no way to modify Nim's syntax as to match C's syntax.
 &quot;&quot;&quot;</span>
 
 nbText:<span class="hljs-string">&quot;&quot;&quot;
+#### Benchmark example
 Another example is benchmarking code in Nim. It suffices to put our bench code inside a special block.
 &quot;&quot;&quot;</span>
 
@@ -598,24 +620,24 @@ nbCode:
   <span class="hljs-keyword">import</span> std/times
   <span class="hljs-keyword">template</span> benchmark(benchmarkName: <span class="hljs-built_in">string</span>, code: <span class="hljs-built_in">untyped</span>) =
     <span class="hljs-keyword">block</span>:
-      <span class="hljs-keyword">let</span> t0 = epochTime()
+      <span class="hljs-keyword">let</span> t0 = cpuTime()
       code
-      <span class="hljs-keyword">let</span> elapsed = epochTime() - t0
+      <span class="hljs-keyword">let</span> elapsed = cpuTime() - t0
       <span class="hljs-keyword">let</span> elapsedStr = elapsed.formatFloat(format = ffDecimal, precision = <span class="hljs-number">3</span>)
       <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;CPU Time [&quot;</span>, benchmarkName, <span class="hljs-string">&quot;] &quot;</span>, elapsedStr, <span class="hljs-string">&quot;s&quot;</span>
 
   benchmark <span class="hljs-string">&quot;test1&quot;</span>:
     sleep(<span class="hljs-number">100</span>)
 
-<span class="hljs-comment"># nbText:&quot;&quot;&quot;</span>
-<span class="hljs-comment"># Though powerful, templates are still limited. As an example, I didn't achieve to make a throwAway template (that does not run a code).</span>
-<span class="hljs-comment"># &quot;&quot;&quot;</span>
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+The code inside the `benchmark` code block will be enclosed by our template code.
 
-<span class="hljs-comment"># nbCode:</span>
-<span class="hljs-comment">#   template throwAway(statements: untyped): untyped = discard nil</span>
+Since the code replacement is done at compile time, this transformation does not add additional runtime to our benchmarked code.
+On the contrary, a function or procedure for benchmarking would have add runtime due to the nested function calls.
 
-<span class="hljs-comment">#   throwAway:</span>
-<span class="hljs-comment">#     echo &quot;Test the discard template, if you see this message, it has failed. If not, well …&quot;</span>
+EDIT: I used `epochTime` that has been superseded by `cpuTime` for benchmarking.
+An alternative would be to use `monotimes.getMonoTime`.
+&quot;&quot;&quot;</span>
 
 nbSection <span class="hljs-string">&quot;Macros&quot;</span>
 nbText:<span class="hljs-string">&quot;&quot;&quot;
@@ -933,10 +955,10 @@ nbCode:
 nbText:<span class="hljs-string">&quot;&quot;&quot;
 Trying to parse a type ourselve is risky, since there are numerous easily forgettable possibilities (due to pragma expressions, cyclic types, and many kind of types: object, enum, type alias, etc..., case of fields, branching and conditionals inside the object, … ).
 
-There is actually already a function to do so:
+There is actually already a function to do so and this will be the object of a future release of this tutorial.
 &quot;&quot;&quot;</span>
 
-nbSection <span class="hljs-string">&quot;Existing resources / References / Bibliography&quot;</span>
+nbSection <span class="hljs-string">&quot;References and Bibliography&quot;</span>
 nbText: <span class="hljs-string">&quot;&quot;&quot;
 Press `Ctrl` + `Click` to open following links in a new tab.
 
@@ -970,9 +992,9 @@ We can also count many projects that are macro- or template-based:
   In general, treeform projects source code are good Nim references
   2. My favorite DSL : the [neural network domain specific language (DSL) of the tensor library Arraymancer](https://github.com/mratsim/Arraymancer/blob/68786e147a94069a96f069bab327d67afdaa5a3e/src/arraymancer/nn/nn_dsl.nim)
   [mratsim](https://github.com/mratsim/) develops this library, and made [a list of all his DSL](https://forum.nim-lang.org/t/9551#62851) in the forum.
-  3. [Jester](https://github.com/dom96/jester) library is a really nice HTML DSL, where each block defines a route in your web application.
-  4. [nimib](https://pietroppeter.github.io/nimib/) with which this blog post has been written, has been developed with a macro DSL too.
-  5. The most complex macro system that I know of apart from genny for the moment is the [Nim4UE](https://github.com/jmgomez/NimForUE). You can develop Nim code for the Unreal Engine 5 game engine. The macro system parses your procs and outputs DLL for UE.
+  3. [Jester](https://github.com/dom96/jester) library is a HTML DSL, where each block defines a route in your web application.
+  4. [nimib](https://pietroppeter.github.io/nimib/) with which this blog post has been written.
+  5. [Nim4UE](https://github.com/jmgomez/NimForUE). You can develop Nim code for the Unreal Engine 5 game engine. The macro system parses your procs and outputs DLL for UE.
 &quot;&quot;&quot;</span>
 nbSave
 </code></pre>
