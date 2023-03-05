@@ -24,7 +24,7 @@ template nbSection(name:string) =
   let anchorName = name.toLower.replace(" ", "-")
   nbText "<a name = \"" & anchorName & "\"></a>\n# " & name & "\n\n---"
   # see below, but any number works for a numbered list
-  nbToc.output.add "1. <a href=\"#" & anchorName & "\">" & name & "</a>\n" 
+  nbToc.output.add "1. <a href=\"#" & anchorName & "\">" & name & "</a>\n"
 
 nbText: hlMd"""
 # Nim Metaprogramming / Macro Tutorial
@@ -37,18 +37,22 @@ addToc()
 
 nbSection "Introduction"
 nbText: hlMd"""
-There are four kind/levels of procedures:
-  1. ordinary proc/iterator
-  2. generic proc/iterator
-  3. template
-  4. macro
-The higher the number, the more meta we get. It is recommended to program one's procedure with the lowest level of metaprogramming possible. 
-Let us start with `template`s and `untyped` parameters. I do not present generics in this tutorial.
+There are four kinds of procedures:
+  1. Ordinary proc/iterator
+  2. Generic proc/iterator
+  3. Template
+  4. Macro
+
+We use more metaprogramming feature with higher numbered procedures.
+It is recommended to start to program one's procedure with the lowest level of metaprogramming possible.
+As more metaprogramming features are used, the compilation process takes longer and error debugging gets harder.
+Let us start with `template`s and `untyped` parameters.
+I do not present generics in this tutorial.
 """
 
 nbSection "Templates"
 nbText: """
-We can see *templates* as procedures that modify code through a copy-paste mechanism. Pieces of code are given to (and outputted by) the template with a special type : `untyped`. 
+We can see *templates* as procedures that modify code through a copy-paste mechanism. Pieces of code are given to (and outputted by) the template with a special type : `untyped`.
 For those familiar with [preprocessing](https://gcc.gnu.org/onlinedocs/cpp/) in the C family of languages (C, C++, C#), it does the same than the `#define` or `#if`, `#endif` macros and much more.
 """
 
@@ -102,7 +106,7 @@ do{
 ```
 """
 # Keep this code in case I want to use it for other examples
-# I don't want people to learn about the Syracuse sequence in addition 
+# I don't want people to learn about the Syracuse sequence in addition
 # to learning metaprogramming stuff !
 #
 # proc nextSyracuseTerm(term: var int) =
@@ -119,7 +123,7 @@ nbCode:
     loop
     while conditional:
       loop
-  
+
   var i = 10
   doWhile i < 10:
       echo "Hello World"
@@ -444,7 +448,7 @@ nbCode:
 
     # Parse the type definition to find the TypeDef section's node
     # We create the output's AST along parsing.
-    # We will receive a statement list as the root of the AST 
+    # We will receive a statement list as the root of the AST
     for statement in typedef:
       # We select only the type section in the StmtList
       if statement.kind == nnkTypeSection:
