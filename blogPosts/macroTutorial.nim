@@ -201,7 +201,7 @@ nbCode:
 
 nbText:"""
 This output is given with the
-```raw
+```nim
 StmtList
   TypeSection
     TypeDef
@@ -249,7 +249,7 @@ nbCode:
         a: float32
 
 nbText:"""
-```raw
+```nim
 StmtList
   TypeSection
     TypeDef

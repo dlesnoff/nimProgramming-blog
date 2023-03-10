@@ -5,7 +5,6 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🐳</text></svg>">
   <meta content="text/html; charset=utf-8" http-equiv="content-type">
   <meta content="width=device-width, initial-scale=1" name="viewport">
-  <link rel='stylesheet' href='https://unpkg.com/normalize.css'>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/light.min.css">
   <link rel='stylesheet' href='https://cdn.jsdelivr.net/gh/pietroppeter/nimib/assets/atom-one-light.css'>
     <script src="https://cdn.jsdelivr.net/gh/pietroppeter/nimib@main/assets/highlight.min.js"></script>
@@ -88,8 +87,8 @@ Notice that duplicate is not smart. It will repeat any assignment twice in the c
   statements
 
 duplicate:
-  <span class="hljs-keyword">echo</span> <span class="hljs-number">5</span></code></pre><pre class="nb-output"><samp>5
-5</samp></pre>
+  <span class="hljs-keyword">echo</span> <span class="hljs-number">5</span></code></pre><pre class="nb-output">5
+5</pre>
 <pre><code class="nohighlight hljs nim"><span class="hljs-comment">## Example from Nim In Action</span>
 <span class="hljs-keyword">from</span> std/os <span class="hljs-keyword">import</span> sleep
 <span class="hljs-keyword">template</span> repeat(count: <span class="hljs-built_in">int</span>, statements: <span class="hljs-built_in">untyped</span>) =
@@ -98,11 +97,11 @@ duplicate:
 
 repeat <span class="hljs-number">5</span>:
   <span class="hljs-keyword">echo</span>(<span class="hljs-string">&quot;Hello Templates!&quot;</span>)
-  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output"><samp>Hello Templates!
+  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">Hello Templates!
 Hello Templates!
 Hello Templates!
 Hello Templates!
-Hello Templates!</samp></pre>
+Hello Templates!</pre>
 <h4>Do-While keyword</h4>
 <p>In Nim, there are few restricted keywords and special control-flow mechanisms, as to incite us to create our own constructs (and keep the language simple). Nothing restrains us from defining a <code>doWhile</code> construct similar to languages like <code>C</code> or <code>Javascript</code>.</p>
 <p>For those only knowing Nim, this construct enables to run a loop once before testing the condition.</p>
@@ -121,7 +120,7 @@ do{
 <span class="hljs-keyword">var</span> i = <span class="hljs-number">10</span>
 doWhile i &lt; <span class="hljs-number">10</span>:
     <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;Hello World&quot;</span>
-    i.inc</code></pre><pre class="nb-output"><samp>Hello World</samp></pre>
+    i.inc</code></pre><pre class="nb-output">Hello World</pre>
 <p>Notice though that <em>syntaxically</em> the resulting source code is fairly different than the C++ code.</p>
 <p>In the C source code, appear in this order:</p>
 <ol>
@@ -149,7 +148,7 @@ doWhile i &lt; <span class="hljs-number">10</span>:
     <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;CPU Time [&quot;</span>, benchmarkName, <span class="hljs-string">&quot;] &quot;</span>, elapsedStr, <span class="hljs-string">&quot;s&quot;</span>
 
 benchmark <span class="hljs-string">&quot;test1&quot;</span>:
-  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output"><samp>CPU Time [test1] 0.000s</samp></pre>
+  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 0.000s</pre>
 <p>The code inside the <code>benchmark</code> code block will be enclosed by our template code.</p>
 <p>Since the code replacement is done at compile time, this transformation does not add additional runtime to our benchmarked code.
 On the contrary, a function or procedure for benchmarking would have add runtime due to the nested function calls.</p>
@@ -174,7 +173,7 @@ throwAway:
       left: <span class="hljs-built_in">seq</span>[myObject]
       right: <span class="hljs-built_in">seq</span>[myObject]</code></pre>
 <p>This output is given with the</p>
-<pre><code class="language-raw">StmtList
+<pre><code class="language-nim">StmtList
   TypeSection
     TypeDef
       PragmaExpr
@@ -215,7 +214,7 @@ The first step is to look at the AST of the input code we want to parse.</p>
   <span class="hljs-keyword">type</span>
     <span class="hljs-type">Thing</span> = <span class="hljs-keyword">object</span>
       a: <span class="hljs-built_in">float32</span></code></pre>
-<pre><code class="language-raw">StmtList
+<pre><code class="language-nim">StmtList
   TypeSection
     TypeDef
       Ident &quot;Thing&quot;
@@ -401,13 +400,13 @@ We do not represent spaces in the AST. Each term separated by a dot is an Ident 
   <span class="hljs-keyword">type</span>
     <span class="hljs-type">Thing</span> = <span class="hljs-keyword">object</span> <span class="hljs-keyword">of</span> <span class="hljs-type">RootObj</span>
       a: <span class="hljs-built_in">float32</span>
-      b: <span class="hljs-built_in">string</span></code></pre><pre class="nb-output"><samp>24
-ptr 0x5585973ccf90 --&gt; [a = 0.0,
+      b: <span class="hljs-built_in">string</span></code></pre><pre class="nb-output">24
+ptr 0x556b3ba5ff90 --&gt; [a = 0.0,
 b = &quot;&quot;]
 4
-ptr 0x5585973ccf98 --&gt; 0.0
+ptr 0x556b3ba5ff98 --&gt; 0.0
 8
-ptr 0x5585973ccfa0 --&gt; &quot;&quot;</samp></pre>
+ptr 0x556b3ba5ffa0 --&gt; &quot;&quot;</pre>
 <p>Trying to parse a type ourselve is risky, since there are numerous easily forgettable possibilities (due to pragma expressions, cyclic types, and many kind of types: object, enum, type alias, etc..., case of fields, branching and conditionals inside the object, … ).</p>
 <p>There is actually already a function to do so and this will be the object of a future release of this tutorial.</p>
 <p><a name = "references-and-bibliography"></a></p>
@@ -676,7 +675,7 @@ nbCode:
 
 nbText:<span class="hljs-string">&quot;&quot;&quot;
 This output is given with the
-```raw
+```nim
 StmtList
   TypeSection
     TypeDef
@@ -724,7 +723,7 @@ nbCode:
         a: <span class="hljs-built_in">float32</span>
 
 nbText:<span class="hljs-string">&quot;&quot;&quot;
-```raw
+```nim
 StmtList
   TypeSection
     TypeDef
