@@ -3,31 +3,21 @@ import nimib
 
 nbInit
 
-# a custom text block that shows markdown source
-template nbTextWithSource*(body: untyped) =
-  newNbBlock("nbTextWithSource", false, nb, nb.blk, body):
-    nb.blk.output = body
-  nb.blk.context["code"] = body
-
-nb.renderPlans["nbTextWithSource"] = @["mdOutputToHtml"]
-nb.partials["nbTextWithSource"] = """{{&outputToHtml}}
-<pre><code class=\"language-markdown\">{{code}}</code></pre>"""
-
-# how to add a ToC
+# add a ToC
 var nbToc: NbBlock
 
 template addToc =
   newNbBlock("nbText", false, nb, nbToc, ""):
-    nbToc.output = "## Table of Contents:\n\n"
+    nbToc.output = "### Table of Contents:\n\n"
 
 template nbSection(name:string) =
   let anchorName = name.toLower.replace(" ", "-")
-  nbText "<a name = \"" & anchorName & "\"></a>\n# " & name & "\n\n---"
+  nbText "<a name = \"" & anchorName & "\"></a>\n## " & name & "\n\n---"
   # see below, but any number works for a numbered list
   nbToc.output.add "1. <a href=\"#" & anchorName & "\">" & name & "</a>\n"
 
 nbText: hlMd"""
-# Nim Metaprogramming / Macro Tutorial
+<h1 style="text-align: center;">Nim Metaprogramming - Macro Tutorial</h1>
 
 This tutorial aims to be a _step-by-step_ introduction to the metaprogramming features of the Nim Language and to provide as much detail as possible to kickstart your craziest projects.
 There are already many resources on the Web, but I strive to provide more thorough details on the development process and to gather them all in one place. You are encouraged to code along and modify examples.
