@@ -5,11 +5,9 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🐳</text></svg>">
   <meta content="text/html; charset=utf-8" http-equiv="content-type">
   <meta content="width=device-width, initial-scale=1" name="viewport">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/light.min.css">
+  <link rel='stylesheet' href='https://unpkg.com/normalize.css'>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/kognise/water.css@latest/dist/light.min.css">
   <link rel='stylesheet' href='https://cdn.jsdelivr.net/gh/pietroppeter/nimib/assets/atom-one-light.css'>
-    <script src="https://cdn.jsdelivr.net/gh/pietroppeter/nimib@main/assets/highlight.min.js"></script>
-<script>hljs.highlightAll();</script>
-
   <style>
 .nb-box {
   display: flex;
@@ -57,17 +55,18 @@ There are already many resources on the Web, but I strive to provide more thorou
 <p><a name = "introduction"></a></p>
 <h1>Introduction</h1>
 <hr />
-<p>There are four kinds of procedures:</p>
+<h3>The four horses of <del>Hell</del> Metaprogramming</h3>
+<p>There are four levels of metaprogramming:</p>
 <ol>
-<li>Ordinary proc/iterator</li>
-<li>Generic proc/iterator</li>
+<li>Ordinary procedures/iterators</li>
+<li>Generic procedures/iterators</li>
 <li>Template</li>
 <li>Macro</li>
 </ol>
-<p>We use more metaprogramming feature with higher numbered procedures.
+<p>We use more metaprogramming features with higher numbered procedures.
 It is recommended to start to program one's procedure with the lowest level of metaprogramming possible.
-As more metaprogramming features are used, the compilation process takes longer and error debugging gets harder.
-Let us start with <code>template</code>s and <code>untyped</code> parameters.
+As more metaprogramming features are used, the compilation process takes longer and error debugging gets harder.</p>
+<p>Let us start with <code>template</code>s and <code>untyped</code> parameters.
 I do not present generics in this tutorial.</p>
 <p><a name = "templates"></a></p>
 <h1>Templates</h1>
@@ -75,21 +74,21 @@ I do not present generics in this tutorial.</p>
 <p>We can see <em>templates</em> as procedures that modify code through a copy-paste mechanism. Pieces of code are given to (and outputted by) the template with a special type : <code>untyped</code>.
 For those familiar with <a href="https://gcc.gnu.org/onlinedocs/cpp/">preprocessing</a> in the C family of languages (C, C++, C#), it does the same than the <code>#define</code> or <code>#if</code>, <code>#endif</code> macros and much more.</p>
 <p>Nim's language defines boolean operator like <code>!=</code> with templates. You can even look at Nim's source code, that's almost the same code. See the <a href="https://nim-lang.org/docs/system.html#%21%3D.t%2Cuntyped%2Cuntyped">documentation</a>.</p>
-<pre><code class="nohighlight hljs nim"><span class="hljs-comment">## Example from std/manual</span>
+<pre><code class="nim hljs"><span class="hljs-comment">## Example from std/manual</span>
 <span class="hljs-keyword">template</span> `!=` (a, b: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
   <span class="hljs-keyword">not</span> (a == b)
 
 doAssert(<span class="hljs-number">4</span> != <span class="hljs-number">5</span>)</code></pre>
 <p>We can easily repeat code under a custom block. Here duplicate, just duplicate code and repeat takes an additional parameter, an int, as a generalisation of the <code>duplicate</code> template.
 Notice that duplicate is not smart. It will repeat any assignment twice in the code's block.</p>
-<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">template</span> duplicate(statements: <span class="hljs-built_in">untyped</span>) =
+<pre><code class="nim hljs"><span class="hljs-keyword">template</span> duplicate(statements: <span class="hljs-built_in">untyped</span>) =
   statements
   statements
 
 duplicate:
-  <span class="hljs-keyword">echo</span> <span class="hljs-number">5</span></code></pre><pre class="nb-output">5
-5</pre>
-<pre><code class="nohighlight hljs nim"><span class="hljs-comment">## Example from Nim In Action</span>
+  <span class="hljs-keyword">echo</span> <span class="hljs-number">5</span></code></pre><pre class="nb-output"><samp>5
+5</samp></pre>
+<pre><code class="nim hljs"><span class="hljs-comment">## Example from Nim In Action</span>
 <span class="hljs-keyword">from</span> std/os <span class="hljs-keyword">import</span> sleep
 <span class="hljs-keyword">template</span> repeat(count: <span class="hljs-built_in">int</span>, statements: <span class="hljs-built_in">untyped</span>) =
   <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-number">0</span> ..&lt; count:
@@ -97,11 +96,11 @@ duplicate:
 
 repeat <span class="hljs-number">5</span>:
   <span class="hljs-keyword">echo</span>(<span class="hljs-string">&quot;Hello Templates!&quot;</span>)
-  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">Hello Templates!
+  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output"><samp>Hello Templates!
 Hello Templates!
 Hello Templates!
 Hello Templates!
-Hello Templates!</pre>
+Hello Templates!</samp></pre>
 <h4>Do-While keyword</h4>
 <p>In Nim, there are few restricted keywords and special control-flow mechanisms, as to incite us to create our own constructs (and keep the language simple). Nothing restrains us from defining a <code>doWhile</code> construct similar to languages like <code>C</code> or <code>Javascript</code>.</p>
 <p>For those only knowing Nim, this construct enables to run a loop once before testing the condition.</p>
@@ -112,7 +111,7 @@ do{
   i += 1;
 }while(i &lt; 10);
 </code></pre>
-<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">template</span> doWhile(conditional, loop: <span class="hljs-built_in">untyped</span>) =
+<pre><code class="nim hljs"><span class="hljs-keyword">template</span> doWhile(conditional, loop: <span class="hljs-built_in">untyped</span>) =
   loop
   <span class="hljs-keyword">while</span> conditional:
     loop
@@ -120,7 +119,7 @@ do{
 <span class="hljs-keyword">var</span> i = <span class="hljs-number">10</span>
 doWhile i &lt; <span class="hljs-number">10</span>:
     <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;Hello World&quot;</span>
-    i.inc</code></pre><pre class="nb-output">Hello World</pre>
+    i.inc</code></pre><pre class="nb-output"><samp>Hello World</samp></pre>
 <p>Notice though that <em>syntaxically</em> the resulting source code is fairly different than the C++ code.</p>
 <p>In the C source code, appear in this order:</p>
 <ol>
@@ -138,7 +137,7 @@ doWhile i &lt; <span class="hljs-number">10</span>:
 <p>There is no way to modify Nim's syntax as to match C's syntax.</p>
 <h4>Benchmark example</h4>
 <p>Another example is benchmarking code in Nim. It suffices to put our bench code inside a special block.</p>
-<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">import</span> std/times
+<pre><code class="nim hljs"><span class="hljs-keyword">import</span> std/times
 <span class="hljs-keyword">template</span> benchmark(benchmarkName: <span class="hljs-built_in">string</span>, code: <span class="hljs-built_in">untyped</span>) =
   <span class="hljs-keyword">block</span>:
     <span class="hljs-keyword">let</span> t0 = cpuTime()
@@ -148,7 +147,7 @@ doWhile i &lt; <span class="hljs-number">10</span>:
     <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;CPU Time [&quot;</span>, benchmarkName, <span class="hljs-string">&quot;] &quot;</span>, elapsedStr, <span class="hljs-string">&quot;s&quot;</span>
 
 benchmark <span class="hljs-string">&quot;test1&quot;</span>:
-  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 0.000s</pre>
+  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output"><samp>CPU Time [test1] 0.000s</samp></pre>
 <p>The code inside the <code>benchmark</code> code block will be enclosed by our template code.</p>
 <p>Since the code replacement is done at compile time, this transformation does not add additional runtime to our benchmarked code.
 On the contrary, a function or procedure for benchmarking would have add runtime due to the nested function calls.</p>
@@ -160,14 +159,14 @@ An alternative would be to use <code>monotimes.getMonoTime</code>.</p>
 <p>Macros can be seen as an empowered template procedure. While template substitute code, macros do introspection.
 Instead of simply taking untyped blocks and reuse them as lego bricks to return a code, we can parse our untyped parameter and do something conditionally to informations given in these parameters.
 We can also inject variables into scopes.</p>
-<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">macro</span> throwAway(statements: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
+<pre><code class="nim hljs"><span class="hljs-keyword">macro</span> throwAway(statements: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
   <span class="hljs-literal">result</span> = newStmtList()
 throwAway:
   <span class="hljs-keyword">while</span> <span class="hljs-literal">true</span>:
     <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;If you do not throw me, I'll spam you indefinitely!&quot;</span></code></pre>
 <h3>AST Manipulation</h3>
 <p>In Nim, the code is read and transformed in an internal intermediate representation called an Abstract Syntax Tree (AST). To get a representation of the AST corresponding to a code, we can use the <code>macro</code> <code>dumpTree</code>.</p>
-<pre><code class="nohighlight hljs nim">dumpTree:
+<pre><code class="nim hljs">dumpTree:
   <span class="hljs-keyword">type</span>
     myObject {.packed.} = <span class="hljs-keyword">ref</span> <span class="hljs-keyword">object</span> <span class="hljs-keyword">of</span> <span class="hljs-type">RootObj</span>
       left: <span class="hljs-built_in">seq</span>[myObject]
@@ -210,7 +209,7 @@ I want to print the memory layout of a given type.
 My goal is to find misaligned fields making useless unocuppied memory.
 We should be able in the future to automatically swap the fields to remove the holes (or at least propose a fixed type).
 The first step is to look at the AST of the input code we want to parse.</p>
-<pre><code class="nohighlight hljs nim">dumpTree:
+<pre><code class="nim hljs">dumpTree:
   <span class="hljs-keyword">type</span>
     <span class="hljs-type">Thing</span> = <span class="hljs-keyword">object</span>
       a: <span class="hljs-built_in">float32</span></code></pre>
@@ -252,7 +251,7 @@ I present here first some samples of type definition on which I will run my macr
 </code></pre>
 <p>It is not easy (if even possible) to list all possible types.
 Yet by adding some other informations we can get a better picture of the general AST of a type.</p>
-<pre><code class="nohighlight hljs nim">dumpTree:
+<pre><code class="nim hljs">dumpTree:
   <span class="hljs-keyword">type</span>
     <span class="hljs-type">Thing</span> {.packed.} = <span class="hljs-keyword">object</span> <span class="hljs-keyword">of</span> <span class="hljs-type">RootObj</span>
       a: <span class="hljs-built_in">float32</span>
@@ -319,7 +318,7 @@ We do not represent spaces in the AST. Each term separated by a dot is an Ident 
 <pre><code class="language-nim">dumpTree:
   echo a.field.sizeof
 </code></pre>
-<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">proc</span> echoSizeVarFieldStmt(variable: <span class="hljs-built_in">string</span>, nameOfField: <span class="hljs-built_in">string</span>): <span class="hljs-type">NimNode</span> =
+<pre><code class="nim hljs"><span class="hljs-keyword">proc</span> echoSizeVarFieldStmt(variable: <span class="hljs-built_in">string</span>, nameOfField: <span class="hljs-built_in">string</span>): <span class="hljs-type">NimNode</span> =
   <span class="hljs-comment">## quote do:</span>
   <span class="hljs-comment">##   echo `variable`.`nameOfField`.sizeof</span>
   newStmtList(nnkCommand.newTree(
@@ -335,7 +334,7 @@ We do not represent spaces in the AST. Each term separated by a dot is an Ident 
 <p>The <code>echoAddressVarFieldStmt</code> will take the name of a variable, let us say <code>a</code> and of its field <code>field</code> and return its address:</p>
 <pre><code class="language-nim">echo a.field.addr.repr
 </code></pre>
-<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">proc</span> echoAddressVarFieldStmt(variable: <span class="hljs-built_in">string</span>, nameOfField: <span class="hljs-built_in">string</span>): <span class="hljs-type">NimNode</span> =
+<pre><code class="nim hljs"><span class="hljs-keyword">proc</span> echoAddressVarFieldStmt(variable: <span class="hljs-built_in">string</span>, nameOfField: <span class="hljs-built_in">string</span>): <span class="hljs-type">NimNode</span> =
   <span class="hljs-comment">## quote do:</span>
   <span class="hljs-comment">##   echo `variable`.`nameOfField`.addr.repr</span>
   newStmtList(nnkCommand.newTree(
@@ -351,7 +350,7 @@ We do not represent spaces in the AST. Each term separated by a dot is an Ident 
                 newIdentNode(<span class="hljs-string">&quot;repr&quot;</span>)
               )
               ))</code></pre>
-<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">macro</span> typeMemoryRepr(typedef: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
+<pre><code class="nim hljs"><span class="hljs-keyword">macro</span> typeMemoryRepr(typedef: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
   <span class="hljs-comment">## This macro takes a type definition as an argument and:</span>
   <span class="hljs-comment">## * defines the type (outputs typedef as is)</span>
   <span class="hljs-comment">## * initializes a variable of this type</span>
@@ -396,17 +395,17 @@ We do not represent spaces in the AST. Each term separated by a dot is an Ident 
             <span class="hljs-literal">result</span> = <span class="hljs-literal">result</span>.add(echoAddressVarFieldStmt(nameOfTestVariable, tnode[i][<span class="hljs-number">0</span>].strVal))
 
   <span class="hljs-keyword">echo</span> <span class="hljs-literal">result</span>.repr</code></pre>
-<pre><code class="nohighlight hljs nim">typeMemoryRepr:
+<pre><code class="nim hljs">typeMemoryRepr:
   <span class="hljs-keyword">type</span>
     <span class="hljs-type">Thing</span> = <span class="hljs-keyword">object</span> <span class="hljs-keyword">of</span> <span class="hljs-type">RootObj</span>
       a: <span class="hljs-built_in">float32</span>
-      b: <span class="hljs-built_in">string</span></code></pre><pre class="nb-output">24
-ptr 0x556b3ba5ff90 --&gt; [a = 0.0,
+      b: <span class="hljs-built_in">string</span></code></pre><pre class="nb-output"><samp>24
+ptr 0x55981b3e5e10 --&gt; [a = 0.0,
 b = &quot;&quot;]
 4
-ptr 0x556b3ba5ff98 --&gt; 0.0
+ptr 0x55981b3e5e18 --&gt; 0.0
 8
-ptr 0x556b3ba5ffa0 --&gt; &quot;&quot;</pre>
+ptr 0x55981b3e5e20 --&gt; &quot;&quot;</samp></pre>
 <p>Trying to parse a type ourselve is risky, since there are numerous easily forgettable possibilities (due to pragma expressions, cyclic types, and many kind of types: object, enum, type alias, etc..., case of fields, branching and conditionals inside the object, … ).</p>
 <p>There is actually already a function to do so and this will be the object of a future release of this tutorial.</p>
 <p><a name = "references-and-bibliography"></a></p>
@@ -472,7 +471,7 @@ In general, treeform projects source code are good Nim references</p>
 </div>
 </footer>
 <section id="source">
-<pre><code class="nohighlight nim hljs"><span class="hljs-keyword">import</span> std/[strutils, macros]
+<pre><code class="nim hljs"><span class="hljs-keyword">import</span> std/[strutils, macros]
 <span class="hljs-keyword">import</span> nimib
 
 nbInit
@@ -511,15 +510,17 @@ addToc()
 
 nbSection <span class="hljs-string">&quot;Introduction&quot;</span>
 nbText: <span class="hljs-string">hlMd&quot;&quot;&quot;
-There are four kinds of procedures:
-  1. Ordinary proc/iterator
-  2. Generic proc/iterator
+### The four horses of ~~Hell~~ Metaprogramming
+There are four levels of metaprogramming:
+  1. Ordinary procedures/iterators
+  2. Generic procedures/iterators
   3. Template
   4. Macro
 
-We use more metaprogramming feature with higher numbered procedures.
+We use more metaprogramming features with higher numbered procedures.
 It is recommended to start to program one's procedure with the lowest level of metaprogramming possible.
 As more metaprogramming features are used, the compilation process takes longer and error debugging gets harder.
+
 Let us start with `template`s and `untyped` parameters.
 I do not present generics in this tutorial.
 &quot;&quot;&quot;</span>

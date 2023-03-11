@@ -37,15 +37,17 @@ addToc()
 
 nbSection "Introduction"
 nbText: hlMd"""
-There are four kinds of procedures:
-  1. Ordinary proc/iterator
-  2. Generic proc/iterator
-  3. Template
-  4. Macro
+### The four horsemen of ~~the apocalypse~~ Metaprogramming
+There are four levels of metaprogramming:
+  1. Ordinary procedures/iterators (No metaprogramming)
+  2. Generic procedures/iterators (Type level)
+  3. Template (Copy-paste mechanism)
+  4. Macro (AST substitution)
 
-We use more metaprogramming feature with higher numbered procedures.
+We use more metaprogramming features with higher numbered procedures.
 It is recommended to start to program one's procedure with the lowest level of metaprogramming possible.
 As more metaprogramming features are used, the compilation process takes longer and error debugging gets harder.
+
 Let us start with `template`s and `untyped` parameters.
 I do not present generics in this tutorial.
 """
