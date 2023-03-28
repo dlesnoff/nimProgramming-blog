@@ -544,6 +544,7 @@ There are plentiful of posts in the forum that are good references:
   1. [What is "Metaprogramming" paradigm used for ?](https://forum.nim-lang.org/t/2587)
   2. [Custom macro inserts macro help](https://forum.nim-lang.org/t/9470)
   3. [See generated code after template processing](https://forum.nim-lang.org/t/9498)
+  4. [Fast array assignment](https://forum.nim-lang.org/t/10037)
   4. etc … Please use the forum search bar with specific keywords like `macro`, `metaprogramming`, `generics`, `template`, …
 
 Last but no least, there are three Nim books:
