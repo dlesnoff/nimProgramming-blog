@@ -157,7 +157,7 @@ doWhile i &lt; <span class="hljs-number">10</span>:
     <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;CPU Time [&quot;</span>, benchmarkName, <span class="hljs-string">&quot;] &quot;</span>, elapsed
 
 benchmark <span class="hljs-string">&quot;test1&quot;</span>:
-  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 145 microseconds, and 536 nanoseconds</pre>
+  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 145 microseconds, and 748 nanoseconds</pre>
 <p>The code inside the <code>benchmark</code> code block will be enclosed by our template code.</p>
 <p>Since the code replacement is done at compile time, this transformation does not add additional runtime to our benchmarked code.
 On the contrary, a function or procedure for benchmarking would have add runtime due to the nested function calls.</p>
@@ -435,12 +435,12 @@ We do not represent spaces in the AST. Each term separated by a dot is an Ident 
     <span class="hljs-type">Thing</span> = <span class="hljs-keyword">object</span> <span class="hljs-keyword">of</span> <span class="hljs-type">RootObj</span>
       a: <span class="hljs-built_in">float32</span>
       b: <span class="hljs-built_in">string</span></code></pre><pre class="nb-output">24
-ptr 0x5584f009d740 --&gt; [a = 0.0,
+ptr 0x5643724f0740 --&gt; [a = 0.0,
 b = &quot;&quot;]
 4
-ptr 0x5584f009d748 --&gt; 0.0
+ptr 0x5643724f0748 --&gt; 0.0
 8
-ptr 0x5584f009d750 --&gt; &quot;&quot;</pre>
+ptr 0x5643724f0750 --&gt; &quot;&quot;</pre>
 <p>Trying to parse a type ourselve is risky, since there are numerous easily forgettable possibilities (due to pragma expressions, cyclic types, and many kind of types: object, enum, type alias, etc..., case of fields, branching and conditionals inside the object, … ).</p>
 <p>There is actually already a function to do so and this will be the object of a future release of this tutorial.</p>
 <p><a name = "references-and-bibliography"></a></p>
@@ -468,6 +468,7 @@ The 2. and 3. documentations are complementary learning resources while the last
 <li><a href="https://forum.nim-lang.org/t/2587">What is &quot;Metaprogramming&quot; paradigm used for ?</a></li>
 <li><a href="https://forum.nim-lang.org/t/9470">Custom macro inserts macro help</a></li>
 <li><a href="https://forum.nim-lang.org/t/9498">See generated code after template processing</a></li>
+<li><a href="https://forum.nim-lang.org/t/10037">Fast array assignment</a></li>
 <li>etc … Please use the forum search bar with specific keywords like <code>macro</code>, <code>metaprogramming</code>, <code>generics</code>, <code>template</code>, …</li>
 </ol>
 <p>Last but no least, there are three Nim books:</p>
@@ -1051,6 +1052,7 @@ There are plentiful of posts in the forum that are good references:
   1. [What is &quot;Metaprogramming&quot; paradigm used for ?](https://forum.nim-lang.org/t/2587)
   2. [Custom macro inserts macro help](https://forum.nim-lang.org/t/9470)
   3. [See generated code after template processing](https://forum.nim-lang.org/t/9498)
+  4. [Fast array assignment](https://forum.nim-lang.org/t/10037)
   4. etc … Please use the forum search bar with specific keywords like `macro`, `metaprogramming`, `generics`, `template`, …
 
 Last but no least, there are three Nim books:
