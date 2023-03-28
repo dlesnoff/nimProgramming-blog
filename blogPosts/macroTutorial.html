@@ -5,6 +5,7 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🐳</text></svg>">
   <meta content="text/html; charset=utf-8" http-equiv="content-type">
   <meta content="width=device-width, initial-scale=1" name="viewport">
+  <meta content="nimib 0.3.10" name="generator">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/light.min.css">
   <link rel='stylesheet' href='https://cdn.jsdelivr.net/gh/pietroppeter/nimib/assets/atom-one-light.css'>
     <script src="https://cdn.jsdelivr.net/gh/pietroppeter/nimib@main/assets/highlight.min.js"></script>
@@ -29,11 +30,18 @@ section#source {
   display:none
 }
 pre > code {
-  font-size: 1em;
+  font-size: 1.2em;
 }
 .nb-output {
   line-height: 1.15;
 }
+figure {
+  margin: 2rem 0;
+}
+figcaption {
+  text-align: center;
+}
+  
 </style>
   
 </head>
@@ -48,7 +56,7 @@ pre > code {
 </header><main>
 <h1 style="text-align: center;">Nim Metaprogramming - Macro Tutorial</h1>
 <p>This tutorial aims to be a <em>step-by-step</em> introduction to the metaprogramming features of the Nim Language and to provide as much detail as possible to kickstart your craziest projects.
-There are already many resources on the Web, but I strive to provide more thorough details on the development process and to gather them all in one place. You are encouraged to code along and modify examples.</p>
+There are already many resources on the Web, but I strive to provide more thorough details on the development process and to gather them all in one place.</p>
 <h3>Table of Contents:</h3>
 <ol>
 <li><a href="#introduction">Introduction</a></li>
@@ -59,16 +67,15 @@ There are already many resources on the Web, but I strive to provide more thorou
 <p><a name = "introduction"></a></p>
 <h2>Introduction</h2>
 <hr />
-<h3>The four horsemen of <del>the apocalypse</del> Metaprogramming</h3>
-<p>There are four levels of metaprogramming:</p>
+<h3>Four levels of abstraction</h3>
+<p>There are four levels of abstraction in metaprogramming that are each a special kind of procedure:</p>
 <ol>
 <li>Ordinary procedures/iterators (No metaprogramming)</li>
 <li>Generic procedures/iterators (Type level)</li>
 <li>Template (Copy-paste mechanism)</li>
 <li>Macro (AST substitution)</li>
 </ol>
-<p>We use more metaprogramming features with higher numbered procedures.
-It is recommended to start to program one's procedure with the lowest level of metaprogramming possible.
+<p>It is recommended to start to program one's procedure with the lowest level of metaprogramming possible.
 As more metaprogramming features are used, the compilation process takes longer and error debugging gets harder.</p>
 <p>Let us start with <code>template</code>s and <code>untyped</code> parameters.
 I do not present generics in this tutorial.</p>
@@ -141,30 +148,31 @@ doWhile i &lt; <span class="hljs-number">10</span>:
 <p>There is no way to modify Nim's syntax as to match C's syntax.</p>
 <h4>Benchmark example</h4>
 <p>Another example is benchmarking code in Nim. It suffices to put our bench code inside a special block.</p>
-<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">import</span> std/times
+<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">import</span> std/[strutils, times, os, monotimes]
 <span class="hljs-keyword">template</span> benchmark(benchmarkName: <span class="hljs-built_in">string</span>, code: <span class="hljs-built_in">untyped</span>) =
   <span class="hljs-keyword">block</span>:
-    <span class="hljs-keyword">let</span> t0 = cpuTime()
+    <span class="hljs-keyword">let</span> t0 = getMonoTime()
     code
-    <span class="hljs-keyword">let</span> elapsed = cpuTime() - t0
-    <span class="hljs-keyword">let</span> elapsedStr = elapsed.formatFloat(format = ffDecimal, precision = <span class="hljs-number">3</span>)
-    <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;CPU Time [&quot;</span>, benchmarkName, <span class="hljs-string">&quot;] &quot;</span>, elapsedStr, <span class="hljs-string">&quot;s&quot;</span>
+    <span class="hljs-keyword">let</span> elapsed = getMonoTime() - t0
+    <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;CPU Time [&quot;</span>, benchmarkName, <span class="hljs-string">&quot;] &quot;</span>, elapsed
 
 benchmark <span class="hljs-string">&quot;test1&quot;</span>:
-  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 0.000s</pre>
+  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 145 microseconds, and 536 nanoseconds</pre>
 <p>The code inside the <code>benchmark</code> code block will be enclosed by our template code.</p>
 <p>Since the code replacement is done at compile time, this transformation does not add additional runtime to our benchmarked code.
 On the contrary, a function or procedure for benchmarking would have add runtime due to the nested function calls.</p>
-<p>EDIT: I used <code>epochTime</code> that has been superseded by <code>cpuTime</code> for benchmarking.
-An alternative would be to use <code>monotimes.getMonoTime</code>.</p>
 <p><a name = "macros"></a></p>
 <h2>Macros</h2>
 <hr />
+<p>Template uses <code>untyped</code> parameters as lego bricks. It can not break it down into smaller pieces.
+We can not check untyped parameters in a template. If our template works when given an object as argument, nothing restrics an user to give a function as argument.</p>
 <p>Macros can be seen as an empowered template procedure. While template substitute code, macros do introspection.
-Instead of simply taking untyped blocks and reuse them as lego bricks to return a code, we can parse our untyped parameter and do something conditionally to informations given in these parameters.
+The main difference is that a template can not look inside an untyped parameter. This means that we can not check the input we get as to verify that the user did not give a function when we expect a type.</p>
+<p>One can parse untyped parameters with macros. We can even act something conditionally to informations given in these parameters.
 We can also inject variables into scopes.</p>
 <pre><code class="nohighlight hljs nim"><span class="hljs-keyword">macro</span> throwAway(statements: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
   <span class="hljs-literal">result</span> = newStmtList()
+
 throwAway:
   <span class="hljs-keyword">while</span> <span class="hljs-literal">true</span>:
     <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;If you do not throw me, I'll spam you indefinitely!&quot;</span></code></pre>
@@ -208,6 +216,29 @@ throwAway:
 <img src="./ASTtree.jpg" alt="Nim's Abstract Syntax Tree visualized with a tree">
 <figcaption>Nim's Abstract Syntax Tree visualized with a tree</figcaption>
 </figure>
+<h3>Fireship's macro</h3>
+<p>This example of macro is taken from <a href="https://www.youtube.com/watch?v=WHyOHQ_GkNo">this video</a></p>
+<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">import</span> macros
+
+<span class="hljs-keyword">macro</span> timesTwo(statements: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
+  <span class="hljs-literal">result</span> = statements
+  <span class="hljs-keyword">for</span> s <span class="hljs-keyword">in</span> statements:
+    <span class="hljs-keyword">for</span> node <span class="hljs-keyword">in</span> s:
+      <span class="hljs-keyword">if</span> node.kind == nnkIntLit:
+        node.intVal = node.intVal*<span class="hljs-number">2</span>
+
+timesTwo:
+  <span class="hljs-keyword">echo</span> <span class="hljs-number">1</span> <span class="hljs-comment"># 2</span>
+  <span class="hljs-keyword">echo</span> <span class="hljs-number">2</span> <span class="hljs-comment"># 4</span>
+  <span class="hljs-keyword">echo</span> <span class="hljs-number">3</span> <span class="hljs-comment"># 6</span></code></pre><pre class="nb-output">2
+4
+6</pre>
+<p>Let us breakdown this macro, shall we ?</p>
+<pre><code class="nohighlight hljs nim">dumpTree:
+  <span class="hljs-keyword">echo</span> <span class="hljs-number">1</span>
+  <span class="hljs-keyword">echo</span> <span class="hljs-number">2</span>
+  <span class="hljs-keyword">echo</span> <span class="hljs-number">3</span></code></pre>
+<p>The AST is made of [...]</p>
 <p>I present down my first macro as an example.
 I want to print the memory layout of a given type.
 My goal is to find misaligned fields making useless unocuppied memory.
@@ -404,12 +435,12 @@ We do not represent spaces in the AST. Each term separated by a dot is an Ident 
     <span class="hljs-type">Thing</span> = <span class="hljs-keyword">object</span> <span class="hljs-keyword">of</span> <span class="hljs-type">RootObj</span>
       a: <span class="hljs-built_in">float32</span>
       b: <span class="hljs-built_in">string</span></code></pre><pre class="nb-output">24
-ptr 0x55a5ed3a9f90 --&gt; [a = 0.0,
+ptr 0x5584f009d740 --&gt; [a = 0.0,
 b = &quot;&quot;]
 4
-ptr 0x55a5ed3a9f98 --&gt; 0.0
+ptr 0x5584f009d748 --&gt; 0.0
 8
-ptr 0x55a5ed3a9fa0 --&gt; &quot;&quot;</pre>
+ptr 0x5584f009d750 --&gt; &quot;&quot;</pre>
 <p>Trying to parse a type ourselve is risky, since there are numerous easily forgettable possibilities (due to pragma expressions, cyclic types, and many kind of types: object, enum, type alias, etc..., case of fields, branching and conditionals inside the object, … ).</p>
 <p>There is actually already a function to do so and this will be the object of a future release of this tutorial.</p>
 <p><a name = "references-and-bibliography"></a></p>
@@ -496,21 +527,20 @@ nbText: <span class="hljs-string">hlMd&quot;&quot;&quot;
 &lt;h1 style=&quot;text-align: center;&quot;&gt;Nim Metaprogramming - Macro Tutorial&lt;/h1&gt;
 
 This tutorial aims to be a _step-by-step_ introduction to the metaprogramming features of the Nim Language and to provide as much detail as possible to kickstart your craziest projects.
-There are already many resources on the Web, but I strive to provide more thorough details on the development process and to gather them all in one place. You are encouraged to code along and modify examples.
+There are already many resources on the Web, but I strive to provide more thorough details on the development process and to gather them all in one place.
 &quot;&quot;&quot;</span>
 
 addToc()
 
 nbSection <span class="hljs-string">&quot;Introduction&quot;</span>
 nbText: <span class="hljs-string">hlMd&quot;&quot;&quot;
-### The four horsemen of ~~the apocalypse~~ Metaprogramming
-There are four levels of metaprogramming:
+### Four levels of abstraction
+There are four levels of abstraction in metaprogramming that are each a special kind of procedure:
   1. Ordinary procedures/iterators (No metaprogramming)
   2. Generic procedures/iterators (Type level)
   3. Template (Copy-paste mechanism)
   4. Macro (AST substitution)
 
-We use more metaprogramming features with higher numbered procedures.
 It is recommended to start to program one's procedure with the lowest level of metaprogramming possible.
 As more metaprogramming features are used, the compilation process takes longer and error debugging gets harder.
 
@@ -620,14 +650,13 @@ Another example is benchmarking code in Nim. It suffices to put our bench code i
 &quot;&quot;&quot;</span>
 
 nbCode:
-  <span class="hljs-keyword">import</span> std/times
+  <span class="hljs-keyword">import</span> std/[strutils, times, os, monotimes]
   <span class="hljs-keyword">template</span> benchmark(benchmarkName: <span class="hljs-built_in">string</span>, code: <span class="hljs-built_in">untyped</span>) =
     <span class="hljs-keyword">block</span>:
-      <span class="hljs-keyword">let</span> t0 = cpuTime()
+      <span class="hljs-keyword">let</span> t0 = getMonoTime()
       code
-      <span class="hljs-keyword">let</span> elapsed = cpuTime() - t0
-      <span class="hljs-keyword">let</span> elapsedStr = elapsed.formatFloat(format = ffDecimal, precision = <span class="hljs-number">3</span>)
-      <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;CPU Time [&quot;</span>, benchmarkName, <span class="hljs-string">&quot;] &quot;</span>, elapsedStr, <span class="hljs-string">&quot;s&quot;</span>
+      <span class="hljs-keyword">let</span> elapsed = getMonoTime() - t0
+      <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;CPU Time [&quot;</span>, benchmarkName, <span class="hljs-string">&quot;] &quot;</span>, elapsed
 
   benchmark <span class="hljs-string">&quot;test1&quot;</span>:
     sleep(<span class="hljs-number">100</span>)
@@ -637,20 +666,25 @@ The code inside the `benchmark` code block will be enclosed by our template code
 
 Since the code replacement is done at compile time, this transformation does not add additional runtime to our benchmarked code.
 On the contrary, a function or procedure for benchmarking would have add runtime due to the nested function calls.
-
-EDIT: I used `epochTime` that has been superseded by `cpuTime` for benchmarking.
-An alternative would be to use `monotimes.getMonoTime`.
 &quot;&quot;&quot;</span>
 
 nbSection <span class="hljs-string">&quot;Macros&quot;</span>
 nbText:<span class="hljs-string">&quot;&quot;&quot;
+Template uses `untyped` parameters as lego bricks. It can not break it down into smaller pieces.
+We can not check untyped parameters in a template. If our template works when given an object as argument, nothing restrics an user to give a function as argument.
+
 Macros can be seen as an empowered template procedure. While template substitute code, macros do introspection.
-Instead of simply taking untyped blocks and reuse them as lego bricks to return a code, we can parse our untyped parameter and do something conditionally to informations given in these parameters.
+The main difference is that a template can not look inside an untyped parameter. This means that we can not check the input we get as to verify that the user did not give a function when we expect a type.
+
+
+One can parse untyped parameters with macros. We can even act something conditionally to informations given in these parameters.
 We can also inject variables into scopes.
 &quot;&quot;&quot;</span>
+
 nbCode:
   <span class="hljs-keyword">macro</span> throwAway(statements: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
     <span class="hljs-literal">result</span> = newStmtList()
+
   throwAway:
     <span class="hljs-keyword">while</span> <span class="hljs-literal">true</span>:
       <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;If you do not throw me, I'll spam you indefinitely!&quot;</span>
@@ -701,6 +735,40 @@ We can better visualize the AST with the following picture.
 &quot;&quot;&quot;</span>
 
 nbImage(url=<span class="hljs-string">&quot;ASTtree.jpg&quot;</span>, caption=<span class="hljs-string">&quot;Nim's Abstract Syntax Tree visualized with a tree&quot;</span>)
+
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+### Fireship's macro
+This example of macro is taken from [this video](https://www.youtube.com/watch?v=WHyOHQ_GkNo)
+&quot;&quot;&quot;</span>
+
+nbCode:
+  <span class="hljs-keyword">import</span> macros
+
+  <span class="hljs-keyword">macro</span> timesTwo(statements: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
+    <span class="hljs-literal">result</span> = statements
+    <span class="hljs-keyword">for</span> s <span class="hljs-keyword">in</span> statements:
+      <span class="hljs-keyword">for</span> node <span class="hljs-keyword">in</span> s:
+        <span class="hljs-keyword">if</span> node.kind == nnkIntLit:
+          node.intVal = node.intVal*<span class="hljs-number">2</span>
+
+  timesTwo:
+    <span class="hljs-keyword">echo</span> <span class="hljs-number">1</span> <span class="hljs-comment"># 2</span>
+    <span class="hljs-keyword">echo</span> <span class="hljs-number">2</span> <span class="hljs-comment"># 4</span>
+    <span class="hljs-keyword">echo</span> <span class="hljs-number">3</span> <span class="hljs-comment"># 6</span>
+
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+Let us breakdown this macro, shall we ?
+&quot;&quot;&quot;</span>
+
+nbCode:
+  dumpTree:
+    <span class="hljs-keyword">echo</span> <span class="hljs-number">1</span>
+    <span class="hljs-keyword">echo</span> <span class="hljs-number">2</span>
+    <span class="hljs-keyword">echo</span> <span class="hljs-number">3</span>
+
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+The AST is made of [...]
+&quot;&quot;&quot;</span>
 
 nbText:<span class="hljs-string">&quot;&quot;&quot;
 I present down my first macro as an example.

@@ -20,21 +20,20 @@ nbText: hlMd"""
 <h1 style="text-align: center;">Nim Metaprogramming - Macro Tutorial</h1>
 
 This tutorial aims to be a _step-by-step_ introduction to the metaprogramming features of the Nim Language and to provide as much detail as possible to kickstart your craziest projects.
-There are already many resources on the Web, but I strive to provide more thorough details on the development process and to gather them all in one place. You are encouraged to code along and modify examples.
+There are already many resources on the Web, but I strive to provide more thorough details on the development process and to gather them all in one place.
 """
 
 addToc()
 
 nbSection "Introduction"
 nbText: hlMd"""
-### The four horsemen of ~~the apocalypse~~ Metaprogramming
-There are four levels of metaprogramming:
+### Four levels of abstraction
+There are four levels of abstraction in metaprogramming that are each a special kind of procedure:
   1. Ordinary procedures/iterators (No metaprogramming)
   2. Generic procedures/iterators (Type level)
   3. Template (Copy-paste mechanism)
   4. Macro (AST substitution)
 
-We use more metaprogramming features with higher numbered procedures.
 It is recommended to start to program one's procedure with the lowest level of metaprogramming possible.
 As more metaprogramming features are used, the compilation process takes longer and error debugging gets harder.
 
@@ -144,14 +143,13 @@ Another example is benchmarking code in Nim. It suffices to put our bench code i
 """
 
 nbCode:
-  import std/times
+  import std/[strutils, times, os, monotimes]
   template benchmark(benchmarkName: string, code: untyped) =
     block:
-      let t0 = cpuTime()
+      let t0 = getMonoTime()
       code
-      let elapsed = cpuTime() - t0
-      let elapsedStr = elapsed.formatFloat(format = ffDecimal, precision = 3)
-      echo "CPU Time [", benchmarkName, "] ", elapsedStr, "s"
+      let elapsed = getMonoTime() - t0
+      echo "CPU Time [", benchmarkName, "] ", elapsed
 
   benchmark "test1":
     sleep(100)
@@ -161,20 +159,25 @@ The code inside the `benchmark` code block will be enclosed by our template code
 
 Since the code replacement is done at compile time, this transformation does not add additional runtime to our benchmarked code.
 On the contrary, a function or procedure for benchmarking would have add runtime due to the nested function calls.
-
-EDIT: I used `epochTime` that has been superseded by `cpuTime` for benchmarking.
-An alternative would be to use `monotimes.getMonoTime`.
 """
 
 nbSection "Macros"
 nbText:"""
+Template uses `untyped` parameters as lego bricks. It can not break it down into smaller pieces.
+We can not check untyped parameters in a template. If our template works when given an object as argument, nothing restrics an user to give a function as argument.
+
 Macros can be seen as an empowered template procedure. While template substitute code, macros do introspection.
-Instead of simply taking untyped blocks and reuse them as lego bricks to return a code, we can parse our untyped parameter and do something conditionally to informations given in these parameters.
+The main difference is that a template can not look inside an untyped parameter. This means that we can not check the input we get as to verify that the user did not give a function when we expect a type.
+
+
+One can parse untyped parameters with macros. We can even act something conditionally to informations given in these parameters.
 We can also inject variables into scopes.
 """
+
 nbCode:
   macro throwAway(statements: untyped): untyped =
     result = newStmtList()
+
   throwAway:
     while true:
       echo "If you do not throw me, I'll spam you indefinitely!"
@@ -225,6 +228,40 @@ We can better visualize the AST with the following picture.
 """
 
 nbImage(url="ASTtree.jpg", caption="Nim's Abstract Syntax Tree visualized with a tree")
+
+nbText:"""
+### Fireship's macro
+This example of macro is taken from [this video](https://www.youtube.com/watch?v=WHyOHQ_GkNo)
+"""
+
+nbCode:
+  import macros
+
+  macro timesTwo(statements: untyped): untyped =
+    result = statements
+    for s in statements:
+      for node in s:
+        if node.kind == nnkIntLit:
+          node.intVal = node.intVal*2
+
+  timesTwo:
+    echo 1 # 2
+    echo 2 # 4
+    echo 3 # 6
+
+nbText:"""
+Let us breakdown this macro, shall we ?
+"""
+
+nbCode:
+  dumpTree:
+    echo 1
+    echo 2
+    echo 3
+
+nbText:"""
+The AST is made of [...]
+"""
 
 nbText:"""
 I present down my first macro as an example.
