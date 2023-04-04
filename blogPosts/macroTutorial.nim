@@ -39,7 +39,12 @@ As more metaprogramming features are used, the compilation process takes longer 
 
 Let us start with `template`s and `untyped` parameters.
 I do not present generics in this tutorial.
+
+To run each snippet of code in this tutorial, you will need to import the `std/macros` package.
 """
+
+nbCodeSkip:
+  import std/macros
 
 nbSection "Templates"
 nbText: """
@@ -96,18 +101,7 @@ do{
 }while(i < 10);
 ```
 """
-# Keep this code in case I want to use it for other examples
-# I don't want people to learn about the Syracuse sequence in addition
-# to learning metaprogramming stuff !
-#
-# proc nextSyracuseTerm(term: var int) =
-#   ## This sequence should resolve to the cyclic sequence 1, 4, 2, 1, ...
-#   if term mod 2 == 1:
-#     term *= 3
-#     term.inc
-#   else:
-#     term = term div 2
-#
+
 nbCode:
 
   template doWhile(conditional, loop: untyped) =
@@ -143,7 +137,7 @@ Another example is benchmarking code in Nim. It suffices to put our bench code i
 """
 
 nbCode:
-  import std/[strutils, times, os, monotimes]
+  import std/[times, monotimes]
   template benchmark(benchmarkName: string, code: untyped) =
     block:
       let t0 = getMonoTime()
@@ -235,11 +229,8 @@ This example of macro is taken from [this video](https://www.youtube.com/watch?v
 """
 
 nbCode:
-  import macros
-
   macro timesTwo(statements: untyped): untyped =
-    result = statements
-    for s in statements:
+    for s in result:
       for node in s:
         if node.kind == nnkIntLit:
           node.intVal = node.intVal*2
@@ -250,25 +241,86 @@ nbCode:
     echo 3 # 6
 
 nbText:"""
+This macro multiplies each integer values by two before plotting!
 Let us breakdown this macro, shall we ?
+To understand how a macro work, we first may look at the AST given as input.
 """
 
 nbCode:
   dumpTree:
     echo 1
-    echo 2
-    echo 3
 
 nbText:"""
-The AST is made of [...]
+By compiling this code, you will get the corresponding AST.
+This simple AST is made of four nodes:
+```nim
+StmtList
+  Command
+    Ident "echo"
+    IntLit 1
+```
+
+`StmtList` stands for *statements list*. It groups together all the instructions in your block.
+
+The `Command` node indicates that you use a function whose name is given by its child `Ident` node. An `Ident` can be any variable, object, procedure name.
+
+Our integer literal whose value is 1 has the node kind `IntLit`.
+
+Notice that the order of the nodes in the AST is crucial. If we invert the two last nodes, we would get the AST of the code `1 echo` which does not compile.
+```nim
+StmtList
+  Command
+    IntLit 1
+    Ident "echo"
+```
+
+`StmtList`, `Command`, `IntLit` and `Ident` are the NodeKind of the code's AST.
+Inside your macro, they are denoted with the extra prefix `nnk`, e.g. `nnkIdent`.
+You can get the full list of node kinds [at the std/macros source code](https://github.com/nim-lang/Nim/blob/a8c6e36323601a64dcb6947a694f0bde97b632b2/lib/core/macros.nim#L25-L89).
+
+The output of a macro is an AST, and we can try to write it for a few examples:
+```nim
+StmtList
+  Command
+    Ident "echo"
+    IntLit 2
+  Command
+    Ident "echo"
+    IntLit 4
+  Command
+    Ident "echo"
+    IntLit 6
+```
+Please note that line breaks are not part of the Nim's AST!
+
+Here, the output AST is almost the same as the input. We only change the integer literal value.
+
+Our root node in the input AST is a statement list.
+To fetch the `Command` children node, we may use the list syntax.
+A Node contains the list of its childrens. To get the first children, it suffices to write `statements[0]`.
+To loop over all the child nodes, one can use a `for statement in statements` loop.
+
+We need to fetch the nodes under a `Command` instruction that are integer literals.
+So for each node in the statement, we test if the node kind is equal to `nnkIntLit`. We get their value with the attribute `node.intVal`.
 """
+
 
 nbText:"""
 I present down my first macro as an example.
 I want to print the memory layout of a given type.
-My goal is to find misaligned fields making useless unocuppied memory.
-We should be able in the future to automatically swap the fields to remove the holes (or at least propose a fixed type).
+My goal is to find misaligned fields making useless unocuppied memory in a type object definition.
+This happens when the attributes have types of different sizes. The order of the attributes then changes the memory used by an object.
+To deal with important chunks of memory, the processor stores an object and its attributes with [some rules](https://en.wikipedia.org/wiki/Data_structure_alignment).
+
+It likes when adresses are separated by powers of two. If it is not, it inserts a padding (unoccupied memory) between two attributes.
+
+We can pack a structure with the pragma `{.packed.}`, which removes this extra space. This has the disadvantage to slow down memory accesses.
+
+We would like to detect the presence of holes in an object.
+
 The first step is to look at the AST of the input code we want to parse.
+
+One can look first at the most basic type definition possible, before trying to complexify the AST to get a feel of all the edge cases.
 """
 
 nbCode:
@@ -306,24 +358,29 @@ I present here first some samples of type definition on which I will run my macr
 
 nbText:hlMd"""
 ```nim
-  when defined(typeMemoryRepr):
-    typeMemoryRepr:
-      type
-        Thing2 = object
-          oneChar: char
-          myStr: string
-      type
-        Thing = object of RootObj
-          a: float32
-          b: uint64
-          c: char
-    when false: # erroneous code
-      # type with pragmas aren't supported yet
-      typeMemoryRepr:
-        type
-          Thing {.packed.} = object
-            oneChar: char
-            myStr: string
+typeMemoryRepr:
+  type
+    Thing2 = object
+      oneChar: char
+      myStr: string
+  type
+    Thing = object of RootObj
+      a: float32
+      b: uint64
+      c: char
+```
+
+Type with pragmas aren't supported yet
+```nim
+
+
+when false: # erroneous code
+
+  typeMemoryRepr:
+    type
+      Thing {.packed.} = object
+        oneChar: char
+        myStr: string
 ```
 """
 

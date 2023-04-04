@@ -79,6 +79,8 @@ There are already many resources on the Web, but I strive to provide more thorou
 As more metaprogramming features are used, the compilation process takes longer and error debugging gets harder.</p>
 <p>Let us start with <code>template</code>s and <code>untyped</code> parameters.
 I do not present generics in this tutorial.</p>
+<p>To run each snippet of code in this tutorial, you will need to import the <code>std/macros</code> package.</p>
+<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">import</span> std/macros</code></pre>
 <p><a name = "templates"></a></p>
 <h2>Templates</h2>
 <hr />
@@ -148,7 +150,7 @@ doWhile i &lt; <span class="hljs-number">10</span>:
 <p>There is no way to modify Nim's syntax as to match C's syntax.</p>
 <h4>Benchmark example</h4>
 <p>Another example is benchmarking code in Nim. It suffices to put our bench code inside a special block.</p>
-<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">import</span> std/[strutils, times, os, monotimes]
+<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">import</span> std/[times, monotimes]
 <span class="hljs-keyword">template</span> benchmark(benchmarkName: <span class="hljs-built_in">string</span>, code: <span class="hljs-built_in">untyped</span>) =
   <span class="hljs-keyword">block</span>:
     <span class="hljs-keyword">let</span> t0 = getMonoTime()
@@ -157,7 +159,7 @@ doWhile i &lt; <span class="hljs-number">10</span>:
     <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;CPU Time [&quot;</span>, benchmarkName, <span class="hljs-string">&quot;] &quot;</span>, elapsed
 
 benchmark <span class="hljs-string">&quot;test1&quot;</span>:
-  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 145 microseconds, and 748 nanoseconds</pre>
+  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 165 microseconds, and 678 nanoseconds</pre>
 <p>The code inside the <code>benchmark</code> code block will be enclosed by our template code.</p>
 <p>Since the code replacement is done at compile time, this transformation does not add additional runtime to our benchmarked code.
 On the contrary, a function or procedure for benchmarking would have add runtime due to the nested function calls.</p>
@@ -218,11 +220,8 @@ throwAway:
 </figure>
 <h3>Fireship's macro</h3>
 <p>This example of macro is taken from <a href="https://www.youtube.com/watch?v=WHyOHQ_GkNo">this video</a></p>
-<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">import</span> macros
-
-<span class="hljs-keyword">macro</span> timesTwo(statements: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
-  <span class="hljs-literal">result</span> = statements
-  <span class="hljs-keyword">for</span> s <span class="hljs-keyword">in</span> statements:
+<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">macro</span> timesTwo(statements: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
+  <span class="hljs-keyword">for</span> s <span class="hljs-keyword">in</span> <span class="hljs-literal">result</span>:
     <span class="hljs-keyword">for</span> node <span class="hljs-keyword">in</span> s:
       <span class="hljs-keyword">if</span> node.kind == nnkIntLit:
         node.intVal = node.intVal*<span class="hljs-number">2</span>
@@ -230,20 +229,61 @@ throwAway:
 timesTwo:
   <span class="hljs-keyword">echo</span> <span class="hljs-number">1</span> <span class="hljs-comment"># 2</span>
   <span class="hljs-keyword">echo</span> <span class="hljs-number">2</span> <span class="hljs-comment"># 4</span>
-  <span class="hljs-keyword">echo</span> <span class="hljs-number">3</span> <span class="hljs-comment"># 6</span></code></pre><pre class="nb-output">2
-4
-6</pre>
-<p>Let us breakdown this macro, shall we ?</p>
+  <span class="hljs-keyword">echo</span> <span class="hljs-number">3</span> <span class="hljs-comment"># 6</span></code></pre>
+<p>This macro multiplies each integer values by two before plotting!
+Let us breakdown this macro, shall we ?
+To understand how a macro work, we first may look at the AST given as input.</p>
 <pre><code class="nohighlight hljs nim">dumpTree:
-  <span class="hljs-keyword">echo</span> <span class="hljs-number">1</span>
-  <span class="hljs-keyword">echo</span> <span class="hljs-number">2</span>
-  <span class="hljs-keyword">echo</span> <span class="hljs-number">3</span></code></pre>
-<p>The AST is made of [...]</p>
+  <span class="hljs-keyword">echo</span> <span class="hljs-number">1</span></code></pre>
+<p>By compiling this code, you will get the corresponding AST.
+This simple AST is made of four nodes:</p>
+<pre><code class="language-nim">StmtList
+  Command
+    Ident &quot;echo&quot;
+    IntLit 1
+</code></pre>
+<p><code>StmtList</code> stands for <em>statements list</em>. It groups together all the instructions in your block.</p>
+<p>The <code>Command</code> node indicates that you use a function whose name is given by its child <code>Ident</code> node. An <code>Ident</code> can be any variable, object, procedure name.</p>
+<p>Our integer literal whose value is 1 has the node kind <code>IntLit</code>.</p>
+<p>Notice that the order of the nodes in the AST is crucial. If we invert the two last nodes, we would get the AST of the code <code>1 echo</code> which does not compile.</p>
+<pre><code class="language-nim">StmtList
+  Command
+    IntLit 1
+    Ident &quot;echo&quot;
+</code></pre>
+<p><code>StmtList</code>, <code>Command</code>, <code>IntLit</code> and <code>Ident</code> are the NodeKind of the code's AST.
+Inside your macro, they are denoted with the extra prefix <code>nnk</code>, e.g. <code>nnkIdent</code>.
+You can get the full list of node kinds <a href="https://github.com/nim-lang/Nim/blob/a8c6e36323601a64dcb6947a694f0bde97b632b2/lib/core/macros.nim#L25-L89">at the std/macros source code</a>.</p>
+<p>The output of a macro is an AST, and we can try to write it for a few examples:</p>
+<pre><code class="language-nim">StmtList
+  Command
+    Ident &quot;echo&quot;
+    IntLit 2
+  Command
+    Ident &quot;echo&quot;
+    IntLit 4
+  Command
+    Ident &quot;echo&quot;
+    IntLit 6
+</code></pre>
+<p>Please note that line breaks are not part of the Nim's AST!</p>
+<p>Here, the output AST is almost the same as the input. We only change the integer literal value.</p>
+<p>Our root node in the input AST is a statement list.
+To fetch the <code>Command</code> children node, we may use the list syntax.
+A Node contains the list of its childrens. To get the first children, it suffices to write <code>statements[0]</code>.
+To loop over all the child nodes, one can use a <code>for statement in statements</code> loop.</p>
+<p>We need to fetch the nodes under a <code>Command</code> instruction that are integer literals.
+So for each node in the statement, we test if the node kind is equal to <code>nnkIntLit</code>. We get their value with the attribute <code>node.intVal</code>.</p>
 <p>I present down my first macro as an example.
 I want to print the memory layout of a given type.
-My goal is to find misaligned fields making useless unocuppied memory.
-We should be able in the future to automatically swap the fields to remove the holes (or at least propose a fixed type).
-The first step is to look at the AST of the input code we want to parse.</p>
+My goal is to find misaligned fields making useless unocuppied memory in a type object definition.
+This happens when the attributes have types of different sizes. The order of the attributes then changes the memory used by an object.
+To deal with important chunks of memory, the processor stores an object and its attributes with <a href="https://en.wikipedia.org/wiki/Data_structure_alignment">some rules</a>.</p>
+<p>It likes when adresses are separated by powers of two. If it is not, it inserts a padding (unoccupied memory) between two attributes.</p>
+<p>We can pack a structure with the pragma <code>{.packed.}</code>, which removes this extra space. This has the disadvantage to slow down memory accesses.</p>
+<p>We would like to detect the presence of holes in an object.</p>
+<p>The first step is to look at the AST of the input code we want to parse.</p>
+<p>One can look first at the most basic type definition possible, before trying to complexify the AST to get a feel of all the edge cases.</p>
 <pre><code class="nohighlight hljs nim">dumpTree:
   <span class="hljs-keyword">type</span>
     <span class="hljs-type">Thing</span> = <span class="hljs-keyword">object</span>
@@ -265,24 +305,27 @@ The first step is to look at the AST of the input code we want to parse.</p>
 
 <p>We have to get outputs as much complex as possible to detect edge cases, while keeping the information to the minimum to easily read the AST and locate errors.
 I present here first some samples of type definition on which I will run my macro.</p>
-<pre><code class="language-nim">  when defined(typeMemoryRepr):
-    typeMemoryRepr:
-      type
-        Thing2 = object
-          oneChar: char
-          myStr: string
-      type
-        Thing = object of RootObj
-          a: float32
-          b: uint64
-          c: char
-    when false: # erroneous code
-      # type with pragmas aren't supported yet
-      typeMemoryRepr:
-        type
-          Thing {.packed.} = object
-            oneChar: char
-            myStr: string
+<pre><code class="language-nim">typeMemoryRepr:
+  type
+    Thing2 = object
+      oneChar: char
+      myStr: string
+  type
+    Thing = object of RootObj
+      a: float32
+      b: uint64
+      c: char
+</code></pre>
+<p>Type with pragmas aren't supported yet</p>
+<pre><code class="language-nim">
+
+when false: # erroneous code
+
+  typeMemoryRepr:
+    type
+      Thing {.packed.} = object
+        oneChar: char
+        myStr: string
 </code></pre>
 <p>It is not easy (if even possible) to list all possible types.
 Yet by adding some other informations we can get a better picture of the general AST of a type.</p>
@@ -434,13 +477,12 @@ We do not represent spaces in the AST. Each term separated by a dot is an Ident 
   <span class="hljs-keyword">type</span>
     <span class="hljs-type">Thing</span> = <span class="hljs-keyword">object</span> <span class="hljs-keyword">of</span> <span class="hljs-type">RootObj</span>
       a: <span class="hljs-built_in">float32</span>
-      b: <span class="hljs-built_in">string</span></code></pre><pre class="nb-output">24
-ptr 0x5643724f0740 --&gt; [a = 0.0,
-b = &quot;&quot;]
+      b: <span class="hljs-built_in">string</span></code></pre><pre class="nb-output">32
+ptr Thing(a: 0.0, b: &quot;&quot;)
 4
-ptr 0x5643724f0748 --&gt; 0.0
-8
-ptr 0x5643724f0750 --&gt; &quot;&quot;</pre>
+ptr 0.0
+16
+ptr &quot;&quot;</pre>
 <p>Trying to parse a type ourselve is risky, since there are numerous easily forgettable possibilities (due to pragma expressions, cyclic types, and many kind of types: object, enum, type alias, etc..., case of fields, branching and conditionals inside the object, … ).</p>
 <p>There is actually already a function to do so and this will be the object of a future release of this tutorial.</p>
 <p><a name = "references-and-bibliography"></a></p>
@@ -547,7 +589,12 @@ As more metaprogramming features are used, the compilation process takes longer 
 
 Let us start with `template`s and `untyped` parameters.
 I do not present generics in this tutorial.
+
+To run each snippet of code in this tutorial, you will need to import the `std/macros` package.
 &quot;&quot;&quot;</span>
+
+nbCodeSkip:
+  <span class="hljs-keyword">import</span> std/macros
 
 nbSection <span class="hljs-string">&quot;Templates&quot;</span>
 nbText: <span class="hljs-string">&quot;&quot;&quot;
@@ -604,18 +651,7 @@ do{
 }while(i &lt; 10);
 ```
 &quot;&quot;&quot;</span>
-<span class="hljs-comment"># Keep this code in case I want to use it for other examples</span>
-<span class="hljs-comment"># I don't want people to learn about the Syracuse sequence in addition</span>
-<span class="hljs-comment"># to learning metaprogramming stuff !</span>
-<span class="hljs-comment">#</span>
-<span class="hljs-comment"># proc nextSyracuseTerm(term: var int) =</span>
-<span class="hljs-comment">#   ## This sequence should resolve to the cyclic sequence 1, 4, 2, 1, ...</span>
-<span class="hljs-comment">#   if term mod 2 == 1:</span>
-<span class="hljs-comment">#     term *= 3</span>
-<span class="hljs-comment">#     term.inc</span>
-<span class="hljs-comment">#   else:</span>
-<span class="hljs-comment">#     term = term div 2</span>
-<span class="hljs-comment">#</span>
+
 nbCode:
 
   <span class="hljs-keyword">template</span> doWhile(conditional, loop: <span class="hljs-built_in">untyped</span>) =
@@ -651,7 +687,7 @@ Another example is benchmarking code in Nim. It suffices to put our bench code i
 &quot;&quot;&quot;</span>
 
 nbCode:
-  <span class="hljs-keyword">import</span> std/[strutils, times, os, monotimes]
+  <span class="hljs-keyword">import</span> std/[times, monotimes]
   <span class="hljs-keyword">template</span> benchmark(benchmarkName: <span class="hljs-built_in">string</span>, code: <span class="hljs-built_in">untyped</span>) =
     <span class="hljs-keyword">block</span>:
       <span class="hljs-keyword">let</span> t0 = getMonoTime()
@@ -743,11 +779,8 @@ This example of macro is taken from [this video](https://www.youtube.com/watch?v
 &quot;&quot;&quot;</span>
 
 nbCode:
-  <span class="hljs-keyword">import</span> macros
-
   <span class="hljs-keyword">macro</span> timesTwo(statements: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
-    <span class="hljs-literal">result</span> = statements
-    <span class="hljs-keyword">for</span> s <span class="hljs-keyword">in</span> statements:
+    <span class="hljs-keyword">for</span> s <span class="hljs-keyword">in</span> <span class="hljs-literal">result</span>:
       <span class="hljs-keyword">for</span> node <span class="hljs-keyword">in</span> s:
         <span class="hljs-keyword">if</span> node.kind == nnkIntLit:
           node.intVal = node.intVal*<span class="hljs-number">2</span>
@@ -758,25 +791,86 @@ nbCode:
     <span class="hljs-keyword">echo</span> <span class="hljs-number">3</span> <span class="hljs-comment"># 6</span>
 
 nbText:<span class="hljs-string">&quot;&quot;&quot;
+This macro multiplies each integer values by two before plotting!
 Let us breakdown this macro, shall we ?
+To understand how a macro work, we first may look at the AST given as input.
 &quot;&quot;&quot;</span>
 
 nbCode:
   dumpTree:
     <span class="hljs-keyword">echo</span> <span class="hljs-number">1</span>
-    <span class="hljs-keyword">echo</span> <span class="hljs-number">2</span>
-    <span class="hljs-keyword">echo</span> <span class="hljs-number">3</span>
 
 nbText:<span class="hljs-string">&quot;&quot;&quot;
-The AST is made of [...]
+By compiling this code, you will get the corresponding AST.
+This simple AST is made of four nodes:
+```nim
+StmtList
+  Command
+    Ident &quot;echo&quot;
+    IntLit 1
+```
+
+`StmtList` stands for *statements list*. It groups together all the instructions in your block.
+
+The `Command` node indicates that you use a function whose name is given by its child `Ident` node. An `Ident` can be any variable, object, procedure name.
+
+Our integer literal whose value is 1 has the node kind `IntLit`.
+
+Notice that the order of the nodes in the AST is crucial. If we invert the two last nodes, we would get the AST of the code `1 echo` which does not compile.
+```nim
+StmtList
+  Command
+    IntLit 1
+    Ident &quot;echo&quot;
+```
+
+`StmtList`, `Command`, `IntLit` and `Ident` are the NodeKind of the code's AST.
+Inside your macro, they are denoted with the extra prefix `nnk`, e.g. `nnkIdent`.
+You can get the full list of node kinds [at the std/macros source code](https://github.com/nim-lang/Nim/blob/a8c6e36323601a64dcb6947a694f0bde97b632b2/lib/core/macros.nim#L25-L89).
+
+The output of a macro is an AST, and we can try to write it for a few examples:
+```nim
+StmtList
+  Command
+    Ident &quot;echo&quot;
+    IntLit 2
+  Command
+    Ident &quot;echo&quot;
+    IntLit 4
+  Command
+    Ident &quot;echo&quot;
+    IntLit 6
+```
+Please note that line breaks are not part of the Nim's AST!
+
+Here, the output AST is almost the same as the input. We only change the integer literal value.
+
+Our root node in the input AST is a statement list.
+To fetch the `Command` children node, we may use the list syntax.
+A Node contains the list of its childrens. To get the first children, it suffices to write `statements[0]`.
+To loop over all the child nodes, one can use a `for statement in statements` loop.
+
+We need to fetch the nodes under a `Command` instruction that are integer literals.
+So for each node in the statement, we test if the node kind is equal to `nnkIntLit`. We get their value with the attribute `node.intVal`.
 &quot;&quot;&quot;</span>
+
 
 nbText:<span class="hljs-string">&quot;&quot;&quot;
 I present down my first macro as an example.
 I want to print the memory layout of a given type.
-My goal is to find misaligned fields making useless unocuppied memory.
-We should be able in the future to automatically swap the fields to remove the holes (or at least propose a fixed type).
+My goal is to find misaligned fields making useless unocuppied memory in a type object definition.
+This happens when the attributes have types of different sizes. The order of the attributes then changes the memory used by an object.
+To deal with important chunks of memory, the processor stores an object and its attributes with [some rules](https://en.wikipedia.org/wiki/Data_structure_alignment).
+
+It likes when adresses are separated by powers of two. If it is not, it inserts a padding (unoccupied memory) between two attributes.
+
+We can pack a structure with the pragma `{.packed.}`, which removes this extra space. This has the disadvantage to slow down memory accesses.
+
+We would like to detect the presence of holes in an object.
+
 The first step is to look at the AST of the input code we want to parse.
+
+One can look first at the most basic type definition possible, before trying to complexify the AST to get a feel of all the edge cases.
 &quot;&quot;&quot;</span>
 
 nbCode:
@@ -814,24 +908,29 @@ I present here first some samples of type definition on which I will run my macr
 
 nbText:<span class="hljs-string">hlMd&quot;&quot;&quot;
 ```nim
-  when defined(typeMemoryRepr):
-    typeMemoryRepr:
-      type
-        Thing2 = object
-          oneChar: char
-          myStr: string
-      type
-        Thing = object of RootObj
-          a: float32
-          b: uint64
-          c: char
-    when false: # erroneous code
-      # type with pragmas aren't supported yet
-      typeMemoryRepr:
-        type
-          Thing {.packed.} = object
-            oneChar: char
-            myStr: string
+typeMemoryRepr:
+  type
+    Thing2 = object
+      oneChar: char
+      myStr: string
+  type
+    Thing = object of RootObj
+      a: float32
+      b: uint64
+      c: char
+```
+
+Type with pragmas aren't supported yet
+```nim
+
+
+when false: # erroneous code
+
+  typeMemoryRepr:
+    type
+      Thing {.packed.} = object
+        oneChar: char
+        myStr: string
 ```
 &quot;&quot;&quot;</span>
 

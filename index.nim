@@ -1,7 +1,6 @@
 import nimib, nimib / [paths, gits], os, strutils, strformat
 
 nbInit
-# nb.darkMode
 
 var
   listOfDrafts: string = ""
@@ -12,7 +11,7 @@ for file in walkDirRec(nbHomeDir):
   if not file.endswith(".html") or file.name.startsWith("index") or (not file.isGitTracked):
     # echo file.repr, " ", file.isGitTracked
     continue
-  link = file.relPath.replace(r"\", "/") # TODO: fix this hack. 
+  link = file.relPath.replace(r"\", "/")
   echo "adding link: ", link
   when defined(nblogRerun):
     let cmd = "nim r " & link.replace(".html", ".nim")
@@ -21,7 +20,11 @@ for file in walkDirRec(nbHomeDir):
       echo cmd & " FAILED"
   listOfDrafts.add(&"* [{link}]({link})\n")
 
-nbText: """# Dimitri Lesnoff's blog 
-A blog about programmation with Nim, based on [Pietro Peterlongo's blog](https://pietroppeter.github.io/nblog).
+nbText: """# Dimitri Lesnoff's blog
+A blog about the Nim language. You can find some of my programs and tutorials.
 """ & listOfDrafts
+
+nbText: """
+based on [Pietro Peterlongo's blog](https://pietroppeter.github.io/nblog).
+"""
 nbSave

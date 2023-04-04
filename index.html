@@ -5,7 +5,6 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🐳</text></svg>">
   <meta content="text/html; charset=utf-8" http-equiv="content-type">
   <meta content="width=device-width, initial-scale=1" name="viewport">
-  <link rel='stylesheet' href='https://unpkg.com/normalize.css'>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/light.min.css">
   <link rel='stylesheet' href='https://cdn.jsdelivr.net/gh/pietroppeter/nimib/assets/atom-one-light.css'>
     <script src="https://cdn.jsdelivr.net/gh/pietroppeter/nimib@main/assets/highlight.min.js"></script>
@@ -29,7 +28,9 @@ button.nb-small {
 section#source {
   display:none
 }
-
+pre > code {
+  font-size: 1.2em;
+}
 .nb-output {
   line-height: 1.15;
 }
@@ -46,13 +47,13 @@ section#source {
 <hr>
 </header><main>
 <h1>Dimitri Lesnoff's blog</h1>
-<p>A blog about programmation with Nim, based on <a href="https://pietroppeter.github.io/nblog">Pietro Peterlongo's blog</a>.</p>
+<p>A blog about the Nim language. You can find some of my programs and tutorials.</p>
 <ul>
 <li><a href="blogPosts/macroTutorial.html">blogPosts/macroTutorial.html</a></li>
 </ul>
+<p>based on <a href="https://pietroppeter.github.io/nblog">Pietro Peterlongo's blog</a>.</p>
 </main>
 <footer>
-<hr>
 <div class="nb-box">
   <span><span class="nb-small">made with <a href="https://pietroppeter.github.io/nimib/">nimib 🐳</a></span></span>
   <span></span>
@@ -63,7 +64,6 @@ section#source {
 <pre><code class="nohighlight nim hljs"><span class="hljs-keyword">import</span> nimib, nimib / [paths, gits], os, strutils, strformat
 
 nbInit
-<span class="hljs-comment"># nb.darkMode</span>
 
 <span class="hljs-keyword">var</span>
   listOfDrafts: <span class="hljs-built_in">string</span> = <span class="hljs-string">&quot;&quot;</span>
@@ -74,7 +74,7 @@ nbInit
   <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> file.endswith(<span class="hljs-string">&quot;.html&quot;</span>) <span class="hljs-keyword">or</span> file.name.startsWith(<span class="hljs-string">&quot;index&quot;</span>) <span class="hljs-keyword">or</span> (<span class="hljs-keyword">not</span> file.isGitTracked):
     <span class="hljs-comment"># echo file.repr, &quot; &quot;, file.isGitTracked</span>
     <span class="hljs-keyword">continue</span>
-  link = file.relPath.replace(<span class="hljs-string">r&quot;\&quot;</span>, <span class="hljs-string">&quot;/&quot;</span>) <span class="hljs-comment"># TODO: fix this hack. </span>
+  link = file.relPath.replace(<span class="hljs-string">r&quot;\&quot;</span>, <span class="hljs-string">&quot;/&quot;</span>)
   <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;adding link: &quot;</span>, link
   <span class="hljs-keyword">when</span> <span class="hljs-keyword">defined</span>(nblogRerun):
     <span class="hljs-keyword">let</span> cmd = <span class="hljs-string">&quot;nim r &quot;</span> &amp; link.replace(<span class="hljs-string">&quot;.html&quot;</span>, <span class="hljs-string">&quot;.nim&quot;</span>)
@@ -83,9 +83,13 @@ nbInit
       <span class="hljs-keyword">echo</span> cmd &amp; <span class="hljs-string">&quot; FAILED&quot;</span>
   listOfDrafts.add(&amp;<span class="hljs-string">&quot;* [{link}]({link})</span><span class="hljs-meta">\n</span><span class="hljs-string">&quot;</span>)
 
-nbText: <span class="hljs-string">&quot;&quot;&quot;# Dimitri Lesnoff's blog 
-A blog about programmation with Nim, based on [Pietro Peterlongo's blog](https://pietroppeter.github.io/nblog).
+nbText: <span class="hljs-string">&quot;&quot;&quot;# Dimitri Lesnoff's blog
+A blog about the Nim language. You can find some of my programs and tutorials.
 &quot;&quot;&quot;</span> &amp; listOfDrafts
+
+nbText: <span class="hljs-string">&quot;&quot;&quot;
+based on [Pietro Peterlongo's blog](https://pietroppeter.github.io/nblog).
+&quot;&quot;&quot;</span>
 nbSave
 </code></pre>
 </section><script>
