@@ -1,4 +1,5 @@
 import std/[strutils, macros]
+import std/[enumerate, math]
 import nimib
 
 nbInit
@@ -30,19 +31,55 @@ nbText: hlMd"""
 ### Four levels of abstraction
 There are four levels of abstraction in metaprogramming that are each a special kind of procedure:
   1. Ordinary procedures/iterators (No metaprogramming)
-  2. Generic procedures/iterators (Type level)
+  2. Generic procedures/iterators and typedescs (Type level)
   3. Template (Copy-paste mechanism)
   4. Macro (AST substitution)
 
 It is recommended to start to program one's procedure with the lowest level of metaprogramming possible.
 As more metaprogramming features are used, the compilation process takes longer and error debugging gets harder.
+"""
 
+nbSection "Generics"
+nbText: """
+We often program to perform repetitive tasks easily.
+Programs must adapt themselves to many cases and might be redundant in a first approach.
+To limit the scope for debugging, we like to avoid redundancy and let the compiler do code duplication for us.
+Code duplication means that the generated assembly code has very similar or identical block instructions.
+
+One common example is linear algebra. Imagine you want to perform an addition. Your input data is very general and may as well be integers, floating-point numbers.
+You do not want to write twice your addition function.
+"""
+
+nbCodeSkip:
+  # What to not do!
+  proc add(x, y: int): int =
+    return x + y
+
+  proc add(x, y: float): float =
+    return x + y
+
+  echo add 2 3
+  echo add 3.7 4.5
+
+nbText:"""
+Indeed, what if you want to add a function for other types like `int32` or `float16`?
+You will have to copy-paste your function, and change the type. Not a problem?
+There is nothing in the code telling you how many `add` functions there is in total.
+Whenever a code slip in one of your function, you will have to track all the `add` functions and fix the bug in all of them.
+
+Generics bring a solution to this:
+"""
+
+nbCodeSkip:
+  proc add[T](x,y: T): T =
+    return x + y
+
+
+nbText:"""
 Let us start with `template`s and `untyped` parameters.
-I do not present generics in this tutorial.
 
 To run each snippet of code in this tutorial, you will need to import the `std/macros` package.
 """
-
 nbCodeSkip:
   import std/macros
 
@@ -182,6 +219,8 @@ In Nim, the code is read and transformed in an internal intermediate representat
 """
 
 nbCode:
+  # Don't forget to import std/macros!
+  # You can use --hints:off to display only the AST tree
   dumpTree:
     type
       myObject {.packed.} = ref object of RootObj
@@ -189,7 +228,7 @@ nbCode:
         right: seq[myObject]
 
 nbText:"""
-This output is given with the
+This code outputs the following AST tree (it should not change among Nim versions).
 ```nim
 StmtList
   TypeSection
@@ -579,6 +618,42 @@ Trying to parse a type ourselve is risky, since there are numerous easily forget
 There is actually already a function to do so and this will be the object of a future release of this tutorial.
 """
 
+nbText:"""
+The following macro enables to create enums with power of two values.
+"""
+
+nbCodeSkip:
+  import std/[enumerate, math]
+
+nbCode:
+  # jmgomez on Discord
+  macro power2Enum(body: untyped): untyped =
+    let srcFields = body[^1][1..^1]
+    var dstFields =  nnkEnumTy.newTree(newEmptyNode())
+    for idx, field in enumerate(srcFields):
+      dstFields.add nnkEnumFieldDef.newTree(field, newIntLitNode(pow(2.0, idx.float).int))
+
+    body[^1] = dstFields
+    echo repr body
+    body
+
+
+  type Test {.power2Enum.}  = enum
+    a, b, c, d
+
+nbText:"""
+A macro is not always the best alternative. A simple set and a cast gives the same result.
+"""
+
+nbCode:
+  # Rika
+  type
+    Setting = enum
+      a, b, c
+    Settings = set[Setting]
+  let settings: Settings = {a, c}
+  echo cast[uint8](settings)
+
 nbSection "References and Bibliography"
 nbText: """
 Press `Ctrl` + `Click` to open following links in a new tab.
@@ -602,6 +677,7 @@ There are plentiful of posts in the forum that are good references:
   2. [Custom macro inserts macro help](https://forum.nim-lang.org/t/9470)
   3. [See generated code after template processing](https://forum.nim-lang.org/t/9498)
   4. [Fast array assignment](https://forum.nim-lang.org/t/10037)
+  5. [Variable injection](https://forum.nim-lang.org/t/10513)
   4. etc … Please use the forum search bar with specific keywords like `macro`, `metaprogramming`, `generics`, `template`, …
 
 Last but no least, there are three Nim books:

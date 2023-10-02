@@ -60,6 +60,7 @@ There are already many resources on the Web, but I strive to provide more thorou
 <h3>Table of Contents:</h3>
 <ol>
 <li><a href="#introduction">Introduction</a></li>
+<li><a href="#generics">Generics</a></li>
 <li><a href="#templates">Templates</a></li>
 <li><a href="#macros">Macros</a></li>
 <li><a href="#references-and-bibliography">References and Bibliography</a></li>
@@ -71,14 +72,38 @@ There are already many resources on the Web, but I strive to provide more thorou
 <p>There are four levels of abstraction in metaprogramming that are each a special kind of procedure:</p>
 <ol>
 <li>Ordinary procedures/iterators (No metaprogramming)</li>
-<li>Generic procedures/iterators (Type level)</li>
+<li>Generic procedures/iterators and typedescs (Type level)</li>
 <li>Template (Copy-paste mechanism)</li>
 <li>Macro (AST substitution)</li>
 </ol>
 <p>It is recommended to start to program one's procedure with the lowest level of metaprogramming possible.
 As more metaprogramming features are used, the compilation process takes longer and error debugging gets harder.</p>
-<p>Let us start with <code>template</code>s and <code>untyped</code> parameters.
-I do not present generics in this tutorial.</p>
+<p><a name = "generics"></a></p>
+<h2>Generics</h2>
+<hr />
+<p>We often program to perform repetitive tasks easily.
+Programs must adapt themselves to many cases and might be redundant in a first approach.
+To limit the scope for debugging, we like to avoid redundancy and let the compiler do code duplication for us.
+Code duplication means that the generated assembly code has very similar or identical block instructions.</p>
+<p>One common example is linear algebra. Imagine you want to perform an addition. Your input data is very general and may as well be integers, floating-point numbers.
+You do not want to write twice your addition function.</p>
+<pre><code class="nohighlight hljs nim"><span class="hljs-comment"># What to not do!</span>
+<span class="hljs-keyword">proc</span> add(x, y: <span class="hljs-built_in">int</span>): <span class="hljs-built_in">int</span> =
+  <span class="hljs-keyword">return</span> x + y
+
+<span class="hljs-keyword">proc</span> add(x, y: <span class="hljs-built_in">float</span>): <span class="hljs-built_in">float</span> =
+  <span class="hljs-keyword">return</span> x + y
+
+<span class="hljs-keyword">echo</span> add <span class="hljs-number">2</span> <span class="hljs-number">3</span>
+<span class="hljs-keyword">echo</span> add <span class="hljs-number">3.7</span> <span class="hljs-number">4.5</span></code></pre>
+<p>Indeed, what if you want to add a function for other types like <code>int32</code> or <code>float16</code>?
+You will have to copy-paste your function, and change the type. Not a problem?
+There is nothing in the code telling you how many <code>add</code> functions there is in total.
+Whenever a code slip in one of your function, you will have to track all the <code>add</code> functions and fix the bug in all of them.</p>
+<p>Generics bring a solution to this:</p>
+<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">proc</span> add[<span class="hljs-type">T</span>](x,y: <span class="hljs-type">T</span>): <span class="hljs-type">T</span> =
+  <span class="hljs-keyword">return</span> x + y</code></pre>
+<p>Let us start with <code>template</code>s and <code>untyped</code> parameters.</p>
 <p>To run each snippet of code in this tutorial, you will need to import the <code>std/macros</code> package.</p>
 <pre><code class="nohighlight hljs nim"><span class="hljs-keyword">import</span> std/macros</code></pre>
 <p><a name = "templates"></a></p>
@@ -159,7 +184,7 @@ doWhile i &lt; <span class="hljs-number">10</span>:
     <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;CPU Time [&quot;</span>, benchmarkName, <span class="hljs-string">&quot;] &quot;</span>, elapsed
 
 benchmark <span class="hljs-string">&quot;test1&quot;</span>:
-  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 165 microseconds, and 678 nanoseconds</pre>
+  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 210 microseconds, and 399 nanoseconds</pre>
 <p>The code inside the <code>benchmark</code> code block will be enclosed by our template code.</p>
 <p>Since the code replacement is done at compile time, this transformation does not add additional runtime to our benchmarked code.
 On the contrary, a function or procedure for benchmarking would have add runtime due to the nested function calls.</p>
@@ -180,12 +205,14 @@ throwAway:
     <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;If you do not throw me, I'll spam you indefinitely!&quot;</span></code></pre>
 <h3>AST Manipulation</h3>
 <p>In Nim, the code is read and transformed in an internal intermediate representation called an Abstract Syntax Tree (AST). To get a representation of the AST corresponding to a code, we can use the <code>macro</code> <code>dumpTree</code>.</p>
-<pre><code class="nohighlight hljs nim">dumpTree:
+<pre><code class="nohighlight hljs nim"><span class="hljs-comment"># Don't forget to import std/macros!</span>
+<span class="hljs-comment"># You can use --hints:off to display only the AST tree</span>
+dumpTree:
   <span class="hljs-keyword">type</span>
     myObject {.packed.} = <span class="hljs-keyword">ref</span> <span class="hljs-keyword">object</span> <span class="hljs-keyword">of</span> <span class="hljs-type">RootObj</span>
       left: <span class="hljs-built_in">seq</span>[myObject]
       right: <span class="hljs-built_in">seq</span>[myObject]</code></pre>
-<p>This output is given with the</p>
+<p>This code outputs the following AST tree (it should not change among Nim versions).</p>
 <pre><code class="language-nim">StmtList
   TypeSection
     TypeDef
@@ -485,6 +512,30 @@ ptr 0.0
 ptr &quot;&quot;</pre>
 <p>Trying to parse a type ourselve is risky, since there are numerous easily forgettable possibilities (due to pragma expressions, cyclic types, and many kind of types: object, enum, type alias, etc..., case of fields, branching and conditionals inside the object, … ).</p>
 <p>There is actually already a function to do so and this will be the object of a future release of this tutorial.</p>
+<p>The following macro enables to create enums with power of two values.</p>
+<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">import</span> std/[enumerate, math]</code></pre>
+<pre><code class="nohighlight hljs nim"><span class="hljs-comment"># jmgomez on Discord</span>
+<span class="hljs-keyword">macro</span> power2Enum(body: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
+  <span class="hljs-keyword">let</span> srcFields = body[^<span class="hljs-number">1</span>][<span class="hljs-number">1.</span>.^<span class="hljs-number">1</span>]
+  <span class="hljs-keyword">var</span> dstFields =  nnkEnumTy.newTree(newEmptyNode())
+  <span class="hljs-keyword">for</span> idx, field <span class="hljs-keyword">in</span> enumerate(srcFields):
+    dstFields.add nnkEnumFieldDef.newTree(field, newIntLitNode(pow(<span class="hljs-number">2.0</span>, idx.<span class="hljs-built_in">float</span>).<span class="hljs-built_in">int</span>))
+
+  body[^<span class="hljs-number">1</span>] = dstFields
+  <span class="hljs-keyword">echo</span> repr body
+  body
+
+
+<span class="hljs-keyword">type</span> <span class="hljs-type">Test</span> {.power2Enum.}  = <span class="hljs-keyword">enum</span>
+  a, b, c, d</code></pre>
+<p>A macro is not always the best alternative. A simple set and a cast gives the same result.</p>
+<pre><code class="nohighlight hljs nim"><span class="hljs-comment"># Rika</span>
+<span class="hljs-keyword">type</span>
+  <span class="hljs-type">Setting</span> = <span class="hljs-keyword">enum</span>
+    a, b, c
+  <span class="hljs-type">Settings</span> = <span class="hljs-built_in">set</span>[<span class="hljs-type">Setting</span>]
+<span class="hljs-keyword">let</span> settings: <span class="hljs-type">Settings</span> = {a, c}
+<span class="hljs-keyword">echo</span> <span class="hljs-keyword">cast</span>[<span class="hljs-built_in">uint8</span>](settings)</code></pre><pre class="nb-output">5</pre>
 <p><a name = "references-and-bibliography"></a></p>
 <h2>References and Bibliography</h2>
 <hr />
@@ -511,6 +562,7 @@ The 2. and 3. documentations are complementary learning resources while the last
 <li><a href="https://forum.nim-lang.org/t/9470">Custom macro inserts macro help</a></li>
 <li><a href="https://forum.nim-lang.org/t/9498">See generated code after template processing</a></li>
 <li><a href="https://forum.nim-lang.org/t/10037">Fast array assignment</a></li>
+<li><a href="https://forum.nim-lang.org/t/10513">Variable injection</a></li>
 <li>etc … Please use the forum search bar with specific keywords like <code>macro</code>, <code>metaprogramming</code>, <code>generics</code>, <code>template</code>, …</li>
 </ol>
 <p>Last but no least, there are three Nim books:</p>
@@ -549,6 +601,7 @@ In general, treeform projects source code are good Nim references</p>
 </footer>
 <section id="source">
 <pre><code class="nohighlight nim hljs"><span class="hljs-keyword">import</span> std/[strutils, macros]
+<span class="hljs-keyword">import</span> std/[enumerate, math]
 <span class="hljs-keyword">import</span> nimib
 
 nbInit
@@ -580,19 +633,55 @@ nbText: <span class="hljs-string">hlMd&quot;&quot;&quot;
 ### Four levels of abstraction
 There are four levels of abstraction in metaprogramming that are each a special kind of procedure:
   1. Ordinary procedures/iterators (No metaprogramming)
-  2. Generic procedures/iterators (Type level)
+  2. Generic procedures/iterators and typedescs (Type level)
   3. Template (Copy-paste mechanism)
   4. Macro (AST substitution)
 
 It is recommended to start to program one's procedure with the lowest level of metaprogramming possible.
 As more metaprogramming features are used, the compilation process takes longer and error debugging gets harder.
+&quot;&quot;&quot;</span>
 
+nbSection <span class="hljs-string">&quot;Generics&quot;</span>
+nbText: <span class="hljs-string">&quot;&quot;&quot;
+We often program to perform repetitive tasks easily.
+Programs must adapt themselves to many cases and might be redundant in a first approach.
+To limit the scope for debugging, we like to avoid redundancy and let the compiler do code duplication for us.
+Code duplication means that the generated assembly code has very similar or identical block instructions.
+
+One common example is linear algebra. Imagine you want to perform an addition. Your input data is very general and may as well be integers, floating-point numbers.
+You do not want to write twice your addition function.
+&quot;&quot;&quot;</span>
+
+nbCodeSkip:
+  <span class="hljs-comment"># What to not do!</span>
+  <span class="hljs-keyword">proc</span> add(x, y: <span class="hljs-built_in">int</span>): <span class="hljs-built_in">int</span> =
+    <span class="hljs-keyword">return</span> x + y
+
+  <span class="hljs-keyword">proc</span> add(x, y: <span class="hljs-built_in">float</span>): <span class="hljs-built_in">float</span> =
+    <span class="hljs-keyword">return</span> x + y
+
+  <span class="hljs-keyword">echo</span> add <span class="hljs-number">2</span> <span class="hljs-number">3</span>
+  <span class="hljs-keyword">echo</span> add <span class="hljs-number">3.7</span> <span class="hljs-number">4.5</span>
+
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+Indeed, what if you want to add a function for other types like `int32` or `float16`?
+You will have to copy-paste your function, and change the type. Not a problem?
+There is nothing in the code telling you how many `add` functions there is in total.
+Whenever a code slip in one of your function, you will have to track all the `add` functions and fix the bug in all of them.
+
+Generics bring a solution to this:
+&quot;&quot;&quot;</span>
+
+nbCodeSkip:
+  <span class="hljs-keyword">proc</span> add[<span class="hljs-type">T</span>](x,y: <span class="hljs-type">T</span>): <span class="hljs-type">T</span> =
+    <span class="hljs-keyword">return</span> x + y
+
+
+nbText:<span class="hljs-string">&quot;&quot;&quot;
 Let us start with `template`s and `untyped` parameters.
-I do not present generics in this tutorial.
 
 To run each snippet of code in this tutorial, you will need to import the `std/macros` package.
 &quot;&quot;&quot;</span>
-
 nbCodeSkip:
   <span class="hljs-keyword">import</span> std/macros
 
@@ -732,6 +821,8 @@ In Nim, the code is read and transformed in an internal intermediate representat
 &quot;&quot;&quot;</span>
 
 nbCode:
+  <span class="hljs-comment"># Don't forget to import std/macros!</span>
+  <span class="hljs-comment"># You can use --hints:off to display only the AST tree</span>
   dumpTree:
     <span class="hljs-keyword">type</span>
       myObject {.packed.} = <span class="hljs-keyword">ref</span> <span class="hljs-keyword">object</span> <span class="hljs-keyword">of</span> <span class="hljs-type">RootObj</span>
@@ -739,7 +830,7 @@ nbCode:
         right: <span class="hljs-built_in">seq</span>[myObject]
 
 nbText:<span class="hljs-string">&quot;&quot;&quot;
-This output is given with the
+This code outputs the following AST tree (it should not change among Nim versions).
 ```nim
 StmtList
   TypeSection
@@ -1129,6 +1220,42 @@ Trying to parse a type ourselve is risky, since there are numerous easily forget
 There is actually already a function to do so and this will be the object of a future release of this tutorial.
 &quot;&quot;&quot;</span>
 
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+The following macro enables to create enums with power of two values.
+&quot;&quot;&quot;</span>
+
+nbCodeSkip:
+  <span class="hljs-keyword">import</span> std/[enumerate, math]
+
+nbCode:
+  <span class="hljs-comment"># jmgomez on Discord</span>
+  <span class="hljs-keyword">macro</span> power2Enum(body: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
+    <span class="hljs-keyword">let</span> srcFields = body[^<span class="hljs-number">1</span>][<span class="hljs-number">1.</span>.^<span class="hljs-number">1</span>]
+    <span class="hljs-keyword">var</span> dstFields =  nnkEnumTy.newTree(newEmptyNode())
+    <span class="hljs-keyword">for</span> idx, field <span class="hljs-keyword">in</span> enumerate(srcFields):
+      dstFields.add nnkEnumFieldDef.newTree(field, newIntLitNode(pow(<span class="hljs-number">2.0</span>, idx.<span class="hljs-built_in">float</span>).<span class="hljs-built_in">int</span>))
+
+    body[^<span class="hljs-number">1</span>] = dstFields
+    <span class="hljs-keyword">echo</span> repr body
+    body
+
+
+  <span class="hljs-keyword">type</span> <span class="hljs-type">Test</span> {.power2Enum.}  = <span class="hljs-keyword">enum</span>
+    a, b, c, d
+
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+A macro is not always the best alternative. A simple set and a cast gives the same result.
+&quot;&quot;&quot;</span>
+
+nbCode:
+  <span class="hljs-comment"># Rika</span>
+  <span class="hljs-keyword">type</span>
+    <span class="hljs-type">Setting</span> = <span class="hljs-keyword">enum</span>
+      a, b, c
+    <span class="hljs-type">Settings</span> = <span class="hljs-built_in">set</span>[<span class="hljs-type">Setting</span>]
+  <span class="hljs-keyword">let</span> settings: <span class="hljs-type">Settings</span> = {a, c}
+  <span class="hljs-keyword">echo</span> <span class="hljs-keyword">cast</span>[<span class="hljs-built_in">uint8</span>](settings)
+
 nbSection <span class="hljs-string">&quot;References and Bibliography&quot;</span>
 nbText: <span class="hljs-string">&quot;&quot;&quot;
 Press `Ctrl` + `Click` to open following links in a new tab.
@@ -1152,6 +1279,7 @@ There are plentiful of posts in the forum that are good references:
   2. [Custom macro inserts macro help](https://forum.nim-lang.org/t/9470)
   3. [See generated code after template processing](https://forum.nim-lang.org/t/9498)
   4. [Fast array assignment](https://forum.nim-lang.org/t/10037)
+  5. [Variable injection](https://forum.nim-lang.org/t/10513)
   4. etc … Please use the forum search bar with specific keywords like `macro`, `metaprogramming`, `generics`, `template`, …
 
 Last but no least, there are three Nim books:
