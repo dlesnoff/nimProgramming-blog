@@ -57,6 +57,9 @@ figcaption {
 <h1 style="text-align: center;">Nim Metaprogramming - Macro Tutorial</h1>
 <p>This tutorial aims to be a <em>step-by-step</em> introduction to the metaprogramming features of the Nim Language and to provide as much detail as possible to kickstart your craziest projects.
 There are already many resources on the Web, but I strive to provide more thorough details on the development process and to gather them all in one place.</p>
+<blockquote>
+<p>⚠️ This tutorial is still under heavy development.</p>
+</blockquote>
 <h3>Table of Contents:</h3>
 <ol>
 <li><a href="#introduction">Introduction</a></li>
@@ -184,7 +187,7 @@ doWhile i &lt; <span class="hljs-number">10</span>:
     <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;CPU Time [&quot;</span>, benchmarkName, <span class="hljs-string">&quot;] &quot;</span>, elapsed
 
 benchmark <span class="hljs-string">&quot;test1&quot;</span>:
-  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 201 microseconds, and 673 nanoseconds</pre>
+  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 73 microseconds, and 715 nanoseconds</pre>
 <p>The code inside the <code>benchmark</code> code block will be enclosed by our template code.</p>
 <p>Since the code replacement is done at compile time, this transformation does not add additional runtime to our benchmarked code.
 On the contrary, a function or procedure for benchmarking would have add runtime due to the nested function calls.</p>
@@ -574,6 +577,7 @@ The 2. and 3. documentations are complementary learning resources while the last
 <li><a href="https://forum.nim-lang.org/t/9498">See generated code after template processing</a></li>
 <li><a href="https://forum.nim-lang.org/t/10037">Fast array assignment</a></li>
 <li><a href="https://forum.nim-lang.org/t/10513">Variable injection</a></li>
+<li><a href="https://forum.nim-lang.org/t/9127">Proc inspection</a></li>
 <li>etc … Please use the forum search bar with specific keywords like <code>macro</code>, <code>metaprogramming</code>, <code>generics</code>, <code>template</code>, …</li>
 </ol>
 <p>Last but no least, there are three Nim books:</p>
@@ -613,7 +617,7 @@ In general, treeform projects source code are good Nim references</p>
 <section id="source">
 <pre><code class="nohighlight nim hljs"><span class="hljs-keyword">import</span> std/[strutils, macros]
 <span class="hljs-keyword">import</span> std/[enumerate, math]
-<span class="hljs-keyword">import</span> nimib
+<span class="hljs-keyword">import</span> nimib, nimoji
 
 nbInit
 
@@ -635,7 +639,8 @@ nbText: <span class="hljs-string">hlMd&quot;&quot;&quot;
 
 This tutorial aims to be a _step-by-step_ introduction to the metaprogramming features of the Nim Language and to provide as much detail as possible to kickstart your craziest projects.
 There are already many resources on the Web, but I strive to provide more thorough details on the development process and to gather them all in one place.
-&quot;&quot;&quot;</span>
+&gt; :warning: This tutorial is still under heavy development.
+&quot;&quot;&quot;</span>.emojize
 
 addToc()
 
@@ -1305,7 +1310,8 @@ There are plentiful of posts in the forum that are good references:
   3. [See generated code after template processing](https://forum.nim-lang.org/t/9498)
   4. [Fast array assignment](https://forum.nim-lang.org/t/10037)
   5. [Variable injection](https://forum.nim-lang.org/t/10513)
-  4. etc … Please use the forum search bar with specific keywords like `macro`, `metaprogramming`, `generics`, `template`, …
+  6. [Proc inspection](https://forum.nim-lang.org/t/9127)
+  7. etc … Please use the forum search bar with specific keywords like `macro`, `metaprogramming`, `generics`, `template`, …
 
 Last but no least, there are three Nim books:
   1. [Nim In Action, ed. Manning](https://book.picheta.me) and [github repo](https://github.com/dom96/nim-in-action-code)

@@ -1,6 +1,6 @@
 import std/[strutils, macros]
 import std/[enumerate, math]
-import nimib
+import nimib, nimoji
 
 nbInit
 
@@ -22,7 +22,8 @@ nbText: hlMd"""
 
 This tutorial aims to be a _step-by-step_ introduction to the metaprogramming features of the Nim Language and to provide as much detail as possible to kickstart your craziest projects.
 There are already many resources on the Web, but I strive to provide more thorough details on the development process and to gather them all in one place.
-"""
+> :warning: This tutorial is still under heavy development.
+""".emojize
 
 addToc()
 
