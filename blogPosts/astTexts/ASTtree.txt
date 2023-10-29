@@ -1,0 +1,26 @@
+StmtList
+  TypeSection
+    TypeDef
+      PragmaExpr
+        Ident "myObject"
+        Pragma
+          Ident "packed"
+      Empty
+      RefTy
+        ObjectTy
+          Empty
+          OfInherit
+            Ident "RootObj"
+          RecList
+            IdentDefs
+              Ident "left"
+              BracketExpr
+                Ident "seq"
+                Ident "myObject"
+              Empty
+            IdentDefs
+              Ident "right"
+              BracketExpr
+                Ident "seq"
+                Ident "myObject"
+              Empty
