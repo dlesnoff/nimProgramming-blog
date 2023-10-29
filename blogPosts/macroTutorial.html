@@ -184,7 +184,7 @@ doWhile i &lt; <span class="hljs-number">10</span>:
     <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;CPU Time [&quot;</span>, benchmarkName, <span class="hljs-string">&quot;] &quot;</span>, elapsed
 
 benchmark <span class="hljs-string">&quot;test1&quot;</span>:
-  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 210 microseconds, and 399 nanoseconds</pre>
+  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 201 microseconds, and 673 nanoseconds</pre>
 <p>The code inside the <code>benchmark</code> code block will be enclosed by our template code.</p>
 <p>Since the code replacement is done at compile time, this transformation does not add additional runtime to our benchmarked code.
 On the contrary, a function or procedure for benchmarking would have add runtime due to the nested function calls.</p>
@@ -240,13 +240,13 @@ dumpTree:
                 Ident &quot;myObject&quot;
               Empty
 </code></pre>
-<p>We can better visualize the AST with the following picture.</p>
+<p>We can better visualize the tree structure of the AST with the following picture.</p>
 <figure>
 <img src="./ASTtree.jpg" alt="Nim's Abstract Syntax Tree visualized with a tree">
 <figcaption>Nim's Abstract Syntax Tree visualized with a tree</figcaption>
 </figure>
-<h3>Fireship's macro</h3>
-<p>This example of macro is taken from <a href="https://www.youtube.com/watch?v=WHyOHQ_GkNo">this video</a></p>
+<h3>Multiply by two macro</h3>
+<p>This example of macro is taken from <a href="https://www.youtube.com/watch?v=WHyOHQ_GkNo">this Youtube video</a> made by <a href="https://www.youtube.com/c/Fireship">Fireship</a>.</p>
 <pre><code class="nohighlight hljs nim"><span class="hljs-keyword">macro</span> timesTwo(statements: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
   <span class="hljs-keyword">for</span> s <span class="hljs-keyword">in</span> <span class="hljs-literal">result</span>:
     <span class="hljs-keyword">for</span> node <span class="hljs-keyword">in</span> s:
@@ -281,6 +281,17 @@ This simple AST is made of four nodes:</p>
 <p><code>StmtList</code>, <code>Command</code>, <code>IntLit</code> and <code>Ident</code> are the NodeKind of the code's AST.
 Inside your macro, they are denoted with the extra prefix <code>nnk</code>, e.g. <code>nnkIdent</code>.
 You can get the full list of node kinds <a href="https://github.com/nim-lang/Nim/blob/a8c6e36323601a64dcb6947a694f0bde97b632b2/lib/core/macros.nim#L25-L89">at the std/macros source code</a>.</p>
+<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">macro</span> timesTwoAndEcho(statements: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
+  <span class="hljs-keyword">for</span> s <span class="hljs-keyword">in</span> <span class="hljs-literal">result</span>:
+    <span class="hljs-keyword">for</span> node <span class="hljs-keyword">in</span> s:
+      <span class="hljs-keyword">if</span> node.kind == nnkIntLit:
+        node.intVal = node.intVal*<span class="hljs-number">2</span>
+  <span class="hljs-keyword">echo</span> repr <span class="hljs-literal">result</span>
+
+timesTwoAndEcho:
+  <span class="hljs-keyword">echo</span> <span class="hljs-number">1</span>
+  <span class="hljs-keyword">echo</span> <span class="hljs-number">2</span>
+  <span class="hljs-keyword">echo</span> <span class="hljs-number">3</span></code></pre>
 <p>The output of a macro is an AST, and we can try to write it for a few examples:</p>
 <pre><code class="language-nim">StmtList
   Command
@@ -859,14 +870,14 @@ StmtList
                 Ident &quot;myObject&quot;
               Empty
 ```
-We can better visualize the AST with the following picture.
+We can better visualize the tree structure of the AST with the following picture.
 &quot;&quot;&quot;</span>
 
 nbImage(url=<span class="hljs-string">&quot;ASTtree.jpg&quot;</span>, caption=<span class="hljs-string">&quot;Nim's Abstract Syntax Tree visualized with a tree&quot;</span>)
 
 nbText:<span class="hljs-string">&quot;&quot;&quot;
-### Fireship's macro
-This example of macro is taken from [this video](https://www.youtube.com/watch?v=WHyOHQ_GkNo)
+### Multiply by two macro
+This example of macro is taken from [this Youtube video](https://www.youtube.com/watch?v=WHyOHQ_GkNo) made by [Fireship](https://www.youtube.com/c/Fireship).
 &quot;&quot;&quot;</span>
 
 nbCode:
@@ -918,7 +929,21 @@ StmtList
 `StmtList`, `Command`, `IntLit` and `Ident` are the NodeKind of the code's AST.
 Inside your macro, they are denoted with the extra prefix `nnk`, e.g. `nnkIdent`.
 You can get the full list of node kinds [at the std/macros source code](https://github.com/nim-lang/Nim/blob/a8c6e36323601a64dcb6947a694f0bde97b632b2/lib/core/macros.nim#L25-L89).
+&quot;&quot;&quot;</span>
+nbCode:
+  <span class="hljs-keyword">macro</span> timesTwoAndEcho(statements: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
+    <span class="hljs-keyword">for</span> s <span class="hljs-keyword">in</span> <span class="hljs-literal">result</span>:
+      <span class="hljs-keyword">for</span> node <span class="hljs-keyword">in</span> s:
+        <span class="hljs-keyword">if</span> node.kind == nnkIntLit:
+          node.intVal = node.intVal*<span class="hljs-number">2</span>
+    <span class="hljs-keyword">echo</span> repr <span class="hljs-literal">result</span>
 
+  timesTwoAndEcho:
+    <span class="hljs-keyword">echo</span> <span class="hljs-number">1</span>
+    <span class="hljs-keyword">echo</span> <span class="hljs-number">2</span>
+    <span class="hljs-keyword">echo</span> <span class="hljs-number">3</span>
+
+nbText:<span class="hljs-string">&quot;&quot;&quot;
 The output of a macro is an AST, and we can try to write it for a few examples:
 ```nim
 StmtList

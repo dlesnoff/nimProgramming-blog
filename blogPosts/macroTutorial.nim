@@ -257,14 +257,14 @@ StmtList
                 Ident "myObject"
               Empty
 ```
-We can better visualize the AST with the following picture.
+We can better visualize the tree structure of the AST with the following picture.
 """
 
 nbImage(url="ASTtree.jpg", caption="Nim's Abstract Syntax Tree visualized with a tree")
 
 nbText:"""
-### Fireship's macro
-This example of macro is taken from [this video](https://www.youtube.com/watch?v=WHyOHQ_GkNo)
+### Multiply by two macro
+This example of macro is taken from [this Youtube video](https://www.youtube.com/watch?v=WHyOHQ_GkNo) made by [Fireship](https://www.youtube.com/c/Fireship).
 """
 
 nbCode:
@@ -316,7 +316,21 @@ StmtList
 `StmtList`, `Command`, `IntLit` and `Ident` are the NodeKind of the code's AST.
 Inside your macro, they are denoted with the extra prefix `nnk`, e.g. `nnkIdent`.
 You can get the full list of node kinds [at the std/macros source code](https://github.com/nim-lang/Nim/blob/a8c6e36323601a64dcb6947a694f0bde97b632b2/lib/core/macros.nim#L25-L89).
+"""
+nbCode:
+  macro timesTwoAndEcho(statements: untyped): untyped =
+    for s in result:
+      for node in s:
+        if node.kind == nnkIntLit:
+          node.intVal = node.intVal*2
+    echo repr result
 
+  timesTwoAndEcho:
+    echo 1
+    echo 2
+    echo 3
+
+nbText:"""
 The output of a macro is an AST, and we can try to write it for a few examples:
 ```nim
 StmtList
@@ -678,7 +692,8 @@ There are plentiful of posts in the forum that are good references:
   3. [See generated code after template processing](https://forum.nim-lang.org/t/9498)
   4. [Fast array assignment](https://forum.nim-lang.org/t/10037)
   5. [Variable injection](https://forum.nim-lang.org/t/10513)
-  4. etc … Please use the forum search bar with specific keywords like `macro`, `metaprogramming`, `generics`, `template`, …
+  6. [Proc inspection](https://forum.nim-lang.org/t/9127)
+  7. etc … Please use the forum search bar with specific keywords like `macro`, `metaprogramming`, `generics`, `template`, …
 
 Last but no least, there are three Nim books:
   1. [Nim In Action, ed. Manning](https://book.picheta.me) and [github repo](https://github.com/dom96/nim-in-action-code)
