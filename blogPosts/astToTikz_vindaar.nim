@@ -1,4 +1,6 @@
 import strutils
+import macros
+
 const tmpl = """
 \documentclass{standalone}
 \usepackage{tikz}
@@ -16,16 +18,18 @@ $#
 \end{document}
 """
 
-import macros
 proc removePrefix(s, p: string): string =
   result = s
   result.removePrefix(p)
+
 proc node(n: NimNode): string =
   let nK = n.kind.repr.removePrefix("nnk")
   case n.kind
   of nnkIdent: "node [Ident] {\"" & n.strVal & "\"} "
   else:"node {" & nK & "} "
+
 proc child(s: string): string = "child { $# } " % s
+
 proc child(n: NimNode): string =
   let nStr = n.repr
   result = child(nStr)
@@ -49,5 +53,6 @@ let str = toTikZ:
       left: seq[myObject]
       right: seq[myObject]
 
-import latexdsl # to compile directly
-compile("./tikz_type.tex", str, tmpl)
+when isMainModule:
+  import latexdsl # to compile directly
+  compile("./pictures/tikz_type.tex", str, tmpl)
