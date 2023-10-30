@@ -1,0 +1,60 @@
+digraph {
+a[label="StmtList", shape=rect]
+b[label="TypeSection", shape=rect]
+a -> b
+c[label="TypeDef", shape=rect]
+b -> c
+d[label="PragmaExpr", shape=rect]
+c -> d
+e[label="Ident 'myObject'", shape=rect]
+d -> e
+f[label="Pragma", shape=rect]
+d -> f
+g[label="Ident 'packed'", shape=rect]
+f -> g
+h[label="Empty", shape=rect]
+c -> h
+i[label="RefTy", shape=rect]
+c -> i
+j[label="ObjectTy", shape=rect]
+i -> j
+k[label="Empty", shape=rect]
+j -> k
+l[label="OfInherit", shape=rect]
+j -> l
+m[label="Ident 'RootObj'", shape=rect]
+l -> m
+n[label="RecList", shape=rect]
+j -> n
+o[label="IdentDefs", shape=rect]
+n -> o
+p[label="Ident 'left'", shape=rect]
+o -> p
+q[label="BracketExpr", shape=rect]
+o -> q
+r[label="Ident 'seq'", shape=rect]
+q -> r
+s[label="Ident 'myObject'", shape=rect]
+q -> s
+t[label="Empty", shape=rect]
+o -> t
+u[label="IdentDefs", shape=rect]
+n -> u
+v[label="Ident 'right'", shape=rect]
+u -> v
+w[label="BracketExpr", shape=rect]
+u -> w
+x[label="Ident 'seq'", shape=rect]
+w -> x
+y[label="Ident 'myObject'", shape=rect]
+w -> y
+z[label="Empty", shape=rect]
+u -> z
+a[style=filled]
+b[style=filled]
+c[style=filled]
+i[style=filled]
+j[style=filled]
+n[style=filled]
+u[style=filled]
+}
