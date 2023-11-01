@@ -6,7 +6,7 @@ nbInit
 
 # add a ToC
 var nbToc: NbBlock
-
+enableLineNumbersDoc()
 template addToc =
   newNbBlock("nbText", false, nb, nbToc, ""):
     nbToc.output = "### Plan:\n\n"
@@ -48,7 +48,8 @@ sous la forme d'arbre syntaxique nommé AST.
 nbText: hlMd"""
 ### Quatre niveaux d'abstraction
 Il existe quatre niveaux d'abstraction en métaprogrammation qui sont chacun associés à un type de procédure ou itérateur:
-  0. Procédures/fonctions/itérateurs ordinaires (Pas de métaprogrammation - niveau zéro)
+
+  0. Procédures/fonctions/itérateurs ordinaires (Pas de métaprogrammation)
   1. Les procédures génériques et les classes de type (Métaprogrammation au niveau du type)
   2. Les « modèles » `template` en anglais (Un méchanisme de copier-coller avancé)
   3. Les `Macro`s (Substitution d'arbre syntaxique `AST`)
@@ -72,16 +73,16 @@ nbCodeSkip:
 
 nbSection "Procédures Génériques"
 nbText: """
-We often program to perform repetitive tasks easily.
-Programs must adapt themselves to many cases and might be redundant in a first approach.
-To limit the scope for debugging, we like to avoid redundancy and let the compiler do code duplication for us.
-Code duplication means that the generated assembly code has very similar or identical block instructions.
+Un des objectifs de la programmation est l'automatisation de tâches répétitives.
+Certains programmes sont fastidieux à écrire et nous écrivons souvent des codes similaires.
 
-One common example is linear algebra. Imagine you want to perform an addition. Your input data is very general and may as well be integers, floating-point numbers.
-You do not want to write twice your addition function.
+Imaginez que vous voulez programmer une addition. Votre algorithme est probablement général et ne dépend peut-être pas du type de l'entrée. Votre algorithme pourrait recevoir
+aussi bien des entiers que des nombres flottants en entrée.
+
+Vous ne voulez pas réécrire chacun de vos algorithmes pour chacun des types qui conviendraient.
 """
 
-nbCodeSkip:
+nbCode:
   # What to not do!
   proc add(x, y: int): int =
     return x + y
@@ -89,30 +90,55 @@ nbCodeSkip:
   proc add(x, y: float): float =
     return x + y
 
-  echo add 2 3
-  echo add 3.7 4.5
+  echo add(2, 3)
+  echo add(3.7, 4.5)
 
 nbText:"""
-Indeed, what if you want to add a function for other types like `int32` or `float16`?
-You will have to copy-paste your function, and change the type. Not a problem?
-There is nothing in the code telling you how many `add` functions there is in total.
-Whenever a code slip in one of your function, you will have to track all the `add` functions and fix the bug in all of them.
+En effet, que se passerait-il si vous vouliez ajouter une fonction pour un autre type comme `int32` ou `float16`?
+Vous devrez alors copier-coller votre fonction et changer le type. Bien que cela semble anodin, cela se révèle vite problématique lorsque vous trouvez un bug dans l'algorithme.
 
-Generics bring a solution to this:
+Il vous faut alors corriger autant de fonctions que de types supportés. De plus, le code devient peu lisible, puisque chaque fonction apparaît de nombreuses fois.
+
+Une première solution consiste à utiliser les types « génériques implicites ». On utilise le mot-clé `or` comme pour une expression booléenne avec les types qui conviendraient.
+Durant la phase de compilation, le compilateur Nim choisit quel type convient à la situation.
+"""
+
+nbCodeSkip:
+  proc add(x,y: (int or float)): (int or float) =
+    return x + y
+  
+  add 2, 3 # Selects int
+  add 3.7, 4.5 # Selects float
+
+nbText:"""
+Il se peut que vous ne sachiez pas vraiment à l'avance combien de types exactement pourrait être utilisés pour votre algorithme.
+Vous voudriez peut-être faire des modifications pour certains types précis. Il convient alors d'utiliser un type générique (non implicite).
+Il s'agit d'un type représenté par une variable. Par convention, on désigne cette variable par une lettre majuscule qui est souvent T, U, V, etc …
 """
 
 nbCodeSkip:
   proc add[T](x,y: T): T =
-    return x + y
+    when T is string:
+      x = x.parseFloat()
+      y = y.parseFloat()
+    var c = x + y
+    when T is string:
+      return $c
+    else:
+      return c
+  
+  add 2, 3 # Selects int
+  add 3.7, 4.5 # Selects float
+  add "3.7", "4.5"
 
-
+nbSection "Templates"
 nbText:"""
-To run each snippet of code in this tutorial, you will need to import the `std/macros` package.
-"""
+:warning: Afin d'exécuter chaque code dans la suite de ce tutoriel, vous devrez importer le paquet `std/macros`.
+""".emojize
+
 nbCodeSkip:
   import std/macros
 
-nbSection "Templates"
 nbText: """
 We can see *templates* as procedures that modify code through a copy-paste mechanism. Pieces of code are given to (and outputted by) the template with a special type : `untyped`.
 For those familiar with [preprocessing](https://gcc.gnu.org/onlinedocs/cpp/) in the C family of languages (C, C++, C#), it does the same than the `#define` or `#if`, `#endif` macros and much more.
@@ -121,6 +147,10 @@ For those familiar with [preprocessing](https://gcc.gnu.org/onlinedocs/cpp/) in 
 nbText: """
 Nim's language defines boolean operator like `!=` with templates. You can even look at Nim's source code, that's almost the same code. See the [documentation](https://nim-lang.org/docs/system.html#%21%3D.t%2Cuntyped%2Cuntyped).
 """
+
+nbCodeWithNumbers:
+  echo "hello World"
+
 nbCode:
   ## Example from std/manual
   template `!=` (a, b: untyped): untyped =
