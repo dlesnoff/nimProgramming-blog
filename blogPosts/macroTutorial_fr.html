@@ -68,20 +68,26 @@ Il existe de nombreuses ressources que ce soit à travers les livres ou sur Inte
 <p><a name = "introduction"></a></p>
 <h2>Introduction</h2>
 <hr />
+<blockquote>
 <p>Qu'est-ce que la métaprogrammation ?</p>
+</blockquote>
 <p>La métaprogrammation consiste à programmer du code informatique. Autrement dit, l'entrée et la sortie de programmes réalisant de la métaprogrammation seront eux-mêmes des bouts de code.</p>
-<p>Mon language préféré ne me permet pas d'écrire des macros. Pourquoi écrire des macros (avec Nim)?
-Le principal objectif est d'écrire facilement des longues portions de code qui sont répétitives ou pour s'adapter par exemple à de nombreuses architectures.
+<blockquote>
+<p>Mon language préféré ne me permet pas d'écrire des macros. Pourquoi écrire des macros (avec Nim)?</p>
+</blockquote>
+<p>Le principal objectif est d'écrire facilement des longues portions de code qui sont répétitives ou pour s'adapter par exemple à de nombreuses architectures.
 Il est également possible d'écrire de mini-langages de programmation nommés DSL (&quot;domain-specific languages&quot;) pour une utilisation précise, comme la description de contenu d'une fenêtre graphique avec <code>Owlkettle</code>
 ou pour spécifier les paramètres d'un réseau de neurones <code>Arraymancer</code>. Les macros sont écrites une fois par le développeur d'une bibliothèque, et les utilisateurs de cette bibliothèque vont voir leur code modifié
 par les macros sans même utiliser de macros par eux-mêmes.</p>
+<blockquote>
 <p>Quel rapport avec les macros ?</p>
+</blockquote>
 <p>Les macros sont ces fonctions qui vont travailler sur des bouts de code et générer du code en sortie. Nous verrons par la suite que ce code est représenté
 sous la forme d'arbre syntaxique nommé AST.</p>
 <h3>Quatre niveaux d'abstraction</h3>
 <p>Il existe quatre niveaux d'abstraction en métaprogrammation qui sont chacun associés à un type de procédure ou itérateur:</p>
 <ol start="0">
-<li>Procédures/fonctions/itérateurs ordinaires (Pas de métaprogrammation - niveau zéro)</li>
+<li>Procédures/fonctions/itérateurs ordinaires (Pas de métaprogrammation)</li>
 <li>Les procédures génériques et les classes de type (Métaprogrammation au niveau du type)</li>
 <li>Les « modèles » <code>template</code> en anglais (Un méchanisme de copier-coller avancé)</li>
 <li>Les <code>Macro</code>s (Substitution d'arbre syntaxique <code>AST</code>)</li>
@@ -147,10 +153,14 @@ add <span class="hljs-string">&quot;3.7&quot;</span>, <span class="hljs-string">
 <hr />
 <p>⚠️ Afin d'exécuter chaque code dans la suite de ce tutoriel, vous devrez importer le paquet <code>std/macros</code>.</p>
 <pre><code class="nohighlight hljs nim"><span class="hljs-keyword">import</span> std/macros</code></pre>
-<p>We can see <em>templates</em> as procedures that modify code through a copy-paste mechanism. Pieces of code are given to (and outputted by) the template with a special type : <code>untyped</code>.
-For those familiar with <a href="https://gcc.gnu.org/onlinedocs/cpp/">preprocessing</a> in the C family of languages (C, C++, C#), it does the same than the <code>#define</code> or <code>#if</code>, <code>#endif</code> macros and much more.</p>
-<p>Nim's language defines boolean operator like <code>!=</code> with templates. You can even look at Nim's source code, that's almost the same code. See the <a href="https://nim-lang.org/docs/system.html#%21%3D.t%2Cuntyped%2Cuntyped">documentation</a>.</p>
-<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;hello World&quot;</span></code></pre><pre class="nb-output">hello World</pre>
+<p>Nous pouvons voir les <em>templates</em> comme des procédures qui font de la substitution de code, comme un couper-coller qui serait réalisé à la compilation.</p>
+<p>Les procédures <code>templates</code> reçoivent généralement en dernier paramètre un bout de code.
+Le type qui correspond à un bout de code est <code>untyped</code>.
+Comme nous souhaitons que le template retourne un bout de code, le type de retour est <code>untyped</code> pour presque tous les cas d'usage.</p>
+<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">template</span> `!=` (a, b: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
+  <span class="hljs-keyword">not</span> (a == b)</code></pre>
+<p>:warning: Le reste du tutoriel n'a pas encore été traduit de l'anglais vers le français.</p>
+<p>The Nim language defines boolean operators like <code>!=</code> with templates. You can even look at Nim's source code, that's almost the same code. See the <a href="https://nim-lang.org/docs/system.html#%21%3D.t%2Cuntyped%2Cuntyped">documentation</a>.</p>
 <pre><code class="nohighlight hljs nim"><span class="hljs-comment">## Example from std/manual</span>
 <span class="hljs-keyword">template</span> `!=` (a, b: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
   <span class="hljs-keyword">not</span> (a == b)
@@ -223,7 +233,7 @@ doWhile i &lt; <span class="hljs-number">10</span>:
     <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;CPU Time [&quot;</span>, benchmarkName, <span class="hljs-string">&quot;] &quot;</span>, elapsed
 
 benchmark <span class="hljs-string">&quot;test1&quot;</span>:
-  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 126 microseconds, and 124 nanoseconds</pre>
+  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 208 microseconds, and 351 nanoseconds</pre>
 <p>The code inside the <code>benchmark</code> code block will be enclosed by our template code.</p>
 <p>Since the code replacement is done at compile time, this transformation does not add additional runtime to our benchmarked code.
 On the contrary, a function or procedure for benchmarking would have add runtime due to the nested function calls.</p>
@@ -659,7 +669,7 @@ nbInit
 
 <span class="hljs-comment"># add a ToC</span>
 <span class="hljs-keyword">var</span> nbToc: <span class="hljs-type">NbBlock</span>
-enableLineNumbersDoc()
+
 <span class="hljs-keyword">template</span> addToc =
   newNbBlock(<span class="hljs-string">&quot;nbText&quot;</span>, <span class="hljs-literal">false</span>, nb, nbToc, <span class="hljs-string">&quot;&quot;</span>):
     nbToc.output = <span class="hljs-string">&quot;### Plan:</span><span class="hljs-meta">\n</span><span class="hljs-meta">\n</span><span class="hljs-string">&quot;</span>
@@ -682,17 +692,18 @@ addToc()
 
 nbSection <span class="hljs-string">&quot;Introduction&quot;</span>
 nbText: <span class="hljs-string">hlMd&quot;&quot;&quot;
-Qu'est-ce que la métaprogrammation ? 
+&gt; Qu'est-ce que la métaprogrammation ?
 
 La métaprogrammation consiste à programmer du code informatique. Autrement dit, l'entrée et la sortie de programmes réalisant de la métaprogrammation seront eux-mêmes des bouts de code.
 
-Mon language préféré ne me permet pas d'écrire des macros. Pourquoi écrire des macros (avec Nim)?
+&gt; Mon language préféré ne me permet pas d'écrire des macros. Pourquoi écrire des macros (avec Nim)?
+
 Le principal objectif est d'écrire facilement des longues portions de code qui sont répétitives ou pour s'adapter par exemple à de nombreuses architectures.
 Il est également possible d'écrire de mini-langages de programmation nommés DSL (&quot;domain-specific languages&quot;) pour une utilisation précise, comme la description de contenu d'une fenêtre graphique avec `Owlkettle`
 ou pour spécifier les paramètres d'un réseau de neurones `Arraymancer`. Les macros sont écrites une fois par le développeur d'une bibliothèque, et les utilisateurs de cette bibliothèque vont voir leur code modifié
 par les macros sans même utiliser de macros par eux-mêmes.
 
-Quel rapport avec les macros ?
+&gt; Quel rapport avec les macros ?
 
 Les macros sont ces fonctions qui vont travailler sur des bouts de code et générer du code en sortie. Nous verrons par la suite que ce code est représenté
 sous la forme d'arbre syntaxique nommé AST.
@@ -702,7 +713,7 @@ nbText: <span class="hljs-string">hlMd&quot;&quot;&quot;
 ### Quatre niveaux d'abstraction
 Il existe quatre niveaux d'abstraction en métaprogrammation qui sont chacun associés à un type de procédure ou itérateur:
 
-  0. Procédures/fonctions/itérateurs ordinaires (Pas de métaprogrammation - niveau zéro)
+  0. Procédures/fonctions/itérateurs ordinaires (Pas de métaprogrammation)
   1. Les procédures génériques et les classes de type (Métaprogrammation au niveau du type)
   2. Les « modèles » `template` en anglais (Un méchanisme de copier-coller avancé)
   3. Les `Macro`s (Substitution d'arbre syntaxique `AST`)
@@ -759,7 +770,7 @@ Durant la phase de compilation, le compilateur Nim choisit quel type convient à
 nbCodeSkip:
   <span class="hljs-keyword">proc</span> add(x,y: (<span class="hljs-built_in">int</span> <span class="hljs-keyword">or</span> <span class="hljs-built_in">float</span>)): (<span class="hljs-built_in">int</span> <span class="hljs-keyword">or</span> <span class="hljs-built_in">float</span>) =
     <span class="hljs-keyword">return</span> x + y
-  
+
   add <span class="hljs-number">2</span>, <span class="hljs-number">3</span> <span class="hljs-comment"># Selects int</span>
   add <span class="hljs-number">3.7</span>, <span class="hljs-number">4.5</span> <span class="hljs-comment"># Selects float</span>
 
@@ -779,7 +790,7 @@ nbCodeSkip:
       <span class="hljs-keyword">return</span> $c
     <span class="hljs-keyword">else</span>:
       <span class="hljs-keyword">return</span> c
-  
+
   add <span class="hljs-number">2</span>, <span class="hljs-number">3</span> <span class="hljs-comment"># Selects int</span>
   add <span class="hljs-number">3.7</span>, <span class="hljs-number">4.5</span> <span class="hljs-comment"># Selects float</span>
   add <span class="hljs-string">&quot;3.7&quot;</span>, <span class="hljs-string">&quot;4.5&quot;</span>
@@ -793,16 +804,24 @@ nbCodeSkip:
   <span class="hljs-keyword">import</span> std/macros
 
 nbText: <span class="hljs-string">&quot;&quot;&quot;
-We can see *templates* as procedures that modify code through a copy-paste mechanism. Pieces of code are given to (and outputted by) the template with a special type : `untyped`.
-For those familiar with [preprocessing](https://gcc.gnu.org/onlinedocs/cpp/) in the C family of languages (C, C++, C#), it does the same than the `#define` or `#if`, `#endif` macros and much more.
+Nous pouvons voir les *templates* comme des procédures qui font de la substitution de code, comme un couper-coller qui serait réalisé à la compilation.
+
+Les procédures `templates` reçoivent généralement en dernier paramètre un bout de code.
+Le type qui correspond à un bout de code est `untyped`.
+Comme nous souhaitons que le template retourne un bout de code, le type de retour est `untyped` pour presque tous les cas d'usage.
+&quot;&quot;&quot;</span>
+
+nbCodeSkip:
+  <span class="hljs-keyword">template</span> `!=` (a, b: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
+    <span class="hljs-keyword">not</span> (a == b)
+
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+:warning: Le reste du tutoriel n'a pas encore été traduit de l'anglais vers le français.
 &quot;&quot;&quot;</span>
 
 nbText: <span class="hljs-string">&quot;&quot;&quot;
-Nim's language defines boolean operator like `!=` with templates. You can even look at Nim's source code, that's almost the same code. See the [documentation](https://nim-lang.org/docs/system.html#%21%3D.t%2Cuntyped%2Cuntyped).
+The Nim language defines boolean operators like `!=` with templates. You can even look at Nim's source code, that's almost the same code. See the [documentation](https://nim-lang.org/docs/system.html#%21%3D.t%2Cuntyped%2Cuntyped).
 &quot;&quot;&quot;</span>
-
-nbCodeWithNumbers:
-  <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;hello World&quot;</span>
 
 nbCode:
   <span class="hljs-comment">## Example from std/manual</span>

@@ -6,7 +6,7 @@ nbInit
 
 # add a ToC
 var nbToc: NbBlock
-enableLineNumbersDoc()
+
 template addToc =
   newNbBlock("nbText", false, nb, nbToc, ""):
     nbToc.output = "### Plan:\n\n"
@@ -29,17 +29,18 @@ addToc()
 
 nbSection "Introduction"
 nbText: hlMd"""
-Qu'est-ce que la métaprogrammation ? 
+> Qu'est-ce que la métaprogrammation ?
 
 La métaprogrammation consiste à programmer du code informatique. Autrement dit, l'entrée et la sortie de programmes réalisant de la métaprogrammation seront eux-mêmes des bouts de code.
 
-Mon language préféré ne me permet pas d'écrire des macros. Pourquoi écrire des macros (avec Nim)?
+> Mon language préféré ne me permet pas d'écrire des macros. Pourquoi écrire des macros (avec Nim)?
+
 Le principal objectif est d'écrire facilement des longues portions de code qui sont répétitives ou pour s'adapter par exemple à de nombreuses architectures.
 Il est également possible d'écrire de mini-langages de programmation nommés DSL ("domain-specific languages") pour une utilisation précise, comme la description de contenu d'une fenêtre graphique avec `Owlkettle`
 ou pour spécifier les paramètres d'un réseau de neurones `Arraymancer`. Les macros sont écrites une fois par le développeur d'une bibliothèque, et les utilisateurs de cette bibliothèque vont voir leur code modifié
 par les macros sans même utiliser de macros par eux-mêmes.
 
-Quel rapport avec les macros ?
+> Quel rapport avec les macros ?
 
 Les macros sont ces fonctions qui vont travailler sur des bouts de code et générer du code en sortie. Nous verrons par la suite que ce code est représenté
 sous la forme d'arbre syntaxique nommé AST.
@@ -106,7 +107,7 @@ Durant la phase de compilation, le compilateur Nim choisit quel type convient à
 nbCodeSkip:
   proc add(x,y: (int or float)): (int or float) =
     return x + y
-  
+
   add 2, 3 # Selects int
   add 3.7, 4.5 # Selects float
 
@@ -126,7 +127,7 @@ nbCodeSkip:
       return $c
     else:
       return c
-  
+
   add 2, 3 # Selects int
   add 3.7, 4.5 # Selects float
   add "3.7", "4.5"
@@ -140,16 +141,24 @@ nbCodeSkip:
   import std/macros
 
 nbText: """
-We can see *templates* as procedures that modify code through a copy-paste mechanism. Pieces of code are given to (and outputted by) the template with a special type : `untyped`.
-For those familiar with [preprocessing](https://gcc.gnu.org/onlinedocs/cpp/) in the C family of languages (C, C++, C#), it does the same than the `#define` or `#if`, `#endif` macros and much more.
+Nous pouvons voir les *templates* comme des procédures qui font de la substitution de code, comme un couper-coller qui serait réalisé à la compilation.
+
+Les procédures `templates` reçoivent généralement en dernier paramètre un bout de code.
+Le type qui correspond à un bout de code est `untyped`.
+Comme nous souhaitons que le template retourne un bout de code, le type de retour est `untyped` pour presque tous les cas d'usage.
+"""
+
+nbCodeSkip:
+  template `!=` (a, b: untyped): untyped =
+    not (a == b)
+
+nbText:"""
+:warning: Le reste du tutoriel n'a pas encore été traduit de l'anglais vers le français.
 """
 
 nbText: """
-Nim's language defines boolean operator like `!=` with templates. You can even look at Nim's source code, that's almost the same code. See the [documentation](https://nim-lang.org/docs/system.html#%21%3D.t%2Cuntyped%2Cuntyped).
+The Nim language defines boolean operators like `!=` with templates. You can even look at Nim's source code, that's almost the same code. See the [documentation](https://nim-lang.org/docs/system.html#%21%3D.t%2Cuntyped%2Cuntyped).
 """
-
-nbCodeWithNumbers:
-  echo "hello World"
 
 nbCode:
   ## Example from std/manual
