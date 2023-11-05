@@ -57,6 +57,7 @@ figcaption {
 <h1 style="text-align: center;">Les macros avec Nim - tutoriel de métaprogrammation</h1>
 <p>Ce tutoriel a pour objectif d'être une introduction aux capacités de métaprogrammation du langage de programmation Nim. Il vise à donner autant de détails que possible pour démarrer vos projets les plus fous.
 Il existe de nombreuses ressources que ce soit à travers les livres ou sur Internet mais vous devriez trouvez ici (à terme) une description complète du processus de développement de macros.</p>
+<p>⚠️ Une partie du tutoriel n'a pas encore été traduit de l'anglais vers le français.</p>
 <h3>Plan:</h3>
 <ol>
 <li><a href="#introduction">Introduction</a></li>
@@ -132,7 +133,7 @@ Durant la phase de compilation, le compilateur Nim choisit quel type convient à
 
 add <span class="hljs-number">2</span>, <span class="hljs-number">3</span> <span class="hljs-comment"># Selects int</span>
 add <span class="hljs-number">3.7</span>, <span class="hljs-number">4.5</span> <span class="hljs-comment"># Selects float</span></code></pre>
-<p>Il se peut que vous ne sachiez pas vraiment à l'avance combien de types exactement pourrait être utilisés pour votre algorithme.
+<p>Il se peut que vous ne sachiez pas vraiment à l'avance combien de types exactement pourraient être utilisés pour votre algorithme.
 Vous voudriez peut-être faire des modifications pour certains types précis. Il convient alors d'utiliser un type générique (non implicite).
 Il s'agit d'un type représenté par une variable. Par convention, on désigne cette variable par une lettre majuscule qui est souvent T, U, V, etc …</p>
 <pre><code class="nohighlight hljs nim"><span class="hljs-keyword">proc</span> add[<span class="hljs-type">T</span>](x,y: <span class="hljs-type">T</span>): <span class="hljs-type">T</span> =
@@ -157,47 +158,55 @@ add <span class="hljs-string">&quot;3.7&quot;</span>, <span class="hljs-string">
 <p>Les procédures <code>templates</code> reçoivent généralement en dernier paramètre un bout de code.
 Le type qui correspond à un bout de code est <code>untyped</code>.
 Comme nous souhaitons que le template retourne un bout de code, le type de retour est <code>untyped</code> pour presque tous les cas d'usage.</p>
-<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">template</span> `!=` (a, b: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
-  <span class="hljs-keyword">not</span> (a == b)</code></pre>
-<p>:warning: Le reste du tutoriel n'a pas encore été traduit de l'anglais vers le français.</p>
-<p>The Nim language defines boolean operators like <code>!=</code> with templates. You can even look at Nim's source code, that's almost the same code. See the <a href="https://nim-lang.org/docs/system.html#%21%3D.t%2Cuntyped%2Cuntyped">documentation</a>.</p>
-<pre><code class="nohighlight hljs nim"><span class="hljs-comment">## Example from std/manual</span>
+<pre><code class="nohighlight hljs nim"><span class="hljs-comment">## Exemple provenant de std/manual</span>
 <span class="hljs-keyword">template</span> `!=` (a, b: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
   <span class="hljs-keyword">not</span> (a == b)
 
-doAssert(<span class="hljs-number">4</span> != <span class="hljs-number">5</span>)</code></pre>
-<p>We can easily repeat code under a custom block. Here duplicate, just duplicate code and repeat takes an additional parameter, an int, as a generalisation of the <code>duplicate</code> template.
-Notice that duplicate is not smart. It will repeat any assignment twice in the code's block.</p>
+doAssert(<span class="hljs-number">4</span> != <span class="hljs-number">5</span>) <span class="hljs-comment"># Appelle le template `!=` définit ci-dessus.</span></code></pre>
+<p>Le langage définit l'opérateur booléen <code>!=</code> exactement comme ci-dessus. Le code source de Nim avec cet exemple est consultable librement à <a href="https://nim-lang.org/docs/system.html#%21%3D.t%2Cuntyped%2Cuntyped">cette addresse</a>.</p>
+<p>On peut facilement dupliquer du code à l'aide d'un bloc personnalisé. Attention, on exécute deux fois de suite l'instruction, et donc on ne peux donc pas placer d'affectation en-dessous de ce
+template.</p>
 <pre><code class="nohighlight hljs nim"><span class="hljs-keyword">template</span> duplicate(statements: <span class="hljs-built_in">untyped</span>) =
-  statements
+  statements <span class="hljs-comment"># statements est remplacé par `echo 5` lors de l'appel</span>
   statements
 
-duplicate:
+duplicate: <span class="hljs-comment"># A template can receive its last argument as a code </span>
   <span class="hljs-keyword">echo</span> <span class="hljs-number">5</span></code></pre><pre class="nb-output">5
 5</pre>
-<pre><code class="nohighlight hljs nim"><span class="hljs-comment">## Example from Nim In Action</span>
+<p>Ci-dessous, on généralise l'idée pour répéter le code autant de fois que désiré.</p>
+<pre><code class="nohighlight hljs nim"><span class="hljs-comment">## Exemple provenant de Nim In Action de Dominik Picheta</span>
 <span class="hljs-keyword">from</span> std/os <span class="hljs-keyword">import</span> sleep
-<span class="hljs-keyword">template</span> repeat(count: <span class="hljs-built_in">int</span>, statements: <span class="hljs-built_in">untyped</span>) =
-  <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-number">0</span> ..&lt; count:
-    statements
 
-repeat <span class="hljs-number">5</span>:
-  <span class="hljs-keyword">echo</span>(<span class="hljs-string">&quot;Hello Templates!&quot;</span>)
-  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">Hello Templates!
-Hello Templates!
-Hello Templates!
-Hello Templates!
-Hello Templates!</pre>
-<h4>Do-While keyword</h4>
-<p>In Nim, there are few restricted keywords and special control-flow mechanisms, as to incite us to create our own constructs (and keep the language simple). Nothing restrains us from defining a <code>doWhile</code> construct similar to languages like <code>C</code> or <code>Javascript</code>.</p>
-<p>For those only knowing Nim, this construct enables to run a loop once before testing the condition.</p>
-<p>This C code always print <code>Hello World</code> at least once independantly from the start value of the variable <code>i</code>.</p>
-<pre><code class="language-cpp">int i = 10;
+<span class="hljs-comment"># On garde les instructions en second argument</span>
+<span class="hljs-keyword">template</span> repetition(compteur: <span class="hljs-built_in">int</span>, instructions: <span class="hljs-built_in">untyped</span>) =
+  <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-number">0</span> ..&lt; compteur:
+    instructions
+
+repetition <span class="hljs-number">5</span>:
+  <span class="hljs-keyword">echo</span>(<span class="hljs-string">&quot;Salut. Je vais dormir 100 millisecondes!&quot;</span>)
+  sleep(<span class="hljs-number">100</span>)
+
+<span class="hljs-comment">## Le code est remplacé par:</span>
+<span class="hljs-comment">## for i in 0 ..&lt; 5:</span>
+<span class="hljs-comment">##   echo(&quot;Salut. Je vais dormir 100 millisecondes!&quot;)</span>
+<span class="hljs-comment">##   sleep(100)</span></code></pre><pre class="nb-output">Salut. Je vais dormir 100 millisecondes!
+Salut. Je vais dormir 100 millisecondes!
+Salut. Je vais dormir 100 millisecondes!
+Salut. Je vais dormir 100 millisecondes!
+Salut. Je vais dormir 100 millisecondes!</pre>
+<h4>Le mot-clé Do-While</h4>
+<p>Nim possède peu de mots-clés et de méchanismes de flots de contrôle, afin de garder le langage simple à appréhender. Cependant, on peut toujours définir un mot-clé <code>doWhile</code> que l'on retrouve dans d'autres langages comme <code>C</code> ou <code>Javascript</code>.
+Ce mot-clé est quasiment identique à la boucle <code>While</code>, à l'exception près qu'elle teste la condition après le bloc d'instruction. Cela permet de toujours exécuter au-moins une fois le bloc d'instruction.</p>
+<p>Par exemple, ce code C affiche <code>Hello World</code> au moins une fois, indépendamment de la valeur de départ de la variable <code>i</code>.</p>
+<pre><code class="language-cpp">int i = 10; // On doit déclarer une variable pour la boucle
 do{
-  printf(&quot;Hello World&quot;);
+  printf(&quot;Hello World\n&quot;);
   i += 1;
-}while(i &lt; 10);
+}while(i &lt; 10); // do{}while; est une unique instruction
+// sur plusieurs lignes, d'où le point-virgule à la fin
 </code></pre>
+<p>Nous allons recréer ce code C avec Nim. Techniquement, nous allons nous servir d'une boucle while pour construire la boucle do-while.
+Nous ne pourrons cependant pas obtenir la même syntaxe qu'en C, où la condition est affichée à la fin du bloc d'instruction.</p>
 <pre><code class="nohighlight hljs nim"><span class="hljs-keyword">template</span> doWhile(conditional, loop: <span class="hljs-built_in">untyped</span>) =
   loop
   <span class="hljs-keyword">while</span> conditional:
@@ -206,7 +215,16 @@ do{
 <span class="hljs-keyword">var</span> i = <span class="hljs-number">10</span>
 doWhile i &lt; <span class="hljs-number">10</span>:
     <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;Hello World&quot;</span>
-    i.inc</code></pre><pre class="nb-output">Hello World</pre>
+    i.inc
+
+<span class="hljs-comment">## Le template modifie le code pour que soit exécuté:</span>
+<span class="hljs-comment">## echo &quot;Hello World&quot;</span>
+<span class="hljs-comment">## i.inc</span>
+<span class="hljs-comment">## while i &lt; 10:</span>
+<span class="hljs-comment">##   echo &quot;Hello World&quot;</span>
+<span class="hljs-comment">##   i.inc</span>
+<span class="hljs-comment">## </span>
+<span class="hljs-comment">## Ceci est strictement équivalent au code C présenté ci-dessous.</span></code></pre><pre class="nb-output">Hello World</pre>
 <p>Notice though that <em>syntaxically</em> the resulting source code is fairly different than the C++ code.</p>
 <p>In the C source code, appear in this order:</p>
 <ol>
@@ -222,21 +240,28 @@ doWhile i &lt; <span class="hljs-number">10</span>:
 <li>block of instruction</li>
 </ol>
 <p>There is no way to modify Nim's syntax as to match C's syntax.</p>
-<h4>Benchmark example</h4>
-<p>Another example is benchmarking code in Nim. It suffices to put our bench code inside a special block.</p>
-<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">import</span> std/[times, monotimes]
+<h4>Évaluer le temps d'exécution</h4>
+<p>Pour évaluer le temps d'exécution d'un bout de code, on récupère l'heure avant et après l'exécution, et on affiche la différence.
+Avec Nim, on utilise la fonction <code>getMonoTime</code>.
+Plutôt que d'écrire quatre lignes supplémentaires pour chaque bout de code dont on veut mesurer le temps d'exécution, il nous suffit d'écrire
+le template suivant:</p>
+<pre><code class="nohighlight hljs nim"><span class="hljs-comment">## Évaluation du temps d'exécution</span>
+<span class="hljs-keyword">import</span> std/[times, monotimes] <span class="hljs-comment"># times permet un affichage plus lisible d'un `MonoTime`</span>
+
 <span class="hljs-keyword">template</span> benchmark(benchmarkName: <span class="hljs-built_in">string</span>, code: <span class="hljs-built_in">untyped</span>) =
   <span class="hljs-keyword">block</span>:
-    <span class="hljs-keyword">let</span> t0 = getMonoTime()
+    <span class="hljs-keyword">let</span> t0 = getMonoTime() <span class="hljs-comment"># https://nim-lang.org/docs/monotimes.html#getMonoTime</span>
     code
     <span class="hljs-keyword">let</span> elapsed = getMonoTime() - t0
     <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;CPU Time [&quot;</span>, benchmarkName, <span class="hljs-string">&quot;] &quot;</span>, elapsed
 
-benchmark <span class="hljs-string">&quot;test1&quot;</span>:
-  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 208 microseconds, and 351 nanoseconds</pre>
+benchmark <span class="hljs-string">&quot;test1&quot;</span>: <span class="hljs-comment"># Devrait retourner une valeur proche de 100 ms</span>
+  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 89 microseconds, and 913 nanoseconds</pre>
 <p>The code inside the <code>benchmark</code> code block will be enclosed by our template code.</p>
 <p>Since the code replacement is done at compile time, this transformation does not add additional runtime to our benchmarked code.
 On the contrary, a function or procedure for benchmarking would have add runtime due to the nested function calls.</p>
+<p>Exercice:
+Modifier le code précédent pour effectuer une moyenne des temps obtenus après autant de répétitions que demander par l'utilisateur.</p>
 <p><a name = "macros"></a></p>
 <h2>Macros</h2>
 <hr />
@@ -688,6 +713,10 @@ Il existe de nombreuses ressources que ce soit à travers les livres ou sur Inte
 
 &quot;&quot;&quot;</span>
 
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+:warning: Une partie du tutoriel n'a pas encore été traduit de l'anglais vers le français.
+&quot;&quot;&quot;</span>.emojize()
+
 addToc()
 
 nbSection <span class="hljs-string">&quot;Introduction&quot;</span>
@@ -775,7 +804,7 @@ nbCodeSkip:
   add <span class="hljs-number">3.7</span>, <span class="hljs-number">4.5</span> <span class="hljs-comment"># Selects float</span>
 
 nbText:<span class="hljs-string">&quot;&quot;&quot;
-Il se peut que vous ne sachiez pas vraiment à l'avance combien de types exactement pourrait être utilisés pour votre algorithme.
+Il se peut que vous ne sachiez pas vraiment à l'avance combien de types exactement pourraient être utilisés pour votre algorithme.
 Vous voudriez peut-être faire des modifications pour certains types précis. Il convient alors d'utiliser un type générique (non implicite).
 Il s'agit d'un type représenté par une variable. Par convention, on désigne cette variable par une lettre majuscule qui est souvent T, U, V, etc …
 &quot;&quot;&quot;</span>
@@ -811,67 +840,71 @@ Le type qui correspond à un bout de code est `untyped`.
 Comme nous souhaitons que le template retourne un bout de code, le type de retour est `untyped` pour presque tous les cas d'usage.
 &quot;&quot;&quot;</span>
 
-nbCodeSkip:
-  <span class="hljs-keyword">template</span> `!=` (a, b: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
-    <span class="hljs-keyword">not</span> (a == b)
-
-nbText:<span class="hljs-string">&quot;&quot;&quot;
-:warning: Le reste du tutoriel n'a pas encore été traduit de l'anglais vers le français.
-&quot;&quot;&quot;</span>
-
-nbText: <span class="hljs-string">&quot;&quot;&quot;
-The Nim language defines boolean operators like `!=` with templates. You can even look at Nim's source code, that's almost the same code. See the [documentation](https://nim-lang.org/docs/system.html#%21%3D.t%2Cuntyped%2Cuntyped).
-&quot;&quot;&quot;</span>
-
 nbCode:
-  <span class="hljs-comment">## Example from std/manual</span>
+  <span class="hljs-comment">## Exemple provenant de std/manual</span>
   <span class="hljs-keyword">template</span> `!=` (a, b: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
     <span class="hljs-keyword">not</span> (a == b)
-
-  doAssert(<span class="hljs-number">4</span> != <span class="hljs-number">5</span>)
+  
+  doAssert(<span class="hljs-number">4</span> != <span class="hljs-number">5</span>) <span class="hljs-comment"># Appelle le template `!=` définit ci-dessus.</span>
 
 nbText: <span class="hljs-string">&quot;&quot;&quot;
-We can easily repeat code under a custom block. Here duplicate, just duplicate code and repeat takes an additional parameter, an int, as a generalisation of the `duplicate` template.
-Notice that duplicate is not smart. It will repeat any assignment twice in the code's block.
+Le langage définit l'opérateur booléen `!=` exactement comme ci-dessus. Le code source de Nim avec cet exemple est consultable librement à [cette addresse](https://nim-lang.org/docs/system.html#%21%3D.t%2Cuntyped%2Cuntyped).
+&quot;&quot;&quot;</span>
+
+nbText: <span class="hljs-string">&quot;&quot;&quot;
+On peut facilement dupliquer du code à l'aide d'un bloc personnalisé. Attention, on exécute deux fois de suite l'instruction, et donc on ne peux donc pas placer d'affectation en-dessous de ce
+template.
 &quot;&quot;&quot;</span>
 
 nbCode:
   <span class="hljs-keyword">template</span> duplicate(statements: <span class="hljs-built_in">untyped</span>) =
-    statements
+    statements <span class="hljs-comment"># statements est remplacé par `echo 5` lors de l'appel</span>
     statements
 
-  duplicate:
+  duplicate: <span class="hljs-comment"># A template can receive its last argument as a code </span>
     <span class="hljs-keyword">echo</span> <span class="hljs-number">5</span>
 
-nbCode:
-  <span class="hljs-comment">## Example from Nim In Action</span>
-  <span class="hljs-keyword">from</span> std/os <span class="hljs-keyword">import</span> sleep
-  <span class="hljs-keyword">template</span> repeat(count: <span class="hljs-built_in">int</span>, statements: <span class="hljs-built_in">untyped</span>) =
-    <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-number">0</span> ..&lt; count:
-      statements
-
-  repeat <span class="hljs-number">5</span>:
-    <span class="hljs-keyword">echo</span>(<span class="hljs-string">&quot;Hello Templates!&quot;</span>)
-    sleep(<span class="hljs-number">100</span>)
-
 nbText: <span class="hljs-string">&quot;&quot;&quot;
-#### Do-While keyword
-In Nim, there are few restricted keywords and special control-flow mechanisms, as to incite us to create our own constructs (and keep the language simple). Nothing restrains us from defining a `doWhile` construct similar to languages like `C` or `Javascript`.
-
-For those only knowing Nim, this construct enables to run a loop once before testing the condition.
-
-This C code always print `Hello World` at least once independantly from the start value of the variable `i`.
-```cpp
-int i = 10;
-do{
-  printf(&quot;Hello World&quot;);
-  i += 1;
-}while(i &lt; 10);
-```
+Ci-dessous, on généralise l'idée pour répéter le code autant de fois que désiré.
 &quot;&quot;&quot;</span>
 
 nbCode:
+  <span class="hljs-comment">## Exemple provenant de Nim In Action de Dominik Picheta</span>
+  <span class="hljs-keyword">from</span> std/os <span class="hljs-keyword">import</span> sleep
 
+  <span class="hljs-comment"># On garde les instructions en second argument</span>
+  <span class="hljs-keyword">template</span> repetition(compteur: <span class="hljs-built_in">int</span>, instructions: <span class="hljs-built_in">untyped</span>) =
+    <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-number">0</span> ..&lt; compteur:
+      instructions
+
+  repetition <span class="hljs-number">5</span>:
+    <span class="hljs-keyword">echo</span>(<span class="hljs-string">&quot;Salut. Je vais dormir 100 millisecondes!&quot;</span>)
+    sleep(<span class="hljs-number">100</span>)
+  
+  <span class="hljs-comment">## Le code est remplacé par:</span>
+  <span class="hljs-comment">## for i in 0 ..&lt; 5:</span>
+  <span class="hljs-comment">##   echo(&quot;Salut. Je vais dormir 100 millisecondes!&quot;)</span>
+  <span class="hljs-comment">##   sleep(100)</span>
+
+nbText: <span class="hljs-string">&quot;&quot;&quot;
+#### Le mot-clé Do-While
+Nim possède peu de mots-clés et de méchanismes de flots de contrôle, afin de garder le langage simple à appréhender. Cependant, on peut toujours définir un mot-clé `doWhile` que l'on retrouve dans d'autres langages comme `C` ou `Javascript`.
+Ce mot-clé est quasiment identique à la boucle `While`, à l'exception près qu'elle teste la condition après le bloc d'instruction. Cela permet de toujours exécuter au-moins une fois le bloc d'instruction.
+
+Par exemple, ce code C affiche `Hello World` au moins une fois, indépendamment de la valeur de départ de la variable `i`.
+```cpp
+int i = 10; // On doit déclarer une variable pour la boucle
+do{
+  printf(&quot;Hello World\n&quot;);
+  i += 1;
+}while(i &lt; 10); // do{}while; est une unique instruction
+// sur plusieurs lignes, d'où le point-virgule à la fin
+```
+Nous allons recréer ce code C avec Nim. Techniquement, nous allons nous servir d'une boucle while pour construire la boucle do-while.
+Nous ne pourrons cependant pas obtenir la même syntaxe qu'en C, où la condition est affichée à la fin du bloc d'instruction.
+&quot;&quot;&quot;</span>
+
+nbCode:
   <span class="hljs-keyword">template</span> doWhile(conditional, loop: <span class="hljs-built_in">untyped</span>) =
     loop
     <span class="hljs-keyword">while</span> conditional:
@@ -881,6 +914,15 @@ nbCode:
   doWhile i &lt; <span class="hljs-number">10</span>:
       <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;Hello World&quot;</span>
       i.inc
+  
+  <span class="hljs-comment">## Le template modifie le code pour que soit exécuté:</span>
+  <span class="hljs-comment">## echo &quot;Hello World&quot;</span>
+  <span class="hljs-comment">## i.inc</span>
+  <span class="hljs-comment">## while i &lt; 10:</span>
+  <span class="hljs-comment">##   echo &quot;Hello World&quot;</span>
+  <span class="hljs-comment">##   i.inc</span>
+  <span class="hljs-comment">## </span>
+  <span class="hljs-comment">## Ceci est strictement équivalent au code C présenté ci-dessous.</span>
 
 nbText:<span class="hljs-string">hlMd&quot;&quot;&quot;
 Notice though that _syntaxically_ the resulting source code is fairly different than the C++ code.
@@ -900,20 +942,25 @@ There is no way to modify Nim's syntax as to match C's syntax.
 &quot;&quot;&quot;</span>
 
 nbText:<span class="hljs-string">&quot;&quot;&quot;
-#### Benchmark example
-Another example is benchmarking code in Nim. It suffices to put our bench code inside a special block.
+#### Évaluer le temps d'exécution
+Pour évaluer le temps d'exécution d'un bout de code, on récupère l'heure avant et après l'exécution, et on affiche la différence.
+Avec Nim, on utilise la fonction `getMonoTime`.
+Plutôt que d'écrire quatre lignes supplémentaires pour chaque bout de code dont on veut mesurer le temps d'exécution, il nous suffit d'écrire
+le template suivant:
 &quot;&quot;&quot;</span>
 
 nbCode:
-  <span class="hljs-keyword">import</span> std/[times, monotimes]
+  <span class="hljs-comment">## Évaluation du temps d'exécution</span>
+  <span class="hljs-keyword">import</span> std/[times, monotimes] <span class="hljs-comment"># times permet un affichage plus lisible d'un `MonoTime`</span>
+
   <span class="hljs-keyword">template</span> benchmark(benchmarkName: <span class="hljs-built_in">string</span>, code: <span class="hljs-built_in">untyped</span>) =
     <span class="hljs-keyword">block</span>:
-      <span class="hljs-keyword">let</span> t0 = getMonoTime()
+      <span class="hljs-keyword">let</span> t0 = getMonoTime() <span class="hljs-comment"># https://nim-lang.org/docs/monotimes.html#getMonoTime</span>
       code
       <span class="hljs-keyword">let</span> elapsed = getMonoTime() - t0
       <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;CPU Time [&quot;</span>, benchmarkName, <span class="hljs-string">&quot;] &quot;</span>, elapsed
 
-  benchmark <span class="hljs-string">&quot;test1&quot;</span>:
+  benchmark <span class="hljs-string">&quot;test1&quot;</span>: <span class="hljs-comment"># Devrait retourner une valeur proche de 100 ms</span>
     sleep(<span class="hljs-number">100</span>)
 
 nbText:<span class="hljs-string">&quot;&quot;&quot;
@@ -921,6 +968,11 @@ The code inside the `benchmark` code block will be enclosed by our template code
 
 Since the code replacement is done at compile time, this transformation does not add additional runtime to our benchmarked code.
 On the contrary, a function or procedure for benchmarking would have add runtime due to the nested function calls.
+&quot;&quot;&quot;</span>
+
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+Exercice:
+  Modifier le code précédent pour effectuer une moyenne des temps obtenus après autant de répétitions que demander par l'utilisateur.
 &quot;&quot;&quot;</span>
 
 nbSection <span class="hljs-string">&quot;Macros&quot;</span>
