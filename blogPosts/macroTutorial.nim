@@ -134,7 +134,7 @@ This C code always print `Hello World` at least once independantly from the star
 ```cpp
 int i = 10;
 do{
-  printf("Hello World");
+  printf("Hello World\n");
   i += 1;
 }while(i < 10);
 ```
