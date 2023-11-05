@@ -25,6 +25,10 @@ Il existe de nombreuses ressources que ce soit à travers les livres ou sur Inte
 
 """
 
+nbText:"""
+:warning: Une partie du tutoriel n'a pas encore été traduit de l'anglais vers le français.
+""".emojize()
+
 addToc()
 
 nbSection "Introduction"
@@ -112,7 +116,7 @@ nbCodeSkip:
   add 3.7, 4.5 # Selects float
 
 nbText:"""
-Il se peut que vous ne sachiez pas vraiment à l'avance combien de types exactement pourrait être utilisés pour votre algorithme.
+Il se peut que vous ne sachiez pas vraiment à l'avance combien de types exactement pourraient être utilisés pour votre algorithme.
 Vous voudriez peut-être faire des modifications pour certains types précis. Il convient alors d'utiliser un type générique (non implicite).
 Il s'agit d'un type représenté par une variable. Par convention, on désigne cette variable par une lettre majuscule qui est souvent T, U, V, etc …
 """
@@ -148,67 +152,71 @@ Le type qui correspond à un bout de code est `untyped`.
 Comme nous souhaitons que le template retourne un bout de code, le type de retour est `untyped` pour presque tous les cas d'usage.
 """
 
-nbCodeSkip:
-  template `!=` (a, b: untyped): untyped =
-    not (a == b)
-
-nbText:"""
-:warning: Le reste du tutoriel n'a pas encore été traduit de l'anglais vers le français.
-"""
-
-nbText: """
-The Nim language defines boolean operators like `!=` with templates. You can even look at Nim's source code, that's almost the same code. See the [documentation](https://nim-lang.org/docs/system.html#%21%3D.t%2Cuntyped%2Cuntyped).
-"""
-
 nbCode:
-  ## Example from std/manual
+  ## Exemple provenant de std/manual
   template `!=` (a, b: untyped): untyped =
     not (a == b)
-
-  doAssert(4 != 5)
+  
+  doAssert(4 != 5) # Appelle le template `!=` définit ci-dessus.
 
 nbText: """
-We can easily repeat code under a custom block. Here duplicate, just duplicate code and repeat takes an additional parameter, an int, as a generalisation of the `duplicate` template.
-Notice that duplicate is not smart. It will repeat any assignment twice in the code's block.
+Le langage définit l'opérateur booléen `!=` exactement comme ci-dessus. Le code source de Nim avec cet exemple est consultable librement à [cette addresse](https://nim-lang.org/docs/system.html#%21%3D.t%2Cuntyped%2Cuntyped).
+"""
+
+nbText: """
+On peut facilement dupliquer du code à l'aide d'un bloc personnalisé. Attention, on exécute deux fois de suite l'instruction, et donc on ne peux donc pas placer d'affectation en-dessous de ce
+template.
 """
 
 nbCode:
   template duplicate(statements: untyped) =
-    statements
+    statements # statements est remplacé par `echo 5` lors de l'appel
     statements
 
-  duplicate:
+  duplicate: # A template can receive its last argument as a code 
     echo 5
 
-nbCode:
-  ## Example from Nim In Action
-  from std/os import sleep
-  template repeat(count: int, statements: untyped) =
-    for i in 0 ..< count:
-      statements
-
-  repeat 5:
-    echo("Hello Templates!")
-    sleep(100)
-
 nbText: """
-#### Do-While keyword
-In Nim, there are few restricted keywords and special control-flow mechanisms, as to incite us to create our own constructs (and keep the language simple). Nothing restrains us from defining a `doWhile` construct similar to languages like `C` or `Javascript`.
-
-For those only knowing Nim, this construct enables to run a loop once before testing the condition.
-
-This C code always print `Hello World` at least once independantly from the start value of the variable `i`.
-```cpp
-int i = 10;
-do{
-  printf("Hello World");
-  i += 1;
-}while(i < 10);
-```
+Ci-dessous, on généralise l'idée pour répéter le code autant de fois que désiré.
 """
 
 nbCode:
+  ## Exemple provenant de Nim In Action de Dominik Picheta
+  from std/os import sleep
 
+  # On garde les instructions en second argument
+  template repetition(compteur: int, instructions: untyped) =
+    for i in 0 ..< compteur:
+      instructions
+
+  repetition 5:
+    echo("Salut. Je vais dormir 100 millisecondes!")
+    sleep(100)
+  
+  ## Le code est remplacé par:
+  ## for i in 0 ..< 5:
+  ##   echo("Salut. Je vais dormir 100 millisecondes!")
+  ##   sleep(100)
+
+nbText: """
+#### Le mot-clé Do-While
+Nim possède peu de mots-clés et de méchanismes de flots de contrôle, afin de garder le langage simple à appréhender. Cependant, on peut toujours définir un mot-clé `doWhile` que l'on retrouve dans d'autres langages comme `C` ou `Javascript`.
+Ce mot-clé est quasiment identique à la boucle `While`, à l'exception près qu'elle teste la condition après le bloc d'instruction. Cela permet de toujours exécuter au-moins une fois le bloc d'instruction.
+
+Par exemple, ce code C affiche `Hello World` au moins une fois, indépendamment de la valeur de départ de la variable `i`.
+```cpp
+int i = 10; // On doit déclarer une variable pour la boucle
+do{
+  printf("Hello World\n");
+  i += 1;
+}while(i < 10); // do{}while; est une unique instruction
+// sur plusieurs lignes, d'où le point-virgule à la fin
+```
+Nous allons recréer ce code C avec Nim. Techniquement, nous allons nous servir d'une boucle while pour construire la boucle do-while.
+Nous ne pourrons cependant pas obtenir la même syntaxe qu'en C, où la condition est affichée à la fin du bloc d'instruction.
+"""
+
+nbCode:
   template doWhile(conditional, loop: untyped) =
     loop
     while conditional:
@@ -218,6 +226,15 @@ nbCode:
   doWhile i < 10:
       echo "Hello World"
       i.inc
+  
+  ## Le template modifie le code pour que soit exécuté:
+  ## echo "Hello World"
+  ## i.inc
+  ## while i < 10:
+  ##   echo "Hello World"
+  ##   i.inc
+  ## 
+  ## Ceci est strictement équivalent au code C présenté ci-dessous.
 
 nbText:hlMd"""
 Notice though that _syntaxically_ the resulting source code is fairly different than the C++ code.
@@ -237,20 +254,25 @@ There is no way to modify Nim's syntax as to match C's syntax.
 """
 
 nbText:"""
-#### Benchmark example
-Another example is benchmarking code in Nim. It suffices to put our bench code inside a special block.
+#### Évaluer le temps d'exécution
+Pour évaluer le temps d'exécution d'un bout de code, on récupère l'heure avant et après l'exécution, et on affiche la différence.
+Avec Nim, on utilise la fonction `getMonoTime`.
+Plutôt que d'écrire quatre lignes supplémentaires pour chaque bout de code dont on veut mesurer le temps d'exécution, il nous suffit d'écrire
+le template suivant:
 """
 
 nbCode:
-  import std/[times, monotimes]
+  ## Évaluation du temps d'exécution
+  import std/[times, monotimes] # times permet un affichage plus lisible d'un `MonoTime`
+
   template benchmark(benchmarkName: string, code: untyped) =
     block:
-      let t0 = getMonoTime()
+      let t0 = getMonoTime() # https://nim-lang.org/docs/monotimes.html#getMonoTime
       code
       let elapsed = getMonoTime() - t0
       echo "CPU Time [", benchmarkName, "] ", elapsed
 
-  benchmark "test1":
+  benchmark "test1": # Devrait retourner une valeur proche de 100 ms
     sleep(100)
 
 nbText:"""
@@ -258,6 +280,11 @@ The code inside the `benchmark` code block will be enclosed by our template code
 
 Since the code replacement is done at compile time, this transformation does not add additional runtime to our benchmarked code.
 On the contrary, a function or procedure for benchmarking would have add runtime due to the nested function calls.
+"""
+
+nbText:"""
+Exercice:
+  Modifier le code précédent pour effectuer une moyenne des temps obtenus après autant de répétitions que demander par l'utilisateur.
 """
 
 nbSection "Macros"
