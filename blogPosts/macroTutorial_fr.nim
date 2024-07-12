@@ -156,7 +156,7 @@ nbCode:
   ## Exemple provenant de std/manual
   template `!=` (a, b: untyped): untyped =
     not (a == b)
-  
+
   doAssert(4 != 5) # Appelle le template `!=` définit ci-dessus.
 
 nbText: """
@@ -173,7 +173,7 @@ nbCode:
     statements # statements est remplacé par `echo 5` lors de l'appel
     statements
 
-  duplicate: # A template can receive its last argument as a code 
+  duplicate: # A template can receive its last argument as a code
     echo 5
 
 nbText: """
@@ -192,7 +192,7 @@ nbCode:
   repetition 5:
     echo("Salut. Je vais dormir 100 millisecondes!")
     sleep(100)
-  
+
   ## Le code est remplacé par:
   ## for i in 0 ..< 5:
   ##   echo("Salut. Je vais dormir 100 millisecondes!")
@@ -226,31 +226,32 @@ nbCode:
   doWhile i < 10:
       echo "Hello World"
       i.inc
-  
+
   ## Le template modifie le code pour que soit exécuté:
   ## echo "Hello World"
   ## i.inc
   ## while i < 10:
   ##   echo "Hello World"
   ##   i.inc
-  ## 
+  ##
   ## Ceci est strictement équivalent au code C présenté ci-dessous.
 
 nbText:hlMd"""
-Notice though that _syntaxically_ the resulting source code is fairly different than the C++ code.
+Vous noterez cependant que _syntaxiquement_ le code source qu'il est alors permis d'écrire est différent du code C++.
 
-In the C source code, appear in this order:
-  1. the `do` keyword
-  2. the block of instruction
-  3. the `while` keyword
-  4. the conditional (boolean expression)
+En effet, dans le code source C, apparaissent dans l'ordre:
+  1. le mot-clé `do`
+  2. le bloc d'instruction
+  3. le mot-clé `while`
+  4. la condition (expression booléenne)
 
+Avec Nim, on a dans cet ordre:
 In Nim, we have in this order:
-  1. the `doWhile` indent
-  2. the conditional
-  3. block of instruction
+  1. le mot-clé `doWhile`
+  2. la condition
+  3. le bloc d'instruction
 
-There is no way to modify Nim's syntax as to match C's syntax.
+Nous ne pouvons pas modifier la syntaxe de Nim pour correspondre à la syntaxe du C.
 """
 
 nbText:"""
@@ -265,21 +266,20 @@ nbCode:
   ## Évaluation du temps d'exécution
   import std/[times, monotimes] # times permet un affichage plus lisible d'un `MonoTime`
 
-  template benchmark(benchmarkName: string, code: untyped) =
+  template benchmark(nomBenchmark: string, code: untyped) =
     block:
       let t0 = getMonoTime() # https://nim-lang.org/docs/monotimes.html#getMonoTime
       code
-      let elapsed = getMonoTime() - t0
-      echo "CPU Time [", benchmarkName, "] ", elapsed
+      let écoulé = getMonoTime() - t0
+      echo "CPU Time [", nomBenchmark, "] ", écoulé
 
   benchmark "test1": # Devrait retourner une valeur proche de 100 ms
     sleep(100)
 
 nbText:"""
-The code inside the `benchmark` code block will be enclosed by our template code.
+Le code qui est indenté en-dessous du bloc `benchmark` sera délimité par le code du benchmark.
 
-Since the code replacement is done at compile time, this transformation does not add additional runtime to our benchmarked code.
-On the contrary, a function or procedure for benchmarking would have add runtime due to the nested function calls.
+Puisque la substitution du code est réalisée au moment de la compilation, cette transformation ne modifie pas les temps obtenus.
 """
 
 nbText:"""
@@ -289,28 +289,75 @@ Exercice:
 
 nbSection "Macros"
 nbText:"""
-Template uses `untyped` parameters as lego bricks. It can not break it down into smaller pieces.
-We can not check untyped parameters in a template. If our template works when given an object as argument, nothing restrics an user to give a function as argument.
+Les Templates utilisent les paramètres `untyped` comme des briques de LEGO©, c'est-à-dire comme du code indivisible qui ne peut-être inspecté pour ses propriétés.
+Si par exemple, nous ne voulions pas que l'utilisateur de notre template passe en argument un code contenant des déclarations, nous ne pourrions le vérifier avec un template.
+L'utilisateur obtiendrait alors une erreur due à son mauvais usage de la fonction sans que nous puissions faire quelque chose pour l'en empêcher.
 
-Macros can be seen as an empowered template procedure. While template substitute code, macros do introspection.
-The main difference is that a template can not look inside an untyped parameter. This means that we can not check the input we get as to verify that the user did not give a function when we expect a type.
+Les `macro`s sont en quelque sorte des `template` améliorées qui peuvent analyser le code qu'elles reçoivent en argument.
 
+« Tandis que les templates remplacent du code, les macros réalisent une introspection. »
 
-One can parse untyped parameters with macros. We can even act something conditionally to informations given in these parameters.
-We can also inject variables into scopes.
+Ici, une introspection de code signifie en analyser le contenu: présence de définitions, analyser les types utilisés, etc…
+
+Au-delà, de l'introspection, les `macro`s vont pouvoir retourner une version modifiée du code passé en argument en injectant des variables dans le code original.
+
+En premier exemple de `macro`, j'ai choisi la macro la plus simple possible puisqu'elle ne retourne rien, ou plus précisément, une liste vide d'instructions.
+Le code qui lui est passé en argument provoquerait une boucle infinie si exécuté. Heureusement, le code généré par la macro étant vide, rien n'est exécuté.
 """
 
 nbCode:
-  macro throwAway(statements: untyped): untyped =
+  macro jetteAuxOubliettes(statements: untyped): untyped =
     result = newStmtList()
 
-  throwAway:
+  jetteAuxOubliettes:
     while true:
-      echo "If you do not throw me, I'll spam you indefinitely!"
+      echo "Si tu ne fais rien, je te spammerai indéfiniment !"
+
+nbText:"""
+### Arbre syntaxique abstrait
+
+Un arbre syntaxique (abstrait) (en anglais AST pour "abstract syntaxic tree") est une représentation du code interne au compilateur, qui est dite intermédiaire, car elle représente le code entre le code source (compréhensible par un humain) et le code généré (difficilement compréhensible par un humain mais pour un compilateur: code C, C++, Objective-C, ou Javascript selon le `backend`).
+
+Chaque code source Nim a son équivalent en AST. En revanche plusieurs codes sources peuvent correspondre à un AST.
+
+Les commentaires et espaces du code source sont supprimés.
+
+L'arbre syntaxique représente le code source sous la forme d'une arborescence ordonnée. L'AST est formée de nœuds qui possèdent chacun un ou plusieurs nœuds enfants. Ces nœuds ne peuvent être intervertis sans changer le sens du code.
+
+Pour obtenir une représentation du code syntaxique d'un code, on peut écrire ce code sous une `macro` spéciale appelée `dumpTree`.
+"""
 
 nbText:"""
 ### AST Manipulation
 In Nim, the code is read and transformed in an internal intermediate representation called an Abstract Syntax Tree (AST). To get a representation of the AST corresponding to a code, we can use the `macro` `dumpTree`.
+"""
+nbCode:
+  # N'oubliez pas d'importer std/macros!
+  # Vous pouvez utiliser --hints:off pour mieux discerner l'Arbre syntaxique
+  dumpTree:
+    echo "Salut!"
+
+nbText:"""
+Vous trouverez dans la sortie du compilateur l'AST suivant:
+```nim
+StmtList
+  Command
+    Ident "echo"
+    StrLit "Salut!"
+```
+Ce code contient quatre nœuds. `StmtList` est à la racine de l'arbre, puis chaque indentation désigne que l'on passe à un nœud enfant, à un niveau inférieur dans la hiérarchie.
+
+`StmtList` est la contraction de _statements list_ qui signifie bloc d'instructions. Il rassemble ensemble toutes les instructions dans le bloc.
+
+Le nœud suivant `Command` indique que l'on utilise une procédure dont le nom est donné par son nœud enfant `Ident`. Un `Ident` peut-être le nom d'une variable, d'un objet ou d'une procédure.
+Le nœud `Command` précise la façon dont la procédure est appelée. Je ne détaille pas ici, mais cela a un rapport avec l'UFCS: Uniform Function Call Syntax qui est une propriété du langage qui indique qu'une fonction ou procédure peut être appelée indifféremment avec trois syntaxes distinctes.
+
+Nous avons ensuite deux nœuds avec du texte accolé à la suite. Les nœuds correspondants à des noms de variables ou de procédures sont des nœuds de type `Ident`.
+Les chaines de caractères sont des nœuds de type `StrLit`.
+"""
+
+nbText:"""
+Afin de vous donner une idée de ce qui se passe en général, voici un exemple d'un code nettement plus complexe.
 """
 
 nbCode:
@@ -323,7 +370,7 @@ nbCode:
         right: seq[myObject]
 
 nbText:"""
-This code outputs the following AST tree (it should not change among Nim versions).
+Ce code donne en sortie l'arbre syntaxique suivant:
 ```nim
 StmtList
   TypeSection
@@ -352,14 +399,26 @@ StmtList
                 Ident "myObject"
               Empty
 ```
-We can better visualize the tree structure of the AST with the following picture.
+L'AST retourné par `dumpTree` démarrera sauf quelques exceptions toujours par `StmtList`.
+Les définitions de type se retrouvent toujours dans une `TypeSection` qui possèdent autant d'enfants de type `TypeDef` que de définitions.
+Les types objets sont définis par des `ObjectTy`.
+
+Afin de mieux visualiser l'hiérarchie, vous trouverez ci-dessous un schéma de l'AST:
 """
 
-nbImage(url="ASTtree.jpg", caption="Nim's Abstract Syntax Tree visualized with a tree")
+nbImage(url="pictures/ASTtree.jpg", caption="Arbre syntaxique de la définition du type myObject")
 
 nbText:"""
-### Multiply by two macro
-This example of macro is taken from [this Youtube video](https://www.youtube.com/watch?v=WHyOHQ_GkNo) made by [Fireship](https://www.youtube.com/c/Fireship).
+Il n'est pas nécessaire que vous compreniez l'ensemble de la génération de l'AST. Sachez simplement que vous pouvez l'obtenir avec la commande `DumpTree`.
+Si jamais vous avez besoin d'écrire vous même un AST pour une macro, sachez que des exemples pour toutes les structures et mots-clefs sont dans la documentation des macros:
+[std/macros](https://nim-lang.org/docs/macros.html)
+"""
+
+nbText:"""
+### Premier exemple de Macro: multiplication par deux
+La première macro que je vous présente provient de cette [vidéo Youtube](https://www.youtube.com/watch?v=WHyOHQ_GkNo) réalisée par [Jeff Delaunay sur sa chaîne Fireship](https://www.youtube.com/c/Fireship).
+
+Lorsque un utilisateur désire afficher des valeurs entières sous cette macro, les valeurs seront multipliées par deux.
 """
 
 nbCode:
@@ -368,21 +427,53 @@ nbCode:
       for node in s:
         if node.kind == nnkIntLit:
           node.intVal = node.intVal*2
-
   timesTwo:
     echo 1 # 2
     echo 2 # 4
     echo 3 # 6
 
 nbText:"""
-This macro multiplies each integer values by two before plotting!
-Let us breakdown this macro, shall we ?
-To understand how a macro work, we first may look at the AST given as input.
+Avant d'expliciter le fonctionnement de la macro, on va comparer l'AST du code donné en entrée,
+avec celui que l'on pense obtenir avec le code:
 """
 
 nbCode:
   dumpTree:
     echo 1
+    echo 2
+    echo 3
+  dumpTree:
+    echo 2
+    echo 4
+    echo 6
+
+nbText:"""
+Le compilateur retourne:
+```nim
+StmtList
+  Command
+    Ident "echo"
+    IntLit 1
+  Command
+    Ident "echo"
+    IntLit 2
+  Command
+    Ident "echo"
+    IntLit 3
+StmtList
+  Command
+    Ident "echo"
+    IntLit 2
+  Command
+    Ident "echo"
+    IntLit 4
+  Command
+    Ident "echo"
+    IntLit 6
+```
+Cette sortie ressemble à s'y méprendre au premier exemple d'AST vu précédemment.
+Au lieu du StrLit "Salut!", on a désormais IntLit suivi du nombre présent dans le code source ou dans la sortie.
+"""
 
 nbText:"""
 By compiling this code, you will get the corresponding AST.

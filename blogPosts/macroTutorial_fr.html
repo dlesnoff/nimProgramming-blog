@@ -5,7 +5,7 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🐳</text></svg>">
   <meta content="text/html; charset=utf-8" http-equiv="content-type">
   <meta content="width=device-width, initial-scale=1" name="viewport">
-  <meta content="nimib 0.3.10" name="generator">
+  <meta content="nimib 0.3.12" name="generator">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/light.min.css">
   <link rel='stylesheet' href='https://cdn.jsdelivr.net/gh/pietroppeter/nimib/assets/atom-one-light.css'>
     <script src="https://cdn.jsdelivr.net/gh/pietroppeter/nimib@main/assets/highlight.min.js"></script>
@@ -170,7 +170,7 @@ template.</p>
   statements <span class="hljs-comment"># statements est remplacé par `echo 5` lors de l'appel</span>
   statements
 
-duplicate: <span class="hljs-comment"># A template can receive its last argument as a code </span>
+duplicate: <span class="hljs-comment"># A template can receive its last argument as a code</span>
   <span class="hljs-keyword">echo</span> <span class="hljs-number">5</span></code></pre><pre class="nb-output">5
 5</pre>
 <p>Ci-dessous, on généralise l'idée pour répéter le code autant de fois que désiré.</p>
@@ -223,23 +223,24 @@ doWhile i &lt; <span class="hljs-number">10</span>:
 <span class="hljs-comment">## while i &lt; 10:</span>
 <span class="hljs-comment">##   echo &quot;Hello World&quot;</span>
 <span class="hljs-comment">##   i.inc</span>
-<span class="hljs-comment">## </span>
+<span class="hljs-comment">##</span>
 <span class="hljs-comment">## Ceci est strictement équivalent au code C présenté ci-dessous.</span></code></pre><pre class="nb-output">Hello World</pre>
-<p>Notice though that <em>syntaxically</em> the resulting source code is fairly different than the C++ code.</p>
-<p>In the C source code, appear in this order:</p>
+<p>Vous noterez cependant que <em>syntaxiquement</em> le code source qu'il est alors permis d'écrire est différent du code C++.</p>
+<p>En effet, dans le code source C, apparaissent dans l'ordre:</p>
 <ol>
-<li>the <code>do</code> keyword</li>
-<li>the block of instruction</li>
-<li>the <code>while</code> keyword</li>
-<li>the conditional (boolean expression)</li>
+<li>le mot-clé <code>do</code></li>
+<li>le bloc d'instruction</li>
+<li>le mot-clé <code>while</code></li>
+<li>la condition (expression booléenne)</li>
 </ol>
-<p>In Nim, we have in this order:</p>
+<p>Avec Nim, on a dans cet ordre:
+In Nim, we have in this order:</p>
 <ol>
-<li>the <code>doWhile</code> indent</li>
-<li>the conditional</li>
-<li>block of instruction</li>
+<li>le mot-clé <code>doWhile</code></li>
+<li>la condition</li>
+<li>le bloc d'instruction</li>
 </ol>
-<p>There is no way to modify Nim's syntax as to match C's syntax.</p>
+<p>Nous ne pouvons pas modifier la syntaxe de Nim pour correspondre à la syntaxe du C.</p>
 <h4>Évaluer le temps d'exécution</h4>
 <p>Pour évaluer le temps d'exécution d'un bout de code, on récupère l'heure avant et après l'exécution, et on affiche la différence.
 Avec Nim, on utilise la fonction <code>getMonoTime</code>.
@@ -248,37 +249,62 @@ le template suivant:</p>
 <pre><code class="nohighlight hljs nim"><span class="hljs-comment">## Évaluation du temps d'exécution</span>
 <span class="hljs-keyword">import</span> std/[times, monotimes] <span class="hljs-comment"># times permet un affichage plus lisible d'un `MonoTime`</span>
 
-<span class="hljs-keyword">template</span> benchmark(benchmarkName: <span class="hljs-built_in">string</span>, code: <span class="hljs-built_in">untyped</span>) =
+<span class="hljs-keyword">template</span> benchmark(nomBenchmark: <span class="hljs-built_in">string</span>, code: <span class="hljs-built_in">untyped</span>) =
   <span class="hljs-keyword">block</span>:
     <span class="hljs-keyword">let</span> t0 = getMonoTime() <span class="hljs-comment"># https://nim-lang.org/docs/monotimes.html#getMonoTime</span>
     code
-    <span class="hljs-keyword">let</span> elapsed = getMonoTime() - t0
-    <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;CPU Time [&quot;</span>, benchmarkName, <span class="hljs-string">&quot;] &quot;</span>, elapsed
+    <span class="hljs-keyword">let</span> écoulé = getMonoTime() - t0
+    <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;CPU Time [&quot;</span>, nomBenchmark, <span class="hljs-string">&quot;] &quot;</span>, écoulé
 
 benchmark <span class="hljs-string">&quot;test1&quot;</span>: <span class="hljs-comment"># Devrait retourner une valeur proche de 100 ms</span>
-  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 89 microseconds, and 913 nanoseconds</pre>
-<p>The code inside the <code>benchmark</code> code block will be enclosed by our template code.</p>
-<p>Since the code replacement is done at compile time, this transformation does not add additional runtime to our benchmarked code.
-On the contrary, a function or procedure for benchmarking would have add runtime due to the nested function calls.</p>
+  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 183 microseconds, and 909 nanoseconds</pre>
+<p>Le code qui est indenté en-dessous du bloc <code>benchmark</code> sera délimité par le code du benchmark.</p>
+<p>Puisque la substitution du code est réalisée au moment de la compilation, cette transformation ne modifie pas les temps obtenus.</p>
 <p>Exercice:
 Modifier le code précédent pour effectuer une moyenne des temps obtenus après autant de répétitions que demander par l'utilisateur.</p>
 <p><a name = "macros"></a></p>
 <h2>Macros</h2>
 <hr />
-<p>Template uses <code>untyped</code> parameters as lego bricks. It can not break it down into smaller pieces.
-We can not check untyped parameters in a template. If our template works when given an object as argument, nothing restrics an user to give a function as argument.</p>
-<p>Macros can be seen as an empowered template procedure. While template substitute code, macros do introspection.
-The main difference is that a template can not look inside an untyped parameter. This means that we can not check the input we get as to verify that the user did not give a function when we expect a type.</p>
-<p>One can parse untyped parameters with macros. We can even act something conditionally to informations given in these parameters.
-We can also inject variables into scopes.</p>
-<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">macro</span> throwAway(statements: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
+<p>Les Templates utilisent les paramètres <code>untyped</code> comme des briques de LEGO©, c'est-à-dire comme du code indivisible qui ne peut-être inspecté pour ses propriétés.
+Si par exemple, nous ne voulions pas que l'utilisateur de notre template passe en argument un code contenant des déclarations, nous ne pourrions le vérifier avec un template.
+L'utilisateur obtiendrait alors une erreur due à son mauvais usage de la fonction sans que nous puissions faire quelque chose pour l'en empêcher.</p>
+<p>Les <code>macro</code>s sont en quelque sorte des <code>template</code> améliorées qui peuvent analyser le code qu'elles reçoivent en argument.</p>
+<p>« Tandis que les templates remplacent du code, les macros réalisent une introspection. »</p>
+<p>Ici, une introspection de code signifie en analyser le contenu: présence de définitions, analyser les types utilisés, etc…</p>
+<p>Au-delà, de l'introspection, les <code>macro</code>s vont pouvoir retourner une version modifiée du code passé en argument en injectant des variables dans le code original.</p>
+<p>En premier exemple de <code>macro</code>, j'ai choisi la macro la plus simple possible puisqu'elle ne retourne rien, ou plus précisément, une liste vide d'instructions.
+Le code qui lui est passé en argument provoquerait une boucle infinie si exécuté. Heureusement, le code généré par la macro étant vide, rien n'est exécuté.</p>
+<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">macro</span> jetteAuxOubliettes(statements: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
   <span class="hljs-literal">result</span> = newStmtList()
 
-throwAway:
+jetteAuxOubliettes:
   <span class="hljs-keyword">while</span> <span class="hljs-literal">true</span>:
-    <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;If you do not throw me, I'll spam you indefinitely!&quot;</span></code></pre>
+    <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;Si tu ne fais rien, je te spammerai indéfiniment !&quot;</span></code></pre>
+<h3>Arbre syntaxique abstrait</h3>
+<p>Un arbre syntaxique (abstrait) (en anglais AST pour &quot;abstract syntaxic tree&quot;) est une représentation du code interne au compilateur, qui est dite intermédiaire, car elle représente le code entre le code source (compréhensible par un humain) et le code généré (difficilement compréhensible par un humain mais pour un compilateur: code C, C++, Objective-C, ou Javascript selon le <code>backend</code>).</p>
+<p>Chaque code source Nim a son équivalent en AST. En revanche plusieurs codes sources peuvent correspondre à un AST.</p>
+<p>Les commentaires et espaces du code source sont supprimés.</p>
+<p>L'arbre syntaxique représente le code source sous la forme d'une arborescence ordonnée. L'AST est formée de nœuds qui possèdent chacun un ou plusieurs nœuds enfants. Ces nœuds ne peuvent être intervertis sans changer le sens du code.</p>
+<p>Pour obtenir une représentation du code syntaxique d'un code, on peut écrire ce code sous une <code>macro</code> spéciale appelée <code>dumpTree</code>.</p>
 <h3>AST Manipulation</h3>
 <p>In Nim, the code is read and transformed in an internal intermediate representation called an Abstract Syntax Tree (AST). To get a representation of the AST corresponding to a code, we can use the <code>macro</code> <code>dumpTree</code>.</p>
+<pre><code class="nohighlight hljs nim"><span class="hljs-comment"># N'oubliez pas d'importer std/macros!</span>
+<span class="hljs-comment"># Vous pouvez utiliser --hints:off pour mieux discerner l'Arbre syntaxique</span>
+dumpTree:
+  <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;Salut!&quot;</span></code></pre>
+<p>Vous trouverez dans la sortie du compilateur l'AST suivant:</p>
+<pre><code class="language-nim">StmtList
+  Command
+    Ident &quot;echo&quot;
+    StrLit &quot;Salut!&quot;
+</code></pre>
+<p>Ce code contient quatre nœuds. <code>StmtList</code> est à la racine de l'arbre, puis chaque indentation désigne que l'on passe à un nœud enfant, à un niveau inférieur dans la hiérarchie.</p>
+<p><code>StmtList</code> est la contraction de <em>statements list</em> qui signifie bloc d'instructions. Il rassemble ensemble toutes les instructions dans le bloc.</p>
+<p>Le nœud suivant <code>Command</code> indique que l'on utilise une procédure dont le nom est donné par son nœud enfant <code>Ident</code>. Un <code>Ident</code> peut-être le nom d'une variable, d'un objet ou d'une procédure.
+Le nœud <code>Command</code> précise la façon dont la procédure est appelée. Je ne détaille pas ici, mais cela a un rapport avec l'UFCS: Uniform Function Call Syntax qui est une propriété du langage qui indique qu'une fonction ou procédure peut être appelée indifféremment avec trois syntaxes distinctes.</p>
+<p>Nous avons ensuite deux nœuds avec du texte accolé à la suite. Les nœuds correspondants à des noms de variables ou de procédures sont des nœuds de type <code>Ident</code>.
+Les chaines de caractères sont des nœuds de type <code>StrLit</code>.</p>
+<p>Afin de vous donner une idée de ce qui se passe en général, voici un exemple d'un code nettement plus complexe.</p>
 <pre><code class="nohighlight hljs nim"><span class="hljs-comment"># Don't forget to import std/macros!</span>
 <span class="hljs-comment"># You can use --hints:off to display only the AST tree</span>
 dumpTree:
@@ -286,7 +312,7 @@ dumpTree:
     myObject {.packed.} = <span class="hljs-keyword">ref</span> <span class="hljs-keyword">object</span> <span class="hljs-keyword">of</span> <span class="hljs-type">RootObj</span>
       left: <span class="hljs-built_in">seq</span>[myObject]
       right: <span class="hljs-built_in">seq</span>[myObject]</code></pre>
-<p>This code outputs the following AST tree (it should not change among Nim versions).</p>
+<p>Ce code donne en sortie l'arbre syntaxique suivant:</p>
 <pre><code class="language-nim">StmtList
   TypeSection
     TypeDef
@@ -314,28 +340,63 @@ dumpTree:
                 Ident &quot;myObject&quot;
               Empty
 </code></pre>
-<p>We can better visualize the tree structure of the AST with the following picture.</p>
+<p>L'AST retourné par <code>dumpTree</code> démarrera sauf quelques exceptions toujours par <code>StmtList</code>.
+Les définitions de type se retrouvent toujours dans une <code>TypeSection</code> qui possèdent autant d'enfants de type <code>TypeDef</code> que de définitions.
+Les types objets sont définis par des <code>ObjectTy</code>.</p>
+<p>Afin de mieux visualiser l'hiérarchie, vous trouverez ci-dessous un schéma de l'AST:</p>
 <figure>
-<img src="./ASTtree.jpg" alt="Nim's Abstract Syntax Tree visualized with a tree">
-<figcaption>Nim's Abstract Syntax Tree visualized with a tree</figcaption>
+<img src="./pictures/ASTtree.jpg" alt="Arbre syntaxique de la définition du type myObject">
+<figcaption>Arbre syntaxique de la définition du type myObject</figcaption>
 </figure>
-<h3>Multiply by two macro</h3>
-<p>This example of macro is taken from <a href="https://www.youtube.com/watch?v=WHyOHQ_GkNo">this Youtube video</a> made by <a href="https://www.youtube.com/c/Fireship">Fireship</a>.</p>
+<p>Il n'est pas nécessaire que vous compreniez l'ensemble de la génération de l'AST. Sachez simplement que vous pouvez l'obtenir avec la commande <code>DumpTree</code>.
+Si jamais vous avez besoin d'écrire vous même un AST pour une macro, sachez que des exemples pour toutes les structures et mots-clefs sont dans la documentation des macros:
+<a href="https://nim-lang.org/docs/macros.html">std/macros</a></p>
+<h3>Premier exemple de Macro: multiplication par deux</h3>
+<p>La première macro que je vous présente provient de cette <a href="https://www.youtube.com/watch?v=WHyOHQ_GkNo">vidéo Youtube</a> réalisée par <a href="https://www.youtube.com/c/Fireship">Jeff Delaunay sur sa chaîne Fireship</a>.</p>
+<p>Lorsque un utilisateur désire afficher des valeurs entières sous cette macro, les valeurs seront multipliées par deux.</p>
 <pre><code class="nohighlight hljs nim"><span class="hljs-keyword">macro</span> timesTwo(statements: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
   <span class="hljs-keyword">for</span> s <span class="hljs-keyword">in</span> <span class="hljs-literal">result</span>:
     <span class="hljs-keyword">for</span> node <span class="hljs-keyword">in</span> s:
       <span class="hljs-keyword">if</span> node.kind == nnkIntLit:
         node.intVal = node.intVal*<span class="hljs-number">2</span>
-
 timesTwo:
   <span class="hljs-keyword">echo</span> <span class="hljs-number">1</span> <span class="hljs-comment"># 2</span>
   <span class="hljs-keyword">echo</span> <span class="hljs-number">2</span> <span class="hljs-comment"># 4</span>
   <span class="hljs-keyword">echo</span> <span class="hljs-number">3</span> <span class="hljs-comment"># 6</span></code></pre>
-<p>This macro multiplies each integer values by two before plotting!
-Let us breakdown this macro, shall we ?
-To understand how a macro work, we first may look at the AST given as input.</p>
+<p>Avant d'expliciter le fonctionnement de la macro, on va comparer l'AST du code donné en entrée,
+avec celui que l'on pense obtenir avec le code:</p>
 <pre><code class="nohighlight hljs nim">dumpTree:
-  <span class="hljs-keyword">echo</span> <span class="hljs-number">1</span></code></pre>
+  <span class="hljs-keyword">echo</span> <span class="hljs-number">1</span>
+  <span class="hljs-keyword">echo</span> <span class="hljs-number">2</span>
+  <span class="hljs-keyword">echo</span> <span class="hljs-number">3</span>
+dumpTree:
+  <span class="hljs-keyword">echo</span> <span class="hljs-number">2</span>
+  <span class="hljs-keyword">echo</span> <span class="hljs-number">4</span>
+  <span class="hljs-keyword">echo</span> <span class="hljs-number">6</span></code></pre>
+<p>Le compilateur retourne:</p>
+<pre><code class="language-nim">StmtList
+  Command
+    Ident &quot;echo&quot;
+    IntLit 1
+  Command
+    Ident &quot;echo&quot;
+    IntLit 2
+  Command
+    Ident &quot;echo&quot;
+    IntLit 3
+StmtList
+  Command
+    Ident &quot;echo&quot;
+    IntLit 2
+  Command
+    Ident &quot;echo&quot;
+    IntLit 4
+  Command
+    Ident &quot;echo&quot;
+    IntLit 6
+</code></pre>
+<p>Cette sortie ressemble à s'y méprendre au premier exemple d'AST vu précédemment.
+Au lieu du StrLit &quot;Salut!&quot;, on a désormais IntLit suivi du nombre présent dans le code source ou dans la sortie.</p>
 <p>By compiling this code, you will get the corresponding AST.
 This simple AST is made of four nodes:</p>
 <pre><code class="language-nim">StmtList
@@ -844,7 +905,7 @@ nbCode:
   <span class="hljs-comment">## Exemple provenant de std/manual</span>
   <span class="hljs-keyword">template</span> `!=` (a, b: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
     <span class="hljs-keyword">not</span> (a == b)
-  
+
   doAssert(<span class="hljs-number">4</span> != <span class="hljs-number">5</span>) <span class="hljs-comment"># Appelle le template `!=` définit ci-dessus.</span>
 
 nbText: <span class="hljs-string">&quot;&quot;&quot;
@@ -861,7 +922,7 @@ nbCode:
     statements <span class="hljs-comment"># statements est remplacé par `echo 5` lors de l'appel</span>
     statements
 
-  duplicate: <span class="hljs-comment"># A template can receive its last argument as a code </span>
+  duplicate: <span class="hljs-comment"># A template can receive its last argument as a code</span>
     <span class="hljs-keyword">echo</span> <span class="hljs-number">5</span>
 
 nbText: <span class="hljs-string">&quot;&quot;&quot;
@@ -880,7 +941,7 @@ nbCode:
   repetition <span class="hljs-number">5</span>:
     <span class="hljs-keyword">echo</span>(<span class="hljs-string">&quot;Salut. Je vais dormir 100 millisecondes!&quot;</span>)
     sleep(<span class="hljs-number">100</span>)
-  
+
   <span class="hljs-comment">## Le code est remplacé par:</span>
   <span class="hljs-comment">## for i in 0 ..&lt; 5:</span>
   <span class="hljs-comment">##   echo(&quot;Salut. Je vais dormir 100 millisecondes!&quot;)</span>
@@ -914,31 +975,32 @@ nbCode:
   doWhile i &lt; <span class="hljs-number">10</span>:
       <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;Hello World&quot;</span>
       i.inc
-  
+
   <span class="hljs-comment">## Le template modifie le code pour que soit exécuté:</span>
   <span class="hljs-comment">## echo &quot;Hello World&quot;</span>
   <span class="hljs-comment">## i.inc</span>
   <span class="hljs-comment">## while i &lt; 10:</span>
   <span class="hljs-comment">##   echo &quot;Hello World&quot;</span>
   <span class="hljs-comment">##   i.inc</span>
-  <span class="hljs-comment">## </span>
+  <span class="hljs-comment">##</span>
   <span class="hljs-comment">## Ceci est strictement équivalent au code C présenté ci-dessous.</span>
 
 nbText:<span class="hljs-string">hlMd&quot;&quot;&quot;
-Notice though that _syntaxically_ the resulting source code is fairly different than the C++ code.
+Vous noterez cependant que _syntaxiquement_ le code source qu'il est alors permis d'écrire est différent du code C++.
 
-In the C source code, appear in this order:
-  1. the `do` keyword
-  2. the block of instruction
-  3. the `while` keyword
-  4. the conditional (boolean expression)
+En effet, dans le code source C, apparaissent dans l'ordre:
+  1. le mot-clé `do`
+  2. le bloc d'instruction
+  3. le mot-clé `while`
+  4. la condition (expression booléenne)
 
+Avec Nim, on a dans cet ordre:
 In Nim, we have in this order:
-  1. the `doWhile` indent
-  2. the conditional
-  3. block of instruction
+  1. le mot-clé `doWhile`
+  2. la condition
+  3. le bloc d'instruction
 
-There is no way to modify Nim's syntax as to match C's syntax.
+Nous ne pouvons pas modifier la syntaxe de Nim pour correspondre à la syntaxe du C.
 &quot;&quot;&quot;</span>
 
 nbText:<span class="hljs-string">&quot;&quot;&quot;
@@ -953,21 +1015,20 @@ nbCode:
   <span class="hljs-comment">## Évaluation du temps d'exécution</span>
   <span class="hljs-keyword">import</span> std/[times, monotimes] <span class="hljs-comment"># times permet un affichage plus lisible d'un `MonoTime`</span>
 
-  <span class="hljs-keyword">template</span> benchmark(benchmarkName: <span class="hljs-built_in">string</span>, code: <span class="hljs-built_in">untyped</span>) =
+  <span class="hljs-keyword">template</span> benchmark(nomBenchmark: <span class="hljs-built_in">string</span>, code: <span class="hljs-built_in">untyped</span>) =
     <span class="hljs-keyword">block</span>:
       <span class="hljs-keyword">let</span> t0 = getMonoTime() <span class="hljs-comment"># https://nim-lang.org/docs/monotimes.html#getMonoTime</span>
       code
-      <span class="hljs-keyword">let</span> elapsed = getMonoTime() - t0
-      <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;CPU Time [&quot;</span>, benchmarkName, <span class="hljs-string">&quot;] &quot;</span>, elapsed
+      <span class="hljs-keyword">let</span> écoulé = getMonoTime() - t0
+      <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;CPU Time [&quot;</span>, nomBenchmark, <span class="hljs-string">&quot;] &quot;</span>, écoulé
 
   benchmark <span class="hljs-string">&quot;test1&quot;</span>: <span class="hljs-comment"># Devrait retourner une valeur proche de 100 ms</span>
     sleep(<span class="hljs-number">100</span>)
 
 nbText:<span class="hljs-string">&quot;&quot;&quot;
-The code inside the `benchmark` code block will be enclosed by our template code.
+Le code qui est indenté en-dessous du bloc `benchmark` sera délimité par le code du benchmark.
 
-Since the code replacement is done at compile time, this transformation does not add additional runtime to our benchmarked code.
-On the contrary, a function or procedure for benchmarking would have add runtime due to the nested function calls.
+Puisque la substitution du code est réalisée au moment de la compilation, cette transformation ne modifie pas les temps obtenus.
 &quot;&quot;&quot;</span>
 
 nbText:<span class="hljs-string">&quot;&quot;&quot;
@@ -977,28 +1038,75 @@ Exercice:
 
 nbSection <span class="hljs-string">&quot;Macros&quot;</span>
 nbText:<span class="hljs-string">&quot;&quot;&quot;
-Template uses `untyped` parameters as lego bricks. It can not break it down into smaller pieces.
-We can not check untyped parameters in a template. If our template works when given an object as argument, nothing restrics an user to give a function as argument.
+Les Templates utilisent les paramètres `untyped` comme des briques de LEGO©, c'est-à-dire comme du code indivisible qui ne peut-être inspecté pour ses propriétés.
+Si par exemple, nous ne voulions pas que l'utilisateur de notre template passe en argument un code contenant des déclarations, nous ne pourrions le vérifier avec un template.
+L'utilisateur obtiendrait alors une erreur due à son mauvais usage de la fonction sans que nous puissions faire quelque chose pour l'en empêcher.
 
-Macros can be seen as an empowered template procedure. While template substitute code, macros do introspection.
-The main difference is that a template can not look inside an untyped parameter. This means that we can not check the input we get as to verify that the user did not give a function when we expect a type.
+Les `macro`s sont en quelque sorte des `template` améliorées qui peuvent analyser le code qu'elles reçoivent en argument.
 
+« Tandis que les templates remplacent du code, les macros réalisent une introspection. »
 
-One can parse untyped parameters with macros. We can even act something conditionally to informations given in these parameters.
-We can also inject variables into scopes.
+Ici, une introspection de code signifie en analyser le contenu: présence de définitions, analyser les types utilisés, etc…
+
+Au-delà, de l'introspection, les `macro`s vont pouvoir retourner une version modifiée du code passé en argument en injectant des variables dans le code original.
+
+En premier exemple de `macro`, j'ai choisi la macro la plus simple possible puisqu'elle ne retourne rien, ou plus précisément, une liste vide d'instructions.
+Le code qui lui est passé en argument provoquerait une boucle infinie si exécuté. Heureusement, le code généré par la macro étant vide, rien n'est exécuté.
 &quot;&quot;&quot;</span>
 
 nbCode:
-  <span class="hljs-keyword">macro</span> throwAway(statements: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
+  <span class="hljs-keyword">macro</span> jetteAuxOubliettes(statements: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
     <span class="hljs-literal">result</span> = newStmtList()
 
-  throwAway:
+  jetteAuxOubliettes:
     <span class="hljs-keyword">while</span> <span class="hljs-literal">true</span>:
-      <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;If you do not throw me, I'll spam you indefinitely!&quot;</span>
+      <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;Si tu ne fais rien, je te spammerai indéfiniment !&quot;</span>
+
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+### Arbre syntaxique abstrait
+
+Un arbre syntaxique (abstrait) (en anglais AST pour &quot;abstract syntaxic tree&quot;) est une représentation du code interne au compilateur, qui est dite intermédiaire, car elle représente le code entre le code source (compréhensible par un humain) et le code généré (difficilement compréhensible par un humain mais pour un compilateur: code C, C++, Objective-C, ou Javascript selon le `backend`).
+
+Chaque code source Nim a son équivalent en AST. En revanche plusieurs codes sources peuvent correspondre à un AST.
+
+Les commentaires et espaces du code source sont supprimés.
+
+L'arbre syntaxique représente le code source sous la forme d'une arborescence ordonnée. L'AST est formée de nœuds qui possèdent chacun un ou plusieurs nœuds enfants. Ces nœuds ne peuvent être intervertis sans changer le sens du code.
+
+Pour obtenir une représentation du code syntaxique d'un code, on peut écrire ce code sous une `macro` spéciale appelée `dumpTree`.
+&quot;&quot;&quot;</span>
 
 nbText:<span class="hljs-string">&quot;&quot;&quot;
 ### AST Manipulation
 In Nim, the code is read and transformed in an internal intermediate representation called an Abstract Syntax Tree (AST). To get a representation of the AST corresponding to a code, we can use the `macro` `dumpTree`.
+&quot;&quot;&quot;</span>
+nbCode:
+  <span class="hljs-comment"># N'oubliez pas d'importer std/macros!</span>
+  <span class="hljs-comment"># Vous pouvez utiliser --hints:off pour mieux discerner l'Arbre syntaxique</span>
+  dumpTree:
+    <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;Salut!&quot;</span>
+
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+Vous trouverez dans la sortie du compilateur l'AST suivant:
+```nim
+StmtList
+  Command
+    Ident &quot;echo&quot;
+    StrLit &quot;Salut!&quot;
+```
+Ce code contient quatre nœuds. `StmtList` est à la racine de l'arbre, puis chaque indentation désigne que l'on passe à un nœud enfant, à un niveau inférieur dans la hiérarchie.
+
+`StmtList` est la contraction de _statements list_ qui signifie bloc d'instructions. Il rassemble ensemble toutes les instructions dans le bloc.
+
+Le nœud suivant `Command` indique que l'on utilise une procédure dont le nom est donné par son nœud enfant `Ident`. Un `Ident` peut-être le nom d'une variable, d'un objet ou d'une procédure.
+Le nœud `Command` précise la façon dont la procédure est appelée. Je ne détaille pas ici, mais cela a un rapport avec l'UFCS: Uniform Function Call Syntax qui est une propriété du langage qui indique qu'une fonction ou procédure peut être appelée indifféremment avec trois syntaxes distinctes.
+
+Nous avons ensuite deux nœuds avec du texte accolé à la suite. Les nœuds correspondants à des noms de variables ou de procédures sont des nœuds de type `Ident`.
+Les chaines de caractères sont des nœuds de type `StrLit`.
+&quot;&quot;&quot;</span>
+
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+Afin de vous donner une idée de ce qui se passe en général, voici un exemple d'un code nettement plus complexe.
 &quot;&quot;&quot;</span>
 
 nbCode:
@@ -1011,7 +1119,7 @@ nbCode:
         right: <span class="hljs-built_in">seq</span>[myObject]
 
 nbText:<span class="hljs-string">&quot;&quot;&quot;
-This code outputs the following AST tree (it should not change among Nim versions).
+Ce code donne en sortie l'arbre syntaxique suivant:
 ```nim
 StmtList
   TypeSection
@@ -1040,14 +1148,26 @@ StmtList
                 Ident &quot;myObject&quot;
               Empty
 ```
-We can better visualize the tree structure of the AST with the following picture.
+L'AST retourné par `dumpTree` démarrera sauf quelques exceptions toujours par `StmtList`.
+Les définitions de type se retrouvent toujours dans une `TypeSection` qui possèdent autant d'enfants de type `TypeDef` que de définitions.
+Les types objets sont définis par des `ObjectTy`.
+
+Afin de mieux visualiser l'hiérarchie, vous trouverez ci-dessous un schéma de l'AST:
 &quot;&quot;&quot;</span>
 
-nbImage(url=<span class="hljs-string">&quot;ASTtree.jpg&quot;</span>, caption=<span class="hljs-string">&quot;Nim's Abstract Syntax Tree visualized with a tree&quot;</span>)
+nbImage(url=<span class="hljs-string">&quot;pictures/ASTtree.jpg&quot;</span>, caption=<span class="hljs-string">&quot;Arbre syntaxique de la définition du type myObject&quot;</span>)
 
 nbText:<span class="hljs-string">&quot;&quot;&quot;
-### Multiply by two macro
-This example of macro is taken from [this Youtube video](https://www.youtube.com/watch?v=WHyOHQ_GkNo) made by [Fireship](https://www.youtube.com/c/Fireship).
+Il n'est pas nécessaire que vous compreniez l'ensemble de la génération de l'AST. Sachez simplement que vous pouvez l'obtenir avec la commande `DumpTree`.
+Si jamais vous avez besoin d'écrire vous même un AST pour une macro, sachez que des exemples pour toutes les structures et mots-clefs sont dans la documentation des macros:
+[std/macros](https://nim-lang.org/docs/macros.html)
+&quot;&quot;&quot;</span>
+
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+### Premier exemple de Macro: multiplication par deux
+La première macro que je vous présente provient de cette [vidéo Youtube](https://www.youtube.com/watch?v=WHyOHQ_GkNo) réalisée par [Jeff Delaunay sur sa chaîne Fireship](https://www.youtube.com/c/Fireship).
+
+Lorsque un utilisateur désire afficher des valeurs entières sous cette macro, les valeurs seront multipliées par deux.
 &quot;&quot;&quot;</span>
 
 nbCode:
@@ -1056,21 +1176,53 @@ nbCode:
       <span class="hljs-keyword">for</span> node <span class="hljs-keyword">in</span> s:
         <span class="hljs-keyword">if</span> node.kind == nnkIntLit:
           node.intVal = node.intVal*<span class="hljs-number">2</span>
-
   timesTwo:
     <span class="hljs-keyword">echo</span> <span class="hljs-number">1</span> <span class="hljs-comment"># 2</span>
     <span class="hljs-keyword">echo</span> <span class="hljs-number">2</span> <span class="hljs-comment"># 4</span>
     <span class="hljs-keyword">echo</span> <span class="hljs-number">3</span> <span class="hljs-comment"># 6</span>
 
 nbText:<span class="hljs-string">&quot;&quot;&quot;
-This macro multiplies each integer values by two before plotting!
-Let us breakdown this macro, shall we ?
-To understand how a macro work, we first may look at the AST given as input.
+Avant d'expliciter le fonctionnement de la macro, on va comparer l'AST du code donné en entrée,
+avec celui que l'on pense obtenir avec le code:
 &quot;&quot;&quot;</span>
 
 nbCode:
   dumpTree:
     <span class="hljs-keyword">echo</span> <span class="hljs-number">1</span>
+    <span class="hljs-keyword">echo</span> <span class="hljs-number">2</span>
+    <span class="hljs-keyword">echo</span> <span class="hljs-number">3</span>
+  dumpTree:
+    <span class="hljs-keyword">echo</span> <span class="hljs-number">2</span>
+    <span class="hljs-keyword">echo</span> <span class="hljs-number">4</span>
+    <span class="hljs-keyword">echo</span> <span class="hljs-number">6</span>
+
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+Le compilateur retourne:
+```nim
+StmtList
+  Command
+    Ident &quot;echo&quot;
+    IntLit 1
+  Command
+    Ident &quot;echo&quot;
+    IntLit 2
+  Command
+    Ident &quot;echo&quot;
+    IntLit 3
+StmtList
+  Command
+    Ident &quot;echo&quot;
+    IntLit 2
+  Command
+    Ident &quot;echo&quot;
+    IntLit 4
+  Command
+    Ident &quot;echo&quot;
+    IntLit 6
+```
+Cette sortie ressemble à s'y méprendre au premier exemple d'AST vu précédemment.
+Au lieu du StrLit &quot;Salut!&quot;, on a désormais IntLit suivi du nombre présent dans le code source ou dans la sortie.
+&quot;&quot;&quot;</span>
 
 nbText:<span class="hljs-string">&quot;&quot;&quot;
 By compiling this code, you will get the corresponding AST.
