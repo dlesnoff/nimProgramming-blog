@@ -321,6 +321,7 @@ You can get the full list of node kinds [at the std/macros source code](https://
 """
 nbCode:
   macro timesTwoAndEcho(statements: untyped): untyped =
+    result = statements
     for s in result:
       for node in s:
         if node.kind == nnkIntLit:
