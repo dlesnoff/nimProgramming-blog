@@ -122,7 +122,7 @@ aussi bien des entiers que des nombres flottants en entrée.</p>
 
 <span class="hljs-keyword">echo</span> add(<span class="hljs-number">2</span>, <span class="hljs-number">3</span>)
 <span class="hljs-keyword">echo</span> add(<span class="hljs-number">3.7</span>, <span class="hljs-number">4.5</span>)</code></pre><pre class="nb-output">5
-8.199999999999999</pre>
+8.2</pre>
 <p>En effet, que se passerait-il si vous vouliez ajouter une fonction pour un autre type comme <code>int32</code> ou <code>float16</code>?
 Vous devrez alors copier-coller votre fonction et changer le type. Bien que cela semble anodin, cela se révèle vite problématique lorsque vous trouvez un bug dans l'algorithme.</p>
 <p>Il vous faut alors corriger autant de fonctions que de types supportés. De plus, le code devient peu lisible, puisque chaque fonction apparaît de nombreuses fois.</p>
@@ -257,7 +257,7 @@ le template suivant:</p>
     <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;CPU Time [&quot;</span>, nomBenchmark, <span class="hljs-string">&quot;] &quot;</span>, écoulé
 
 benchmark <span class="hljs-string">&quot;test1&quot;</span>: <span class="hljs-comment"># Devrait retourner une valeur proche de 100 ms</span>
-  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 183 microseconds, and 909 nanoseconds</pre>
+  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 221 microseconds, and 260 nanoseconds</pre>
 <p>Le code qui est indenté en-dessous du bloc <code>benchmark</code> sera délimité par le code du benchmark.</p>
 <p>Puisque la substitution du code est réalisée au moment de la compilation, cette transformation ne modifie pas les temps obtenus.</p>
 <p>Exercice:
@@ -355,14 +355,17 @@ Si jamais vous avez besoin d'écrire vous même un AST pour une macro, sachez qu
 <p>La première macro que je vous présente provient de cette <a href="https://www.youtube.com/watch?v=WHyOHQ_GkNo">vidéo Youtube</a> réalisée par <a href="https://www.youtube.com/c/Fireship">Jeff Delaunay sur sa chaîne Fireship</a>.</p>
 <p>Lorsque un utilisateur désire afficher des valeurs entières sous cette macro, les valeurs seront multipliées par deux.</p>
 <pre><code class="nohighlight hljs nim"><span class="hljs-keyword">macro</span> timesTwo(statements: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
+  <span class="hljs-literal">result</span> = statements
   <span class="hljs-keyword">for</span> s <span class="hljs-keyword">in</span> <span class="hljs-literal">result</span>:
     <span class="hljs-keyword">for</span> node <span class="hljs-keyword">in</span> s:
       <span class="hljs-keyword">if</span> node.kind == nnkIntLit:
         node.intVal = node.intVal*<span class="hljs-number">2</span>
 timesTwo:
-  <span class="hljs-keyword">echo</span> <span class="hljs-number">1</span> <span class="hljs-comment"># 2</span>
-  <span class="hljs-keyword">echo</span> <span class="hljs-number">2</span> <span class="hljs-comment"># 4</span>
-  <span class="hljs-keyword">echo</span> <span class="hljs-number">3</span> <span class="hljs-comment"># 6</span></code></pre>
+  <span class="hljs-keyword">echo</span> <span class="hljs-number">1</span>
+  <span class="hljs-keyword">echo</span> <span class="hljs-number">2</span>
+  <span class="hljs-keyword">echo</span> <span class="hljs-number">3</span></code></pre><pre class="nb-output">2
+4
+6</pre>
 <p>Avant d'expliciter le fonctionnement de la macro, on va comparer l'AST du code donné en entrée,
 avec celui que l'on pense obtenir avec le code:</p>
 <pre><code class="nohighlight hljs nim">dumpTree:
@@ -417,6 +420,7 @@ This simple AST is made of four nodes:</p>
 Inside your macro, they are denoted with the extra prefix <code>nnk</code>, e.g. <code>nnkIdent</code>.
 You can get the full list of node kinds <a href="https://github.com/nim-lang/Nim/blob/a8c6e36323601a64dcb6947a694f0bde97b632b2/lib/core/macros.nim#L25-L89">at the std/macros source code</a>.</p>
 <pre><code class="nohighlight hljs nim"><span class="hljs-keyword">macro</span> timesTwoAndEcho(statements: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
+  <span class="hljs-literal">result</span> = statements
   <span class="hljs-keyword">for</span> s <span class="hljs-keyword">in</span> <span class="hljs-literal">result</span>:
     <span class="hljs-keyword">for</span> node <span class="hljs-keyword">in</span> s:
       <span class="hljs-keyword">if</span> node.kind == nnkIntLit:
@@ -426,7 +430,9 @@ You can get the full list of node kinds <a href="https://github.com/nim-lang/Nim
 timesTwoAndEcho:
   <span class="hljs-keyword">echo</span> <span class="hljs-number">1</span>
   <span class="hljs-keyword">echo</span> <span class="hljs-number">2</span>
-  <span class="hljs-keyword">echo</span> <span class="hljs-number">3</span></code></pre>
+  <span class="hljs-keyword">echo</span> <span class="hljs-number">3</span></code></pre><pre class="nb-output">2
+4
+6</pre>
 <p>The output of a macro is an AST, and we can try to write it for a few examples:</p>
 <pre><code class="language-nim">StmtList
   Command
@@ -1172,14 +1178,15 @@ Lorsque un utilisateur désire afficher des valeurs entières sous cette macro, 
 
 nbCode:
   <span class="hljs-keyword">macro</span> timesTwo(statements: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
+    <span class="hljs-literal">result</span> = statements
     <span class="hljs-keyword">for</span> s <span class="hljs-keyword">in</span> <span class="hljs-literal">result</span>:
       <span class="hljs-keyword">for</span> node <span class="hljs-keyword">in</span> s:
         <span class="hljs-keyword">if</span> node.kind == nnkIntLit:
           node.intVal = node.intVal*<span class="hljs-number">2</span>
   timesTwo:
-    <span class="hljs-keyword">echo</span> <span class="hljs-number">1</span> <span class="hljs-comment"># 2</span>
-    <span class="hljs-keyword">echo</span> <span class="hljs-number">2</span> <span class="hljs-comment"># 4</span>
-    <span class="hljs-keyword">echo</span> <span class="hljs-number">3</span> <span class="hljs-comment"># 6</span>
+    <span class="hljs-keyword">echo</span> <span class="hljs-number">1</span>
+    <span class="hljs-keyword">echo</span> <span class="hljs-number">2</span>
+    <span class="hljs-keyword">echo</span> <span class="hljs-number">3</span>
 
 nbText:<span class="hljs-string">&quot;&quot;&quot;
 Avant d'expliciter le fonctionnement de la macro, on va comparer l'AST du code donné en entrée,
@@ -1254,6 +1261,7 @@ You can get the full list of node kinds [at the std/macros source code](https://
 &quot;&quot;&quot;</span>
 nbCode:
   <span class="hljs-keyword">macro</span> timesTwoAndEcho(statements: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
+    <span class="hljs-literal">result</span> = statements
     <span class="hljs-keyword">for</span> s <span class="hljs-keyword">in</span> <span class="hljs-literal">result</span>:
       <span class="hljs-keyword">for</span> node <span class="hljs-keyword">in</span> s:
         <span class="hljs-keyword">if</span> node.kind == nnkIntLit:

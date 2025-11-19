@@ -187,7 +187,7 @@ doWhile i &lt; <span class="hljs-number">10</span>:
     <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;CPU Time [&quot;</span>, benchmarkName, <span class="hljs-string">&quot;] &quot;</span>, elapsed
 
 benchmark <span class="hljs-string">&quot;test1&quot;</span>:
-  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 218 microseconds, and 58 nanoseconds</pre>
+  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 220 microseconds, and 594 nanoseconds</pre>
 <p>The code inside the <code>benchmark</code> code block will be enclosed by our template code.</p>
 <p>Since the code replacement is done at compile time, this transformation does not add additional runtime to our benchmarked code.
 On the contrary, a function or procedure for benchmarking would have add runtime due to the nested function calls.</p>
@@ -258,9 +258,9 @@ dumpTree:
         node.intVal = node.intVal*<span class="hljs-number">2</span>
 
 timesTwo:
-  <span class="hljs-keyword">echo</span> <span class="hljs-number">1</span> <span class="hljs-comment"># 2</span>
-  <span class="hljs-keyword">echo</span> <span class="hljs-number">2</span> <span class="hljs-comment"># 4</span>
-  <span class="hljs-keyword">echo</span> <span class="hljs-number">3</span> <span class="hljs-comment"># 6</span></code></pre><pre class="nb-output">2
+  <span class="hljs-keyword">echo</span> <span class="hljs-number">1</span>
+  <span class="hljs-keyword">echo</span> <span class="hljs-number">2</span>
+  <span class="hljs-keyword">echo</span> <span class="hljs-number">3</span></code></pre><pre class="nb-output">2
 4
 6</pre>
 <p>This macro multiplies each integer values by two before plotting!
@@ -900,9 +900,9 @@ nbCode:
           node.intVal = node.intVal*<span class="hljs-number">2</span>
 
   timesTwo:
-    <span class="hljs-keyword">echo</span> <span class="hljs-number">1</span> <span class="hljs-comment"># 2</span>
-    <span class="hljs-keyword">echo</span> <span class="hljs-number">2</span> <span class="hljs-comment"># 4</span>
-    <span class="hljs-keyword">echo</span> <span class="hljs-number">3</span> <span class="hljs-comment"># 6</span>
+    <span class="hljs-keyword">echo</span> <span class="hljs-number">1</span>
+    <span class="hljs-keyword">echo</span> <span class="hljs-number">2</span>
+    <span class="hljs-keyword">echo</span> <span class="hljs-number">3</span>
 
 nbText:<span class="hljs-string">&quot;&quot;&quot;
 This macro multiplies each integer values by two before plotting!

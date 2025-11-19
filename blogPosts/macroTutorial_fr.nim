@@ -423,14 +423,15 @@ Lorsque un utilisateur désire afficher des valeurs entières sous cette macro, 
 
 nbCode:
   macro timesTwo(statements: untyped): untyped =
+    result = statements
     for s in result:
       for node in s:
         if node.kind == nnkIntLit:
           node.intVal = node.intVal*2
   timesTwo:
-    echo 1 # 2
-    echo 2 # 4
-    echo 3 # 6
+    echo 1
+    echo 2
+    echo 3
 
 nbText:"""
 Avant d'expliciter le fonctionnement de la macro, on va comparer l'AST du code donné en entrée,
@@ -505,6 +506,7 @@ You can get the full list of node kinds [at the std/macros source code](https://
 """
 nbCode:
   macro timesTwoAndEcho(statements: untyped): untyped =
+    result = statements
     for s in result:
       for node in s:
         if node.kind == nnkIntLit:

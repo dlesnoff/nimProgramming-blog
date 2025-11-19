@@ -277,9 +277,9 @@ nbCode:
           node.intVal = node.intVal*2
 
   timesTwo:
-    echo 1 # 2
-    echo 2 # 4
-    echo 3 # 6
+    echo 1
+    echo 2
+    echo 3
 
 nbText:"""
 This macro multiplies each integer values by two before plotting!
