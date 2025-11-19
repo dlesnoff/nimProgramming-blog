@@ -270,6 +270,7 @@ This example of macro is taken from [this Youtube video](https://www.youtube.com
 
 nbCode:
   macro timesTwo(statements: untyped): untyped =
+    result = statements
     for s in result:
       for node in s:
         if node.kind == nnkIntLit:
