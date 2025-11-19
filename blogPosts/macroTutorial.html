@@ -187,7 +187,7 @@ doWhile i &lt; <span class="hljs-number">10</span>:
     <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;CPU Time [&quot;</span>, benchmarkName, <span class="hljs-string">&quot;] &quot;</span>, elapsed
 
 benchmark <span class="hljs-string">&quot;test1&quot;</span>:
-  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 220 microseconds, and 594 nanoseconds</pre>
+  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 96 microseconds, and 304 nanoseconds</pre>
 <p>The code inside the <code>benchmark</code> code block will be enclosed by our template code.</p>
 <p>Since the code replacement is done at compile time, this transformation does not add additional runtime to our benchmarked code.
 On the contrary, a function or procedure for benchmarking would have add runtime due to the nested function calls.</p>
@@ -245,7 +245,7 @@ dumpTree:
 </code></pre>
 <p>We can better visualize the tree structure of the AST with the following picture.</p>
 <figure>
-<img src="./ASTtree.jpg" alt="Nim's Abstract Syntax Tree visualized with a tree">
+<img src="./pictures/ASTtree.jpg" alt="Nim's Abstract Syntax Tree visualized with a tree">
 <figcaption>Nim's Abstract Syntax Tree visualized with a tree</figcaption>
 </figure>
 <h3>Multiply by two macro</h3>
@@ -884,7 +884,7 @@ StmtList
 We can better visualize the tree structure of the AST with the following picture.
 &quot;&quot;&quot;</span>
 
-nbImage(url=<span class="hljs-string">&quot;ASTtree.jpg&quot;</span>, caption=<span class="hljs-string">&quot;Nim's Abstract Syntax Tree visualized with a tree&quot;</span>)
+nbImage(url=<span class="hljs-string">&quot;pictures/ASTtree.jpg&quot;</span>, caption=<span class="hljs-string">&quot;Nim's Abstract Syntax Tree visualized with a tree&quot;</span>)
 
 nbText:<span class="hljs-string">&quot;&quot;&quot;
 ### Multiply by two macro

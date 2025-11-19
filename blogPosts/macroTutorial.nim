@@ -261,7 +261,7 @@ StmtList
 We can better visualize the tree structure of the AST with the following picture.
 """
 
-nbImage(url="ASTtree.jpg", caption="Nim's Abstract Syntax Tree visualized with a tree")
+nbImage(url="pictures/ASTtree.jpg", caption="Nim's Abstract Syntax Tree visualized with a tree")
 
 nbText:"""
 ### Multiply by two macro
