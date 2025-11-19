@@ -20,14 +20,10 @@ template nbSection(name:string) =
 nbText: hlMd"""
 <h1 style="text-align: center;">Les macros avec Nim - tutoriel de métaprogrammation</h1>
 
-Ce tutoriel a pour objectif d'être une introduction aux capacités de métaprogrammation du langage de programmation Nim. Il vise à donner autant de détails que possible pour démarrer vos projets les plus fous.
+Ce tutoriel a pour objectif d'être une introduction aux capacités de métaprogrammation du langage de programmation Nim. Il vise à donner autant de détails que possible pour démarrer vos projets.
 Il existe de nombreuses ressources que ce soit à travers les livres ou sur Internet mais vous devriez trouvez ici (à terme) une description complète du processus de développement de macros.
 
 """
-
-nbText:"""
-:warning: Une partie du tutoriel n'a pas encore été traduit de l'anglais vers le français.
-""".emojize()
 
 addToc()
 
@@ -477,8 +473,8 @@ Au lieu du StrLit "Salut!", on a désormais IntLit suivi du nombre présent dans
 """
 
 nbText:"""
-By compiling this code, you will get the corresponding AST.
-This simple AST is made of four nodes:
+En compilant ce code, vous obtiendrez l’AST correspondant. Cet AST simple est composé de quatre nœuds :
+
 ```nim
 StmtList
   Command
@@ -486,13 +482,14 @@ StmtList
     IntLit 1
 ```
 
-`StmtList` stands for *statements list*. It groups together all the instructions in your block.
+`StmtList` signifie *liste d’instructions*. Il regroupe toutes les instructions de votre bloc.
 
-The `Command` node indicates that you use a function whose name is given by its child `Ident` node. An `Ident` can be any variable, object, procedure name.
+Le nœud `Command` indique que vous utilisez une fonction dont le nom est donné par son nœud enfant `Ident`. Un `Ident` peut être n’importe quel nom de variable, d’objet ou de procédure.
 
-Our integer literal whose value is 1 has the node kind `IntLit`.
+Notre littéral entier dont la valeur est 1 possède le type de nœud `IntLit`.
 
-Notice that the order of the nodes in the AST is crucial. If we invert the two last nodes, we would get the AST of the code `1 echo` which does not compile.
+Remarquez que l’ordre des nœuds dans l’AST est crucial. Si nous inversons les deux derniers nœuds, nous obtiendrions l’AST du code `1 echo`, qui ne compile pas.
+
 ```nim
 StmtList
   Command
@@ -500,26 +497,17 @@ StmtList
     Ident "echo"
 ```
 
-`StmtList`, `Command`, `IntLit` and `Ident` are the NodeKind of the code's AST.
-Inside your macro, they are denoted with the extra prefix `nnk`, e.g. `nnkIdent`.
-You can get the full list of node kinds [at the std/macros source code](https://github.com/nim-lang/Nim/blob/a8c6e36323601a64dcb6947a694f0bde97b632b2/lib/core/macros.nim#L25-L89).
+`StmtList`, `Command`, `IntLit` et `Ident` sont les NodeKind de l’AST du code. À l’intérieur d’une macro, ils sont nommés avec le préfixe `nnk`, par exemple : `nnkIdent`.
+
+Vous pouvez obtenir la liste complète des node kinds dans le [code source de std/macros](https://github.com/nim-lang/Nim/blob/a8c6e36323601a64dcb6947a694f0bde97b632b2/lib/core/macros.nim#L25-L89).
 """
-nbCode:
-  macro timesTwoAndEcho(statements: untyped): untyped =
-    result = statements
-    for s in result:
-      for node in s:
-        if node.kind == nnkIntLit:
-          node.intVal = node.intVal*2
-    echo repr result
 
-  timesTwoAndEcho:
-    echo 1
-    echo 2
-    echo 3
-
+# Version IA (version traduite)
 nbText:"""
-The output of a macro is an AST, and we can try to write it for a few examples:
+## Premier exemple de macro
+
+La sortie d’une macro est un AST. Voici ce qu’on obtient pour un exemple simple :
+
 ```nim
 StmtList
   Command
@@ -532,38 +520,31 @@ StmtList
     Ident "echo"
     IntLit 6
 ```
-Please note that line breaks are not part of the Nim's AST!
 
-Here, the output AST is almost the same as the input. We only change the integer literal value.
+Les retours à la ligne ne font pas partie de l’AST !
 
-Our root node in the input AST is a statement list.
-To fetch the `Command` children node, we may use the list syntax.
-A Node contains the list of its childrens. To get the first children, it suffices to write `statements[0]`.
-To loop over all the child nodes, one can use a `for statement in statements` loop.
+Ici, l’AST de sortie est presque identique à l’entrée. Seule la valeur des littéraux entiers change.
 
-We need to fetch the nodes under a `Command` instruction that are integer literals.
-So for each node in the statement, we test if the node kind is equal to `nnkIntLit`. We get their value with the attribute `node.intVal`.
+Le nœud racine est une liste d’instructions. Pour accéder à ses éléments, on utilise l’indexation : `statements[0]`.
+
+Pour parcourir tous ses enfants : `for statement in statements`.
+
+Nous devons récupérer les nœuds situés sous une instruction `Command` qui sont des littéraux entiers, puis modifier `node.intVal`.
 """
-
 
 nbText:"""
-I present down my first macro as an example.
-I want to print the memory layout of a given type.
-My goal is to find misaligned fields making useless unocuppied memory in a type object definition.
-This happens when the attributes have types of different sizes. The order of the attributes then changes the memory used by an object.
-To deal with important chunks of memory, the processor stores an object and its attributes with [some rules](https://en.wikipedia.org/wiki/Data_structure_alignment).
+## Analyse d’une définition de type
 
-It likes when adresses are separated by powers of two. If it is not, it inserts a padding (unoccupied memory) between two attributes.
+Nous voulons afficher la représentation mémoire d’un type donné. L’objectif est de repérer des champs mal alignés qui créent des "trous" de mémoire (padding) dans les objets.
 
-We can pack a structure with the pragma `{.packed.}`, which removes this extra space. This has the disadvantage to slow down memory accesses.
+Les processeurs préfèrent que les adresses soient alignées sur des puissances de deux. Sinon, ils insèrent du padding.
 
-We would like to detect the presence of holes in an object.
+On peut compacter les structures avec `{.packed.}`, mais cela ralentit les accès mémoire.
 
-The first step is to look at the AST of the input code we want to parse.
+La première étape consiste à observer l’AST d’une définition de type simple.
 
-One can look first at the most basic type definition possible, before trying to complexify the AST to get a feel of all the edge cases.
+### Exemple minimal
 """
-
 nbCode:
   dumpTree:
     type
@@ -571,6 +552,8 @@ nbCode:
         a: float32
 
 nbText:"""
+Résultat :
+
 ```nim
 StmtList
   TypeSection
@@ -586,48 +569,9 @@ StmtList
             Ident "float32"
             Empty
 ```
-"""
 
-nbText:"""
-
-"""
-
-nbText:"""
-We have to get outputs as much complex as possible to detect edge cases, while keeping the information to the minimum to easily read the AST and locate errors.
-I present here first some samples of type definition on which I will run my macro.
-"""
-
-nbText:hlMd"""
-```nim
-typeMemoryRepr:
-  type
-    Thing2 = object
-      oneChar: char
-      myStr: string
-  type
-    Thing = object of RootObj
-      a: float32
-      b: uint64
-      c: char
-```
-
-Type with pragmas aren't supported yet
-```nim
-
-
-when false: # erroneous code
-
-  typeMemoryRepr:
-    type
-      Thing {.packed.} = object
-        oneChar: char
-        myStr: string
-```
-"""
-
-nbText:"""
-It is not easy (if even possible) to list all possible types.
-Yet by adding some other informations we can get a better picture of the general AST of a type.
+Nous augmenterons la complexité pour repérer les cas particuliers.
+## Exemple avec héritage et pragmas
 """
 
 nbCode:
@@ -638,6 +582,8 @@ nbCode:
         b: string
 
 nbText:"""
+AST :
+
 ```nim
 StmtList
   TypeSection
@@ -661,64 +607,35 @@ StmtList
             Ident "string"
             Empty
 ```
+
+Notez que le nom du type apparaît sous `PragmaExpr`. Il faudra en tenir compte lors de la lecture de l'arbre que nous allons devoir réaliser pour la macro.
+
+## Structure générale d’une macro
+
+Une macro suit toujours les mêmes étapes :
+
+1. Chercher un nœud d’un type particulier dans l’AST.
+2. Extraire ses propriétés.
+3. Générer un AST en sortie basé sur ces propriétés.
+4. Continuer à parcourir l’AST.
+
+Vos macros auront besoin de commentaires détaillés pour rester lisibles.
+
+## Macro `typeMemoryRepr`
+
+Cette macro génère automatiquement :
+
+* la déclaration du type,
+* une variable d’exemple,
+* l’affichage de sa taille et adresse,
+* l’affichage de la taille et adresse de chaque champ.
+
+Cela évite d’écrire manuellement des dizaines de `echo var.field.sizeof`.
+
+### Construction de fragments AST
+
+#### Affichage de la taille d’un champ
 """
-
-nbText:"""
-Notice how the name of the type went under the PragmaExpr section. We have to be careful about this when trying to parse the type.
-"""
-
-nbText:"""
-A macro does always the same steps:
-
-  1. Search for a node of a specific kind, inside the input AST or check that the given node is of the expected kind.
-  2. Fetch properties of the selected node.
-  3. Form AST output in function of these input node's properties.
-  4. Continue exploring the AST.
-"""
-
-nbText:"""
-Your macros will require a long docstring and many comments both with thorough details.
-
-I present now my macro `typeMemoryRepr` inspired from the [nim memory guide](https://zevv.nl/nim-memory/) on memory representation.
-In this guide, we manually print types fields address, to get an idea of the memory layout and the space taken by each variable and its fields.
-
-```nim
-type Thing = object
-  a: uint32
-  b: uint8
-  c: uint16
-
-var t: Thing
-
-echo "size t.a ", t.a.sizeof
-echo "size t.b ", t.b.sizeof
-echo "size t.c ", t.c.sizeof
-echo "size t   ", t.sizeof
-
-echo "addr t.a ", t.a.addr.repr
-echo "addr t.b ", t.b.addr.repr
-echo "addr t.c ", t.c.addr.repr
-echo "addr t   ", t.addr.repr
-```
-
-All these echo's are redundant and have to be changed each time we change the type field. For types with more than four or five fields, this becomes not manageable.
-
-I have split this macro into different procedures.
-The `echoSizeVarFieldStmt` will take the name of a variable, let us say `a` and of its field `field` and return the code:
-```nim
-echo a.field.sizeof
-```
-We create a NimNode of kind `StmtList` (a statement list), that contains `IdentNode`s.
-The first `IdentNode` is the command `echo`.
-We do not represent spaces in the AST. Each term separated by a dot is an Ident and part of a `nnkDotExpr`.
-
-It suffices to output the above code under a `dumpTree` block, to understand the AST we have to generate.
-```nim
-dumpTree:
-  echo a.field.sizeof
-```
-"""
-
 nbCode:
   proc echoSizeVarFieldStmt(variable: string, nameOfField: string): NimNode =
     ## quote do:
@@ -728,19 +645,15 @@ nbCode:
               nnkDotExpr.newTree(
                 nnkDotExpr.newTree(
                   newIdentNode(variable),
-                  newIdentNode(nameOfField) # The name of the field is the first ident
+                  newIdentNode(nameOfField) # Nom du champ
                   ),
                   newIdentNode("sizeof")
               )
               ))
 
 nbText:"""
-The `echoAddressVarFieldStmt` will take the name of a variable, let us say `a` and of its field `field` and return its address:
-```nim
-echo a.field.addr.repr
-```
+#### Affichage de l’adresse d’un champ
 """
-
 nbCode:
   proc echoAddressVarFieldStmt(variable: string, nameOfField: string): NimNode =
     ## quote do:
@@ -759,53 +672,49 @@ nbCode:
                 )
                 ))
 
-
+nbText:"""
+### Macro complète
+"""
 nbCode:
   macro typeMemoryRepr(typedef: untyped): untyped =
-    ## This macro takes a type definition as an argument and:
-    ## * defines the type (outputs typedef as is)
-    ## * initializes a variable of this type
-    ## * echoes the size and address of the variable
-    ## Then, for each field:
-    ## * echoes the size and address of the variable field
+    ## Cette macro :
+    ## * définit le type
+    ## * crée une variable de ce type
+    ## * affiche sa taille et son adresse
+    ## * affiche la taille et l'adresse de chaque champ
 
-    # We begin by running the type definition.
     result = quote do:
       `typedef`
 
-    # Parse the type definition to find the TypeDef section's node
-    # We create the output's AST along parsing.
-    # We will receive a statement list as the root of the AST
     for statement in typedef:
-      # We select only the type section in the StmtList
       if statement.kind == nnkTypeSection:
         let typeSection = statement
         for i in 0 ..< typeSection.len:
           if typeSection[i].kind == nnkTypeDef:
             var tnode = typeSection[i]
-            # The name of the type is the first Ident child. We can get the ident's string with strVal or repr
             let nameOfType = typeSection[i].findChild(it.kind == nnkIdent)
 
-            ## Generation of AST:
-            # We create a variable of the given type definition (hopefully not already defined) name for the "myTypenameVar"
             let nameOfTestVariable = "my" & nameOfType.strVal.capitalizeAscii() & "Var"
             let testVariable = newIdentNode(nameOfTestVariable)
+
             result = result.add(
-            quote do:
-              var `testVariable`:`nameOfType` # instanciate variable with type defined in typedef
-              echo `testVariable`.sizeof # echo the total size
-              echo `testVariable`.addr.repr # gives the address in memory
+              quote do:
+                var `testVariable`:`nameOfType`
+                echo `testVariable`.sizeof
+                echo `testVariable`.addr.repr
             )
-            # myTypeVar.field[i] memory size and address in memory
-            tnode = tnode[2][2] # The third child of the third child is the fields's AST
+
+            tnode = tnode[2][2]
             assert tnode.kind == nnkRecList
+
             for i in 0 ..< tnode.len:
-              # myTypeVar.field[i].sizeof
               result = result.add(echoSizeVarFieldStmt(nameOfTestVariable, tnode[i][0].strVal))
-              # myTypeVar.field[i].addr.repr
               result = result.add(echoAddressVarFieldStmt(nameOfTestVariable, tnode[i][0].strVal))
 
     echo result.repr
+
+
+nbSection "Exemple d’utilisation"
 
 nbCode:
   typeMemoryRepr:
@@ -815,86 +724,430 @@ nbCode:
         b: string
 
 nbText:"""
-Trying to parse a type ourselve is risky, since there are numerous easily forgettable possibilities (due to pragma expressions, cyclic types, and many kind of types: object, enum, type alias, etc..., case of fields, branching and conditionals inside the object, … ).
-
-There is actually already a function to do so and this will be the object of a future release of this tutorial.
+Analyser un type soi-même est risqué : pragmas, héritages, enums, alias, types cycliques, objets `case`, etc.
+Une fonction dédiée sera présentée dans une future version.
 """
 
+nbSection "Autre macro : `power2Enum`"
 nbText:"""
-The following macro enables to create enums with power of two values.
+Cette macro crée automatiquement des enums dont les valeurs sont des puissances de deux.
+
+```nim
+macro power2Enum(body: untyped): untyped =
+  let srcFields = body[^1][1..^1]
+  var dstFields =  nnkEnumTy.newTree(newEmptyNode())
+  for idx, field in enumerate(srcFields):
+    dstFields.add nnkEnumFieldDef.newTree(field, newIntLitNode(pow(2.0, idx.float).int))
+
+  body[^1] = dstFields
+  echo repr body
+  body
+```
+
+Usage :
+
+```nim
+type Test {.power2Enum.}  = enum
+  a, b, c, d
+```
+
+Mais souvent, un simple `set` + `cast` suffit.
 """
 
-nbCodeSkip:
-  import std/[enumerate, math]
 
-nbCode:
-  # jmgomez on Discord
-  macro power2Enum(body: untyped): untyped =
-    let srcFields = body[^1][1..^1]
-    var dstFields =  nnkEnumTy.newTree(newEmptyNode())
-    for idx, field in enumerate(srcFields):
-      dstFields.add nnkEnumFieldDef.newTree(field, newIntLitNode(pow(2.0, idx.float).int))
-
-    body[^1] = dstFields
-    echo repr body
-    body
-
-
-  type Test {.power2Enum.}  = enum
-    a, b, c, d
-
-nbText:"""
-A macro is not always the best alternative. A simple set and a cast gives the same result.
-"""
-
-nbCode:
-  # Rika
-  type
-    Setting = enum
-      a, b, c
-    Settings = set[Setting]
-  let settings: Settings = {a, c}
-  echo cast[uint8](settings)
-
-nbSection "References and Bibliography"
+nbSection "Références et bibliographie"
 nbText: """
-Press `Ctrl` + `Click` to open following links in a new tab.
+Pressez `Ctrl` en même temps que `Clic` pour ouvrir les liens dans un nouvel onglet.
 
-First, there are four official resources at the Nim's website:
-  1. [Nim by Example](https://nim-by-example.github.io/macros/)
-  2. [Nim Tutorial (Part III)](https://nim-lang.org/docs/tut3.html)
-  3. [Manual section about macros](https://nim-lang.org/docs/manual.html#macros)
-  4. [The Standard Documentation of the std/macros library](https://nim-lang.org/docs/macros.html)
-The 2. and 3. documentations are complementary learning resources while the last one will be your up-to-date exhaustive reference. It provides dumped AST (explained later) for all the nodes.
+D'abord, quatre ressources officielles du site Nim :
 
-Many developers have written their macro's tutorial:
+ 1. [Nim by Example](https://nim-by-example.github.io/macros/)
+ 2. [Nim Tutorial (Part III)](https://nim-lang.org/docs/tut3.html)
+ 3. [Section du manuel sur les macros](https://nim-lang.org/docs/manual.html#macros)
+ 4. [Documentation standard de std/macros](https://nim-lang.org/docs/macros.html)
+
+Les documents 2 et 3 sont complémentaires, tandis que le dernier sera votre référence exhaustive à jour. Il fournit des AST pour tous les nœuds.
+
+De nombreux développeurs ont écrit des tutoriels sur les macros :
   1. [Nim in Y minutes](https://learnxinyminutes.com/docs/nim/)
   2. [Jason Beetham a.k.a ElegantBeef's dev.to tutorial](https://dev.to/beef331/demystification-of-macros-in-nim-13n8). This tutorial contains a lot of good first examples.
   3. [Pattern matching (sadly outdated) in macros by DevOnDuty](https://www.youtube.com/watch?v=GJpn6SfR_1M)
   4. [Tomohiro's FAQ section about macros](https://internet-of-tomohiro.netlify.app/nim/faq.en.html#macro)
   5. [The Making of NimYAML's article of flyx](https://flyx.org/nimyaml-making-of/)
 
-There are plentiful of posts in the forum that are good references:
+Il existe également beaucoup de posts sur le forum qui sont informatifs:
   1. [What is "Metaprogramming" paradigm used for ?](https://forum.nim-lang.org/t/2587)
   2. [Custom macro inserts macro help](https://forum.nim-lang.org/t/9470)
   3. [See generated code after template processing](https://forum.nim-lang.org/t/9498)
   4. [Fast array assignment](https://forum.nim-lang.org/t/10037)
   5. [Variable injection](https://forum.nim-lang.org/t/10513)
   6. [Proc inspection](https://forum.nim-lang.org/t/9127)
-  7. etc … Please use the forum search bar with specific keywords like `macro`, `metaprogramming`, `generics`, `template`, …
+  7. etc … Utiliser la barre de recherche du forum ! mots-clés: `macro`, `metaprogramming`, `generics`, `template`, …
 
-Last but no least, there are three Nim books:
+Enfin, trois livres Nim :
   1. [Nim In Action, ed. Manning](https://book.picheta.me) and [github repo](https://github.com/dom96/nim-in-action-code)
   2. [Mastering Nim, auto-published by A. Rumpf/Araq, Nim's creator](https://www.amazon.fr/dp/B0B4R7B9YX).
   3. [Nim Programming Book, by S.Salewski](https://ssalewski.de/nimprogramming.html#_macros_and_meta_programming)
 
-We can also count many projects that are macro- or template-based:
+De nombreux projets utilisent intensivement des macros ou des templates :
   1. [genny](https://github.com/treeform/genny) and [benchy](https://github.com/treeform/genny). Benchy is a template based library that benchmarks your code snippet under bench blocks. Genny is used to export a Nim library to other languages (C, C++, Node, Python, Zig).
   In general, treeform projects source code are good Nim references
-  2. My favorite DSL : the [neural network domain specific language (DSL) of the tensor library Arraymancer](https://github.com/mratsim/Arraymancer/blob/68786e147a94069a96f069bab327d67afdaa5a3e/src/arraymancer/nn/nn_dsl.nim)
+  2. Mon DSL favori : the [neural network domain specific language (DSL) of the tensor library Arraymancer](https://github.com/mratsim/Arraymancer/blob/68786e147a94069a96f069bab327d67afdaa5a3e/src/arraymancer/nn/nn_dsl.nim)
   [mratsim](https://github.com/mratsim/) develops this library, and made [a list of all his DSL](https://forum.nim-lang.org/t/9551#62851) in the forum.
   3. [Jester](https://github.com/dom96/jester) library is a HTML DSL, where each block defines a route in your web application.
   4. [nimib](https://pietroppeter.github.io/nimib/) with which this blog post has been written.
   5. [Nim4UE](https://github.com/jmgomez/NimForUE). You can develop Nim code for the Unreal Engine 5 game engine. The macro system parses your procs and outputs DLL for UE.
 """
 nbSave
+
+# nbCode:
+#   macro timesTwoAndEcho(statements: untyped): untyped =
+#     result = statements
+#     for s in result:
+#       for node in s:
+#         if node.kind == nnkIntLit:
+#           node.intVal = node.intVal*2
+#     echo repr result
+
+#   timesTwoAndEcho:
+#     echo 1
+#     echo 2
+#     echo 3
+
+# nbText:"""
+# The output of a macro is an AST, and we can try to write it for a few examples:
+# ```nim
+# StmtList
+#   Command
+#     Ident "echo"
+#     IntLit 2
+#   Command
+#     Ident "echo"
+#     IntLit 4
+#   Command
+#     Ident "echo"
+#     IntLit 6
+# ```
+# Please note that line breaks are not part of the Nim's AST!
+
+# Here, the output AST is almost the same as the input. We only change the integer literal value.
+
+# Our root node in the input AST is a statement list.
+# To fetch the `Command` children node, we may use the list syntax.
+# A Node contains the list of its childrens. To get the first children, it suffices to write `statements[0]`.
+# To loop over all the child nodes, one can use a `for statement in statements` loop.
+
+# We need to fetch the nodes under a `Command` instruction that are integer literals.
+# So for each node in the statement, we test if the node kind is equal to `nnkIntLit`. We get their value with the attribute `node.intVal`.
+# """
+
+
+# nbText:"""
+# I present down my first macro as an example.
+# I want to print the memory layout of a given type.
+# My goal is to find misaligned fields making useless unocuppied memory in a type object definition.
+# This happens when the attributes have types of different sizes. The order of the attributes then changes the memory used by an object.
+# To deal with important chunks of memory, the processor stores an object and its attributes with [some rules](https://en.wikipedia.org/wiki/Data_structure_alignment).
+
+# It likes when adresses are separated by powers of two. If it is not, it inserts a padding (unoccupied memory) between two attributes.
+
+# We can pack a structure with the pragma `{.packed.}`, which removes this extra space. This has the disadvantage to slow down memory accesses.
+
+# We would like to detect the presence of holes in an object.
+
+# The first step is to look at the AST of the input code we want to parse.
+
+# One can look first at the most basic type definition possible, before trying to complexify the AST to get a feel of all the edge cases.
+# """
+
+# nbCode:
+#   dumpTree:
+#     type
+#       Thing = object
+#         a: float32
+
+# nbText:"""
+# ```nim
+# StmtList
+#   TypeSection
+#     TypeDef
+#       Ident "Thing"
+#       Empty
+#       ObjectTy
+#         Empty
+#         Empty
+#         RecList
+#           IdentDefs
+#             Ident "a"
+#             Ident "float32"
+#             Empty
+# ```
+# """
+
+# nbText:"""
+
+# """
+
+# nbText:"""
+# We have to get outputs as much complex as possible to detect edge cases, while keeping the information to the minimum to easily read the AST and locate errors.
+# I present here first some samples of type definition on which I will run my macro.
+# """
+
+# nbText:hlMd"""
+# ```nim
+# typeMemoryRepr:
+#   type
+#     Thing2 = object
+#       oneChar: char
+#       myStr: string
+#   type
+#     Thing = object of RootObj
+#       a: float32
+#       b: uint64
+#       c: char
+# ```
+
+# Type with pragmas aren't supported yet
+# ```nim
+
+
+# when false: # erroneous code
+
+#   typeMemoryRepr:
+#     type
+#       Thing {.packed.} = object
+#         oneChar: char
+#         myStr: string
+# ```
+# """
+
+# nbText:"""
+# It is not easy (if even possible) to list all possible types.
+# Yet by adding some other informations we can get a better picture of the general AST of a type.
+# """
+
+# nbCode:
+#   dumpTree:
+#     type
+#       Thing {.packed.} = object of RootObj
+#         a: float32
+#         b: string
+
+# nbText:"""
+# ```nim
+# StmtList
+#   TypeSection
+#     TypeDef
+#       PragmaExpr
+#         Ident "Thing"
+#         Pragma
+#           Ident "packed"
+#       Empty
+#       ObjectTy
+#         Empty
+#         OfInherit
+#           Ident "RootObj"
+#         RecList
+#           IdentDefs
+#             Ident "a"
+#             Ident "float32"
+#             Empty
+#           IdentDefs
+#             Ident "b"
+#             Ident "string"
+#             Empty
+# ```
+# """
+
+# nbText:"""
+# Notice how the name of the type went under the PragmaExpr section. We have to be careful about this when trying to parse the type.
+# """
+
+# nbText:"""
+# A macro does always the same steps:
+
+#   1. Search for a node of a specific kind, inside the input AST or check that the given node is of the expected kind.
+#   2. Fetch properties of the selected node.
+#   3. Form AST output in function of these input node's properties.
+#   4. Continue exploring the AST.
+# """
+
+# nbText:"""
+# Your macros will require a long docstring and many comments both with thorough details.
+
+# I present now my macro `typeMemoryRepr` inspired from the [nim memory guide](https://zevv.nl/nim-memory/) on memory representation.
+# In this guide, we manually print types fields address, to get an idea of the memory layout and the space taken by each variable and its fields.
+
+# ```nim
+# type Thing = object
+#   a: uint32
+#   b: uint8
+#   c: uint16
+
+# var t: Thing
+
+# echo "size t.a ", t.a.sizeof
+# echo "size t.b ", t.b.sizeof
+# echo "size t.c ", t.c.sizeof
+# echo "size t   ", t.sizeof
+
+# echo "addr t.a ", t.a.addr.repr
+# echo "addr t.b ", t.b.addr.repr
+# echo "addr t.c ", t.c.addr.repr
+# echo "addr t   ", t.addr.repr
+# ```
+
+# All these echo's are redundant and have to be changed each time we change the type field. For types with more than four or five fields, this becomes not manageable.
+
+# I have split this macro into different procedures.
+# The `echoSizeVarFieldStmt` will take the name of a variable, let us say `a` and of its field `field` and return the code:
+# ```nim
+# echo a.field.sizeof
+# ```
+# We create a NimNode of kind `StmtList` (a statement list), that contains `IdentNode`s.
+# The first `IdentNode` is the command `echo`.
+# We do not represent spaces in the AST. Each term separated by a dot is an Ident and part of a `nnkDotExpr`.
+
+# It suffices to output the above code under a `dumpTree` block, to understand the AST we have to generate.
+# ```nim
+# dumpTree:
+#   echo a.field.sizeof
+# ```
+# """
+
+# nbCode:
+#   proc echoSizeVarFieldStmt(variable: string, nameOfField: string): NimNode =
+#     ## quote do:
+#     ##   echo `variable`.`nameOfField`.sizeof
+#     newStmtList(nnkCommand.newTree(
+#               newIdentNode("echo"),
+#               nnkDotExpr.newTree(
+#                 nnkDotExpr.newTree(
+#                   newIdentNode(variable),
+#                   newIdentNode(nameOfField) # The name of the field is the first ident
+#                   ),
+#                   newIdentNode("sizeof")
+#               )
+#               ))
+
+# nbText:"""
+# The `echoAddressVarFieldStmt` will take the name of a variable, let us say `a` and of its field `field` and return its address:
+# ```nim
+# echo a.field.addr.repr
+# ```
+# """
+
+# nbCode:
+#   proc echoAddressVarFieldStmt(variable: string, nameOfField: string): NimNode =
+#     ## quote do:
+#     ##   echo `variable`.`nameOfField`.addr.repr
+#     newStmtList(nnkCommand.newTree(
+#                 newIdentNode("echo"),
+#                 nnkDotExpr.newTree(
+#                   nnkDotExpr.newTree(
+#                     nnkDotExpr.newTree(
+#                       newIdentNode(variable),
+#                       newIdentNode(nameOfField)
+#                     ),
+#                     newIdentNode("addr")
+#                   ),
+#                   newIdentNode("repr")
+#                 )
+#                 ))
+
+
+# nbCode:
+#   macro typeMemoryRepr(typedef: untyped): untyped =
+#     ## This macro takes a type definition as an argument and:
+#     ## * defines the type (outputs typedef as is)
+#     ## * initializes a variable of this type
+#     ## * echoes the size and address of the variable
+#     ## Then, for each field:
+#     ## * echoes the size and address of the variable field
+
+#     # We begin by running the type definition.
+#     result = quote do:
+#       `typedef`
+
+#     # Parse the type definition to find the TypeDef section's node
+#     # We create the output's AST along parsing.
+#     # We will receive a statement list as the root of the AST
+#     for statement in typedef:
+#       # We select only the type section in the StmtList
+#       if statement.kind == nnkTypeSection:
+#         let typeSection = statement
+#         for i in 0 ..< typeSection.len:
+#           if typeSection[i].kind == nnkTypeDef:
+#             var tnode = typeSection[i]
+#             # The name of the type is the first Ident child. We can get the ident's string with strVal or repr
+#             let nameOfType = typeSection[i].findChild(it.kind == nnkIdent)
+
+#             ## Generation of AST:
+#             # We create a variable of the given type definition (hopefully not already defined) name for the "myTypenameVar"
+#             let nameOfTestVariable = "my" & nameOfType.strVal.capitalizeAscii() & "Var"
+#             let testVariable = newIdentNode(nameOfTestVariable)
+#             result = result.add(
+#             quote do:
+#               var `testVariable`:`nameOfType` # instanciate variable with type defined in typedef
+#               echo `testVariable`.sizeof # echo the total size
+#               echo `testVariable`.addr.repr # gives the address in memory
+#             )
+#             # myTypeVar.field[i] memory size and address in memory
+#             tnode = tnode[2][2] # The third child of the third child is the fields's AST
+#             assert tnode.kind == nnkRecList
+#             for i in 0 ..< tnode.len:
+#               # myTypeVar.field[i].sizeof
+#               result = result.add(echoSizeVarFieldStmt(nameOfTestVariable, tnode[i][0].strVal))
+#               # myTypeVar.field[i].addr.repr
+#               result = result.add(echoAddressVarFieldStmt(nameOfTestVariable, tnode[i][0].strVal))
+
+#     echo result.repr
+
+# nbCode:
+#   typeMemoryRepr:
+#     type
+#       Thing = object of RootObj
+#         a: float32
+#         b: string
+
+# nbText:"""
+# Trying to parse a type ourselve is risky, since there are numerous easily forgettable possibilities (due to pragma expressions, cyclic types, and many kind of types: object, enum, type alias, etc..., case of fields, branching and conditionals inside the object, … ).
+
+# There is actually already a function to do so and this will be the object of a future release of this tutorial.
+# """
+
+# nbText:"""
+# The following macro enables to create enums with power of two values.
+# """
+
+# nbCodeSkip:
+#   import std/[enumerate, math]
+
+# nbCode:
+#   # jmgomez on Discord
+#   macro power2Enum(body: untyped): untyped =
+#     let srcFields = body[^1][1..^1]
+#     var dstFields =  nnkEnumTy.newTree(newEmptyNode())
+#     for idx, field in enumerate(srcFields):
+#       dstFields.add nnkEnumFieldDef.newTree(field, newIntLitNode(pow(2.0, idx.float).int))
+
+#     body[^1] = dstFields
+#     echo repr body
+#     body
+
+
+#   type Test {.power2Enum.}  = enum
+#     a, b, c, d
+
+# nbText:"""
+# A macro is not always the best alternative. A simple set and a cast gives the same result.
+# """
+
+# nbCode:
+#   # Rika
+#   type
+#     Setting = enum
+#       a, b, c
+#     Settings = set[Setting]
+#   let settings: Settings = {a, c}
+#   echo cast[uint8](settings)
