@@ -187,7 +187,7 @@ doWhile i &lt; <span class="hljs-number">10</span>:
     <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;CPU Time [&quot;</span>, benchmarkName, <span class="hljs-string">&quot;] &quot;</span>, elapsed
 
 benchmark <span class="hljs-string">&quot;test1&quot;</span>:
-  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 96 microseconds, and 304 nanoseconds</pre>
+  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 233 microseconds, and 545 nanoseconds</pre>
 <p>The code inside the <code>benchmark</code> code block will be enclosed by our template code.</p>
 <p>Since the code replacement is done at compile time, this transformation does not add additional runtime to our benchmarked code.
 On the contrary, a function or procedure for benchmarking would have add runtime due to the nested function calls.</p>
@@ -475,6 +475,7 @@ We do not represent spaces in the AST. Each term separated by a dot is an Ident 
                 newIdentNode(<span class="hljs-string">&quot;repr&quot;</span>)
               )
               ))</code></pre>
+<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">import</span> std/strutils</code></pre>
 <pre><code class="nohighlight hljs nim"><span class="hljs-keyword">macro</span> typeMemoryRepr(typedef: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
   <span class="hljs-comment">## This macro takes a type definition as an argument and:</span>
   <span class="hljs-comment">## * defines the type (outputs typedef as is)</span>
@@ -1197,6 +1198,8 @@ nbCode:
                 )
                 ))
 
+nbCodeSkip:
+  <span class="hljs-keyword">import</span> std/strutils
 
 nbCode:
   <span class="hljs-keyword">macro</span> typeMemoryRepr(typedef: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =

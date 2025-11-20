@@ -574,6 +574,8 @@ nbCode:
                 )
                 ))
 
+nbCodeSkip:
+  import std/strutils
 
 nbCode:
   macro typeMemoryRepr(typedef: untyped): untyped =

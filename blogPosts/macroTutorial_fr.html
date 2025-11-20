@@ -258,7 +258,7 @@ le template suivant:</p>
     <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;CPU Time [&quot;</span>, nomBenchmark, <span class="hljs-string">&quot;] &quot;</span>, écoulé
 
 benchmark <span class="hljs-string">&quot;test1&quot;</span>: <span class="hljs-comment"># Devrait retourner une valeur proche de 100 ms</span>
-  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 216 microseconds, and 192 nanoseconds</pre>
+  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 216 microseconds, and 159 nanoseconds</pre>
 <p>Le code qui est indenté en-dessous du bloc <code>benchmark</code> sera délimité par le code du benchmark.</p>
 <p>Puisque la substitution du code est réalisée au moment de la compilation, cette transformation ne modifie pas les temps obtenus.</p>
 <p>Exercice:
@@ -543,6 +543,7 @@ Au lieu du StrLit &quot;Salut!&quot;, on a désormais IntLit suivi du nombre pr�
               )
               ))</code></pre>
 <h3>Macro complète</h3>
+<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">import</span> std/strutils</code></pre>
 <pre><code class="nohighlight hljs nim"><span class="hljs-keyword">macro</span> typeMemoryRepr(typedef: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
   <span class="hljs-comment">## Cette macro :</span>
   <span class="hljs-comment">## * définit le type</span>
@@ -1355,6 +1356,9 @@ nbCode:
 nbText:<span class="hljs-string">&quot;&quot;&quot;
 ### Macro complète
 &quot;&quot;&quot;</span>
+nbCodeSkip:
+  <span class="hljs-keyword">import</span> std/strutils
+
 nbCode:
   <span class="hljs-keyword">macro</span> typeMemoryRepr(typedef: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
     <span class="hljs-comment">## Cette macro :</span>

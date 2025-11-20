@@ -675,6 +675,9 @@ nbCode:
 nbText:"""
 ### Macro complète
 """
+nbCodeSkip:
+  import std/strutils
+
 nbCode:
   macro typeMemoryRepr(typedef: untyped): untyped =
     ## Cette macro :
