@@ -669,12 +669,14 @@ nbCode:
 
 nbText:"""
 Trying to parse a type ourselve is risky, since there are numerous easily forgettable possibilities (due to pragma expressions, cyclic types, and many kind of types: object, enum, type alias, etc..., case of fields, branching and conditionals inside the object, … ).
-
-There is actually already a function to do so and this will be the object of a future release of this tutorial.
 """
 
+nbSection "Avoiding Macros"
 nbText:"""
-The following macro enables to create enums with power of two values.
+This section contains an example of a case were using a macro would be tempting but should be avoided by principle of "lesser construct first".
+
+Let's say you want to create enums with power of two as values.
+You could use the following macro:
 """
 
 nbCodeSkip:
@@ -696,8 +698,15 @@ nbCode:
   type Test {.power2Enum.}  = enum
     a, b, c, d
 
+  echo $int(c)
+
 nbText:"""
-A macro is not always the best alternative. A simple set and a cast gives the same result.
+The macro is hard to read but serves the feature.
+The pragma provides easy to read code, as long as it is well documented.
+
+Yet, there is much simpler by casting elements of a set to `uint8`. The following snippet illustrates this which leverages the data representation of a set.
+
+Remember: A macro is not always the best construct.
 """
 
 nbCode:
