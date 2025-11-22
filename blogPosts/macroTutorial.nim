@@ -138,22 +138,58 @@ do{
   i += 1;
 }while(i < 10);
 ```
+
+We present below two templates that attempt to replicate this construct in Nim. The first one is not guaranteed to work if the loop contains some `break` or `continue` keyword.
 """
 
 nbCode:
-
-  template doWhile(conditional, loop: untyped) =
+  template doWhileIncorrect(conditional, loop: untyped) =
     loop
     while conditional:
       loop
 
-  var i = 10
-  doWhile i < 10:
+  var iter1 = 0
+  doWhileIncorrect iter1 < 0:
       echo "Hello World"
-      i.inc
+      iter1.inc
+
+nbCode:
+  template doWhile(conditional, loop: untyped) =
+    var c = true
+    while c:
+      defer: c = conditional
+      loop
+
+  var iter2 = 0
+  doWhile iter2 < 0:
+      echo "Hello World"
+      iter2.inc
+
+nbText:"""
+The following code only works with the second template version.
+"""
+nbCodeSkip:
+  for msg in ["Hello even world", "Goodbye even world"]:
+    var i = 1
+    doWhile i < 10:
+      if i mod 2 != 0:
+        inc i
+        continue
+      echo i, ": ", msg
+      i += 2
+
+nbText:"""
+With this code we attempt to print messages with only even numbers. The `if` block ensures
+that we do not enter the main part of the `while` loop body
+without an even value in the variable `i`.
+With `continue`, we go back to the beginning of the loop to ensure that our variable is not greater than 10. With the first template version, the `loop` is first executed outside of the `while` loop and `continue` skip to the next iteration of the `for` loop instead, effectively skipping all `echo` statements.
+
+With the keyword `defer` all the statements are kept inside the `while` loop.
+"""
+
 
 nbText:hlMd"""
-Notice though that _syntaxically_ the resulting source code is fairly different than the C++ code.
+Notice also that _syntaxically_ the resulting source code is fairly different than the C/C++ code.
 
 In the C source code, appear in this order:
   1. the `do` keyword
@@ -698,7 +734,8 @@ There are plentiful of posts in the forum that are good references:
   4. [Fast array assignment](https://forum.nim-lang.org/t/10037)
   5. [Variable injection](https://forum.nim-lang.org/t/10513)
   6. [Proc inspection](https://forum.nim-lang.org/t/9127)
-  7. etc … Please use the forum search bar with specific keywords like `macro`, `metaprogramming`, `generics`, `template`, …
+  7. [doWhile improvement](https://forum.nim-lang.org/t/13511#82034)
+  8. etc … Please use the forum search bar with specific keywords like `macro`, `metaprogramming`, `generics`, `template`, …
 
 Last but no least, there are three Nim books:
   1. [Nim In Action, ed. Manning](https://book.picheta.me) and [github repo](https://github.com/dom96/nim-in-action-code)
