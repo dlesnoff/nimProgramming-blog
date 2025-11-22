@@ -227,7 +227,8 @@ The code inside the `benchmark` code block will be enclosed by our template code
 
 Since the code replacement is done at compile time, this transformation does not add additional runtime to our benchmarked code.
 On the contrary, a function or procedure for benchmarking would have add runtime due to the nested function calls.
-"""
+
+For a lot more robust examples, have a look at the [benchy library](https://github.com/treeform/genny)"""
 
 nbSection "Macros"
 nbText:"""
@@ -670,6 +671,39 @@ nbCode:
 nbText:"""
 Trying to parse a type ourselve is risky, since there are numerous easily forgettable possibilities (due to pragma expressions, cyclic types, and many kind of types: object, enum, type alias, etc..., case of fields, branching and conditionals inside the object, … ).
 """
+
+nbSection "For loop"
+nbText:"""
+
+"""
+
+nbSection "`typed` Parameters"
+nbText:"""
+
+"""
+
+nbSection "Hygienic variables"
+nbText:"""
+`bindSym` vs `ident`
+
+The procedures defined inside macros like `helper` in the following snippets
+are invisible outer `m`'s body.
+To call these procedures in the generated code, one has to use a **symbol (bound identifier)** declared with `bindSym`. It is similar to `ident` that declares **unbound** identifiers.
+"""
+
+nbCode:
+  # Andreas Rumpf "Mastering Nim"
+  macro m(a: string): untyped =
+    proc helper(a: string) = echo a
+    result = newCall(bindSym"helper", a)
+  m "abc"
+
+nbCodeSkip:
+  # Invalid code
+  macro m(a: string): untyped =
+    proc helper(a: string) = echo a
+    result = newCall(ident"helper", a)
+  m "abc"
 
 nbSection "Avoiding Macros"
 nbText:"""

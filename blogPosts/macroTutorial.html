@@ -66,6 +66,10 @@ There are already many resources on the Web, but I strive to provide more thorou
 <li><a href="#generics">Generics</a></li>
 <li><a href="#templates">Templates</a></li>
 <li><a href="#macros">Macros</a></li>
+<li><a href="#for-loop">For loop</a></li>
+<li><a href="#`typed`-parameters"><code>typed</code> Parameters</a></li>
+<li><a href="#hygienic-variables">Hygienic variables</a></li>
+<li><a href="#avoiding-macros">Avoiding Macros</a></li>
 <li><a href="#references-and-bibliography">References and Bibliography</a></li>
 </ol>
 <p><a name = "introduction"></a></p>
@@ -152,16 +156,41 @@ do{
   i += 1;
 }while(i &lt; 10);
 </code></pre>
-<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">template</span> doWhile(conditional, loop: <span class="hljs-built_in">untyped</span>) =
+<p>We present below two templates that attempt to replicate this construct in Nim. The first one is not guaranteed to work if the loop contains some <code>break</code> or <code>continue</code> keyword.</p>
+<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">template</span> doWhileIncorrect(conditional, loop: <span class="hljs-built_in">untyped</span>) =
   loop
   <span class="hljs-keyword">while</span> conditional:
     loop
 
-<span class="hljs-keyword">var</span> i = <span class="hljs-number">10</span>
-doWhile i &lt; <span class="hljs-number">10</span>:
+<span class="hljs-keyword">var</span> iter1 = <span class="hljs-number">0</span>
+doWhileIncorrect iter1 &lt; <span class="hljs-number">0</span>:
     <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;Hello World&quot;</span>
-    i.inc</code></pre><pre class="nb-output">Hello World</pre>
-<p>Notice though that <em>syntaxically</em> the resulting source code is fairly different than the C++ code.</p>
+    iter1.inc</code></pre><pre class="nb-output">Hello World</pre>
+<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">template</span> doWhile(conditional, loop: <span class="hljs-built_in">untyped</span>) =
+  <span class="hljs-keyword">var</span> c = <span class="hljs-literal">true</span>
+  <span class="hljs-keyword">while</span> c:
+    <span class="hljs-keyword">defer</span>: c = conditional
+    loop
+
+<span class="hljs-keyword">var</span> iter2 = <span class="hljs-number">0</span>
+doWhile iter2 &lt; <span class="hljs-number">0</span>:
+    <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;Hello World&quot;</span>
+    iter2.inc</code></pre><pre class="nb-output">Hello World</pre>
+<p>The following code only works with the second template version.</p>
+<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">for</span> msg <span class="hljs-keyword">in</span> [<span class="hljs-string">&quot;Hello even world&quot;</span>, <span class="hljs-string">&quot;Goodbye even world&quot;</span>]:
+  <span class="hljs-keyword">var</span> i = <span class="hljs-number">1</span>
+  doWhile i &lt; <span class="hljs-number">10</span>:
+    <span class="hljs-keyword">if</span> i <span class="hljs-keyword">mod</span> <span class="hljs-number">2</span> != <span class="hljs-number">0</span>:
+      inc i
+      <span class="hljs-keyword">continue</span>
+    <span class="hljs-keyword">echo</span> i, <span class="hljs-string">&quot;: &quot;</span>, msg
+    i += <span class="hljs-number">2</span></code></pre>
+<p>With this code we attempt to print messages with only even numbers. The <code>if</code> block ensures
+that we do not enter the main part of the <code>while</code> loop body
+without an even value in the variable <code>i</code>.
+With <code>continue</code>, we go back to the beginning of the loop to ensure that our variable is not greater than 10. With the first template version, the <code>loop</code> is first executed outside of the <code>while</code> loop and <code>continue</code> skip to the next iteration of the <code>for</code> loop instead, effectively skipping all <code>echo</code> statements.</p>
+<p>With the keyword <code>defer</code> all the statements are kept inside the <code>while</code> loop.</p>
+<p>Notice also that <em>syntaxically</em> the resulting source code is fairly different than the C/C++ code.</p>
 <p>In the C source code, appear in this order:</p>
 <ol>
 <li>the <code>do</code> keyword</li>
@@ -187,10 +216,11 @@ doWhile i &lt; <span class="hljs-number">10</span>:
     <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;CPU Time [&quot;</span>, benchmarkName, <span class="hljs-string">&quot;] &quot;</span>, elapsed
 
 benchmark <span class="hljs-string">&quot;test1&quot;</span>:
-  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 233 microseconds, and 545 nanoseconds</pre>
+  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 231 microseconds, and 708 nanoseconds</pre>
 <p>The code inside the <code>benchmark</code> code block will be enclosed by our template code.</p>
 <p>Since the code replacement is done at compile time, this transformation does not add additional runtime to our benchmarked code.
 On the contrary, a function or procedure for benchmarking would have add runtime due to the nested function calls.</p>
+<p>For a lot more robust examples, have a look at the <a href="https://github.com/treeform/genny">benchy library</a></p>
 <p><a name = "macros"></a></p>
 <h2>Macros</h2>
 <hr />
@@ -532,8 +562,36 @@ ptr 0.0
 16
 ptr &quot;&quot;</pre>
 <p>Trying to parse a type ourselve is risky, since there are numerous easily forgettable possibilities (due to pragma expressions, cyclic types, and many kind of types: object, enum, type alias, etc..., case of fields, branching and conditionals inside the object, … ).</p>
-<p>There is actually already a function to do so and this will be the object of a future release of this tutorial.</p>
-<p>The following macro enables to create enums with power of two values.</p>
+<p><a name = "for-loop"></a></p>
+<h2>For loop</h2>
+<hr />
+
+<p><a name = "`typed`-parameters"></a></p>
+<h2><code>typed</code> Parameters</h2>
+<hr />
+
+<p><a name = "hygienic-variables"></a></p>
+<h2>Hygienic variables</h2>
+<hr />
+<p><code>bindSym</code> vs <code>ident</code></p>
+<p>The procedures defined inside macros like <code>helper</code> in the following snippets
+are invisible outer <code>m</code>'s body.
+To call these procedures in the generated code, one has to use a <strong>symbol (bound identifier)</strong> declared with <code>bindSym</code>. It is similar to <code>ident</code> that declares <strong>unbound</strong> identifiers.</p>
+<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">macro</span> m(a: <span class="hljs-built_in">string</span>): <span class="hljs-built_in">untyped</span> =
+  <span class="hljs-keyword">proc</span> helper(a: <span class="hljs-built_in">string</span>) = <span class="hljs-keyword">echo</span> a
+  <span class="hljs-literal">result</span> = newCall(<span class="hljs-string">bindSym&quot;helper&quot;</span>, a)
+m <span class="hljs-string">&quot;abc&quot;</span></code></pre><pre class="nb-output">abc</pre>
+<pre><code class="nohighlight hljs nim"><span class="hljs-comment"># Invalid code</span>
+<span class="hljs-keyword">macro</span> m(a: <span class="hljs-built_in">string</span>): <span class="hljs-built_in">untyped</span> =
+  <span class="hljs-keyword">proc</span> helper(a: <span class="hljs-built_in">string</span>) = <span class="hljs-keyword">echo</span> a
+  <span class="hljs-literal">result</span> = newCall(<span class="hljs-string">ident&quot;helper&quot;</span>, a)
+m <span class="hljs-string">&quot;abc&quot;</span></code></pre>
+<p><a name = "avoiding-macros"></a></p>
+<h2>Avoiding Macros</h2>
+<hr />
+<p>This section contains an example of a case were using a macro would be tempting but should be avoided by principle of &quot;lesser construct first&quot;.</p>
+<p>Let's say you want to create enums with power of two as values.
+You could use the following macro:</p>
 <pre><code class="nohighlight hljs nim"><span class="hljs-keyword">import</span> std/[enumerate, math]</code></pre>
 <pre><code class="nohighlight hljs nim"><span class="hljs-comment"># jmgomez on Discord</span>
 <span class="hljs-keyword">macro</span> power2Enum(body: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
@@ -548,8 +606,13 @@ ptr &quot;&quot;</pre>
 
 
 <span class="hljs-keyword">type</span> <span class="hljs-type">Test</span> {.power2Enum.}  = <span class="hljs-keyword">enum</span>
-  a, b, c, d</code></pre>
-<p>A macro is not always the best alternative. A simple set and a cast gives the same result.</p>
+  a, b, c, d
+
+<span class="hljs-keyword">echo</span> $<span class="hljs-built_in">int</span>(c)</code></pre><pre class="nb-output">4</pre>
+<p>The macro is hard to read but serves the feature.
+The pragma provides easy to read code, as long as it is well documented.</p>
+<p>Yet, there is much simpler by casting elements of a set to <code>uint8</code>. The following snippet illustrates this which leverages the data representation of a set.</p>
+<p>Remember: A macro is not always the best construct.</p>
 <pre><code class="nohighlight hljs nim"><span class="hljs-comment"># Rika</span>
 <span class="hljs-keyword">type</span>
   <span class="hljs-type">Setting</span> = <span class="hljs-keyword">enum</span>
@@ -585,6 +648,7 @@ The 2. and 3. documentations are complementary learning resources while the last
 <li><a href="https://forum.nim-lang.org/t/10037">Fast array assignment</a></li>
 <li><a href="https://forum.nim-lang.org/t/10513">Variable injection</a></li>
 <li><a href="https://forum.nim-lang.org/t/9127">Proc inspection</a></li>
+<li><a href="https://forum.nim-lang.org/t/13511#82034">doWhile improvement</a></li>
 <li>etc … Please use the forum search bar with specific keywords like <code>macro</code>, <code>metaprogramming</code>, <code>generics</code>, <code>template</code>, …</li>
 </ol>
 <p>Last but no least, there are three Nim books:</p>
@@ -762,22 +826,58 @@ do{
   i += 1;
 }while(i &lt; 10);
 ```
+
+We present below two templates that attempt to replicate this construct in Nim. The first one is not guaranteed to work if the loop contains some `break` or `continue` keyword.
 &quot;&quot;&quot;</span>
 
 nbCode:
-
-  <span class="hljs-keyword">template</span> doWhile(conditional, loop: <span class="hljs-built_in">untyped</span>) =
+  <span class="hljs-keyword">template</span> doWhileIncorrect(conditional, loop: <span class="hljs-built_in">untyped</span>) =
     loop
     <span class="hljs-keyword">while</span> conditional:
       loop
 
-  <span class="hljs-keyword">var</span> i = <span class="hljs-number">10</span>
-  doWhile i &lt; <span class="hljs-number">10</span>:
+  <span class="hljs-keyword">var</span> iter1 = <span class="hljs-number">0</span>
+  doWhileIncorrect iter1 &lt; <span class="hljs-number">0</span>:
       <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;Hello World&quot;</span>
-      i.inc
+      iter1.inc
+
+nbCode:
+  <span class="hljs-keyword">template</span> doWhile(conditional, loop: <span class="hljs-built_in">untyped</span>) =
+    <span class="hljs-keyword">var</span> c = <span class="hljs-literal">true</span>
+    <span class="hljs-keyword">while</span> c:
+      <span class="hljs-keyword">defer</span>: c = conditional
+      loop
+
+  <span class="hljs-keyword">var</span> iter2 = <span class="hljs-number">0</span>
+  doWhile iter2 &lt; <span class="hljs-number">0</span>:
+      <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;Hello World&quot;</span>
+      iter2.inc
+
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+The following code only works with the second template version.
+&quot;&quot;&quot;</span>
+nbCodeSkip:
+  <span class="hljs-keyword">for</span> msg <span class="hljs-keyword">in</span> [<span class="hljs-string">&quot;Hello even world&quot;</span>, <span class="hljs-string">&quot;Goodbye even world&quot;</span>]:
+    <span class="hljs-keyword">var</span> i = <span class="hljs-number">1</span>
+    doWhile i &lt; <span class="hljs-number">10</span>:
+      <span class="hljs-keyword">if</span> i <span class="hljs-keyword">mod</span> <span class="hljs-number">2</span> != <span class="hljs-number">0</span>:
+        inc i
+        <span class="hljs-keyword">continue</span>
+      <span class="hljs-keyword">echo</span> i, <span class="hljs-string">&quot;: &quot;</span>, msg
+      i += <span class="hljs-number">2</span>
+
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+With this code we attempt to print messages with only even numbers. The `if` block ensures
+that we do not enter the main part of the `while` loop body
+without an even value in the variable `i`.
+With `continue`, we go back to the beginning of the loop to ensure that our variable is not greater than 10. With the first template version, the `loop` is first executed outside of the `while` loop and `continue` skip to the next iteration of the `for` loop instead, effectively skipping all `echo` statements.
+
+With the keyword `defer` all the statements are kept inside the `while` loop.
+&quot;&quot;&quot;</span>
+
 
 nbText:<span class="hljs-string">hlMd&quot;&quot;&quot;
-Notice though that _syntaxically_ the resulting source code is fairly different than the C++ code.
+Notice also that _syntaxically_ the resulting source code is fairly different than the C/C++ code.
 
 In the C source code, appear in this order:
   1. the `do` keyword
@@ -815,7 +915,8 @@ The code inside the `benchmark` code block will be enclosed by our template code
 
 Since the code replacement is done at compile time, this transformation does not add additional runtime to our benchmarked code.
 On the contrary, a function or procedure for benchmarking would have add runtime due to the nested function calls.
-&quot;&quot;&quot;</span>
+
+For a lot more robust examples, have a look at the [benchy library](https://github.com/treeform/genny)&quot;&quot;&quot;</span>
 
 nbSection <span class="hljs-string">&quot;Macros&quot;</span>
 nbText:<span class="hljs-string">&quot;&quot;&quot;
@@ -1257,12 +1358,46 @@ nbCode:
 
 nbText:<span class="hljs-string">&quot;&quot;&quot;
 Trying to parse a type ourselve is risky, since there are numerous easily forgettable possibilities (due to pragma expressions, cyclic types, and many kind of types: object, enum, type alias, etc..., case of fields, branching and conditionals inside the object, … ).
-
-There is actually already a function to do so and this will be the object of a future release of this tutorial.
 &quot;&quot;&quot;</span>
 
+nbSection <span class="hljs-string">&quot;For loop&quot;</span>
 nbText:<span class="hljs-string">&quot;&quot;&quot;
-The following macro enables to create enums with power of two values.
+
+&quot;&quot;&quot;</span>
+
+nbSection <span class="hljs-string">&quot;`typed` Parameters&quot;</span>
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+
+&quot;&quot;&quot;</span>
+
+nbSection <span class="hljs-string">&quot;Hygienic variables&quot;</span>
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+`bindSym` vs `ident`
+
+The procedures defined inside macros like `helper` in the following snippets
+are invisible outer `m`'s body.
+To call these procedures in the generated code, one has to use a **symbol (bound identifier)** declared with `bindSym`. It is similar to `ident` that declares **unbound** identifiers.
+&quot;&quot;&quot;</span>
+
+nbCode:
+  <span class="hljs-keyword">macro</span> m(a: <span class="hljs-built_in">string</span>): <span class="hljs-built_in">untyped</span> =
+    <span class="hljs-keyword">proc</span> helper(a: <span class="hljs-built_in">string</span>) = <span class="hljs-keyword">echo</span> a
+    <span class="hljs-literal">result</span> = newCall(<span class="hljs-string">bindSym&quot;helper&quot;</span>, a)
+  m <span class="hljs-string">&quot;abc&quot;</span>
+
+nbCodeSkip:
+  <span class="hljs-comment"># Invalid code</span>
+  <span class="hljs-keyword">macro</span> m(a: <span class="hljs-built_in">string</span>): <span class="hljs-built_in">untyped</span> =
+    <span class="hljs-keyword">proc</span> helper(a: <span class="hljs-built_in">string</span>) = <span class="hljs-keyword">echo</span> a
+    <span class="hljs-literal">result</span> = newCall(<span class="hljs-string">ident&quot;helper&quot;</span>, a)
+  m <span class="hljs-string">&quot;abc&quot;</span>
+
+nbSection <span class="hljs-string">&quot;Avoiding Macros&quot;</span>
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+This section contains an example of a case were using a macro would be tempting but should be avoided by principle of &quot;lesser construct first&quot;.
+
+Let's say you want to create enums with power of two as values.
+You could use the following macro:
 &quot;&quot;&quot;</span>
 
 nbCodeSkip:
@@ -1284,8 +1419,15 @@ nbCode:
   <span class="hljs-keyword">type</span> <span class="hljs-type">Test</span> {.power2Enum.}  = <span class="hljs-keyword">enum</span>
     a, b, c, d
 
+  <span class="hljs-keyword">echo</span> $<span class="hljs-built_in">int</span>(c)
+
 nbText:<span class="hljs-string">&quot;&quot;&quot;
-A macro is not always the best alternative. A simple set and a cast gives the same result.
+The macro is hard to read but serves the feature.
+The pragma provides easy to read code, as long as it is well documented.
+
+Yet, there is much simpler by casting elements of a set to `uint8`. The following snippet illustrates this which leverages the data representation of a set.
+
+Remember: A macro is not always the best construct.
 &quot;&quot;&quot;</span>
 
 nbCode:
@@ -1322,7 +1464,8 @@ There are plentiful of posts in the forum that are good references:
   4. [Fast array assignment](https://forum.nim-lang.org/t/10037)
   5. [Variable injection](https://forum.nim-lang.org/t/10513)
   6. [Proc inspection](https://forum.nim-lang.org/t/9127)
-  7. etc … Please use the forum search bar with specific keywords like `macro`, `metaprogramming`, `generics`, `template`, …
+  7. [doWhile improvement](https://forum.nim-lang.org/t/13511#82034)
+  8. etc … Please use the forum search bar with specific keywords like `macro`, `metaprogramming`, `generics`, `template`, …
 
 Last but no least, there are three Nim books:
   1. [Nim In Action, ed. Manning](https://book.picheta.me) and [github repo](https://github.com/dom96/nim-in-action-code)
