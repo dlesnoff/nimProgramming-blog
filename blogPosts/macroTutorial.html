@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en-us">
 <head>
-  <title>macroTutorial.nim</title>
+  <title>../blogPosts/macroTutorial.nim</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🐳</text></svg>">
   <meta content="text/html; charset=utf-8" http-equiv="content-type">
   <meta content="width=device-width, initial-scale=1" name="viewport">
@@ -48,8 +48,8 @@ figcaption {
 <body>
 <header>
 <div class="nb-box">
-  <span><a href=".">🏡</a></span>
-  <span><code>macroTutorial.nim</code></span>
+  <span><a href="../macroExamples">🏡</a></span>
+  <span><code>../blogPosts/macroTutorial.nim</code></span>
   <span><a href="https://github.com/dlesnoff/nimMacros.github.io"><svg aria-hidden="true" width="1.2em" height="1.2em" style="vertical-align: middle;" preserveAspectRatio="xMidYMid meet" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59c.4.07.55-.17.55-.38c0-.19-.01-.82-.01-1.49c-2.01.37-2.53-.49-2.69-.94c-.09-.23-.48-.94-.82-1.13c-.28-.15-.68-.52-.01-.53c.63-.01 1.08.58 1.23.82c.72 1.21 1.87.87 2.33.66c.07-.52.28-.87.51-1.07c-1.78-.2-3.64-.89-3.64-3.95c0-.87.31-1.59.82-2.15c-.08-.2-.36-1.02.08-2.12c0 0 .67-.21 2.2.82c.64-.18 1.32-.27 2-.27c.68 0 1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82c.44 1.1.16 1.92.08 2.12c.51.56.82 1.27.82 2.15c0 3.07-1.87 3.75-3.65 3.95c.29.25.54.73.54 1.48c0 1.07-.01 1.93-.01 2.2c0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" fill="#000"></path></svg></a></span>
 </div>
 <hr>
@@ -216,7 +216,7 @@ With <code>continue</code>, we go back to the beginning of the loop to ensure th
     <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;CPU Time [&quot;</span>, benchmarkName, <span class="hljs-string">&quot;] &quot;</span>, elapsed
 
 benchmark <span class="hljs-string">&quot;test1&quot;</span>:
-  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 231 microseconds, and 708 nanoseconds</pre>
+  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 200 microseconds, and 503 nanoseconds</pre>
 <p>The code inside the <code>benchmark</code> code block will be enclosed by our template code.</p>
 <p>Since the code replacement is done at compile time, this transformation does not add additional runtime to our benchmarked code.
 On the contrary, a function or procedure for benchmarking would have add runtime due to the nested function calls.</p>
@@ -275,7 +275,7 @@ dumpTree:
 </code></pre>
 <p>We can better visualize the tree structure of the AST with the following picture.</p>
 <figure>
-<img src="./pictures/ASTtree.jpg" alt="Nim's Abstract Syntax Tree visualized with a tree">
+<img src="../macroExamples/pictures/ASTtree.jpg" alt="Nim's Abstract Syntax Tree visualized with a tree">
 <figcaption>Nim's Abstract Syntax Tree visualized with a tree</figcaption>
 </figure>
 <h3>Multiply by two macro</h3>
@@ -518,6 +518,37 @@ We do not represent spaces in the AST. Each term separated by a dot is an Ident 
   <span class="hljs-literal">result</span> = quote <span class="hljs-keyword">do</span>:
     `typedef`
 
+  <span class="hljs-comment"># Find and validate the type definition</span>
+  <span class="hljs-keyword">var</span> foundTypeDef = <span class="hljs-literal">false</span>
+  <span class="hljs-keyword">var</span> hasFields = <span class="hljs-literal">false</span>
+
+  <span class="hljs-keyword">for</span> statement <span class="hljs-keyword">in</span> typedef:
+    <span class="hljs-keyword">if</span> statement.kind == nnkTypeSection:
+      <span class="hljs-keyword">for</span> typeDef <span class="hljs-keyword">in</span> statement:
+        <span class="hljs-keyword">if</span> typeDef.kind == nnkTypeDef:
+          foundTypeDef = <span class="hljs-literal">true</span>
+
+          <span class="hljs-comment"># Validate the structure: TypeDef should have at least 3 children</span>
+          <span class="hljs-keyword">if</span> typeDef.len &lt; <span class="hljs-number">3</span>:
+            error(<span class="hljs-string">&quot;Malformed type definition&quot;</span>, typeDef)
+
+          <span class="hljs-comment"># Check if it's an object type with fields</span>
+          <span class="hljs-keyword">let</span> typeImpl = typeDef[<span class="hljs-number">2</span>]
+          <span class="hljs-keyword">if</span> typeImpl.kind == nnkObjectTy:
+            <span class="hljs-comment"># Object types have structure: ObjectTy[pragma, parent, RecList]</span>
+            <span class="hljs-keyword">if</span> typeImpl.len &gt;= <span class="hljs-number">3</span> <span class="hljs-keyword">and</span> typeImpl[<span class="hljs-number">2</span>].kind == nnkRecList:
+              <span class="hljs-keyword">if</span> typeImpl[<span class="hljs-number">2</span>].len &gt; <span class="hljs-number">0</span>:
+                hasFields = <span class="hljs-literal">true</span>
+
+  <span class="hljs-comment"># Report errors if validation failed</span>
+  <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> foundTypeDef:
+    error(<span class="hljs-string">&quot;No type definition found in input. &quot;</span> &amp;
+          <span class="hljs-string">&quot;Expected: type MyType = object ...&quot;</span>, typedef)
+
+  <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> hasFields:
+    error(<span class="hljs-string">&quot;Type definition must have at least one field. &quot;</span> &amp;
+          <span class="hljs-string">&quot;Example: type MyType = object</span><span class="hljs-meta">\n</span><span class="hljs-string">  field1: int&quot;</span>, typedef)
+
   <span class="hljs-comment"># Parse the type definition to find the TypeDef section's node</span>
   <span class="hljs-comment"># We create the output's AST along parsing.</span>
   <span class="hljs-comment"># We will receive a statement list as the root of the AST</span>
@@ -561,7 +592,22 @@ ptr Thing(a: 0.0, b: &quot;&quot;)
 ptr 0.0
 16
 ptr &quot;&quot;</pre>
-<p>Trying to parse a type ourselve is risky, since there are numerous easily forgettable possibilities (due to pragma expressions, cyclic types, and many kind of types: object, enum, type alias, etc..., case of fields, branching and conditionals inside the object, … ).</p>
+<pre><code class="nohighlight hljs nim">typeMemoryRepr:
+  <span class="hljs-keyword">type</span> <span class="hljs-type">Person</span> = <span class="hljs-keyword">object</span>
+    name: <span class="hljs-built_in">string</span>
+    age: <span class="hljs-built_in">int</span></code></pre><pre class="nb-output">24
+ptr Person(name: &quot;&quot;, age: 0)
+16
+ptr &quot;&quot;
+8
+ptr 0</pre>
+<p>A macro is prone to user misuse. It is therefore crucial to add input validation. The following code should fail:</p>
+<pre><code class="nohighlight hljs nim">typeMemoryRepr:
+  <span class="hljs-keyword">const</span> x = <span class="hljs-number">5</span>  <span class="hljs-comment"># No type definition found in input. Expected: type MyType = object ...</span>
+
+typeMemoryRepr:
+  <span class="hljs-keyword">type</span> <span class="hljs-type">Empty</span> = <span class="hljs-keyword">object</span> <span class="hljs-comment"># Type definition must have at least one field. Example: type MyType = object</span>
+ <span class="hljs-comment"># field1: int</span></code></pre>
 <p><a name = "for-loop"></a></p>
 <h2>For loop</h2>
 <hr />
@@ -577,7 +623,8 @@ ptr &quot;&quot;</pre>
 <p>The procedures defined inside macros like <code>helper</code> in the following snippets
 are invisible outer <code>m</code>'s body.
 To call these procedures in the generated code, one has to use a <strong>symbol (bound identifier)</strong> declared with <code>bindSym</code>. It is similar to <code>ident</code> that declares <strong>unbound</strong> identifiers.</p>
-<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">macro</span> m(a: <span class="hljs-built_in">string</span>): <span class="hljs-built_in">untyped</span> =
+<pre><code class="nohighlight hljs nim"><span class="hljs-comment"># Andreas Rumpf &quot;Mastering Nim&quot;</span>
+<span class="hljs-keyword">macro</span> m(a: <span class="hljs-built_in">string</span>): <span class="hljs-built_in">untyped</span> =
   <span class="hljs-keyword">proc</span> helper(a: <span class="hljs-built_in">string</span>) = <span class="hljs-keyword">echo</span> a
   <span class="hljs-literal">result</span> = newCall(<span class="hljs-string">bindSym&quot;helper&quot;</span>, a)
 m <span class="hljs-string">&quot;abc&quot;</span></code></pre><pre class="nb-output">abc</pre>
@@ -1315,6 +1362,37 @@ nbCode:
     <span class="hljs-literal">result</span> = quote <span class="hljs-keyword">do</span>:
       `typedef`
 
+    <span class="hljs-comment"># Find and validate the type definition</span>
+    <span class="hljs-keyword">var</span> foundTypeDef = <span class="hljs-literal">false</span>
+    <span class="hljs-keyword">var</span> hasFields = <span class="hljs-literal">false</span>
+
+    <span class="hljs-keyword">for</span> statement <span class="hljs-keyword">in</span> typedef:
+      <span class="hljs-keyword">if</span> statement.kind == nnkTypeSection:
+        <span class="hljs-keyword">for</span> typeDef <span class="hljs-keyword">in</span> statement:
+          <span class="hljs-keyword">if</span> typeDef.kind == nnkTypeDef:
+            foundTypeDef = <span class="hljs-literal">true</span>
+
+            <span class="hljs-comment"># Validate the structure: TypeDef should have at least 3 children</span>
+            <span class="hljs-keyword">if</span> typeDef.len &lt; <span class="hljs-number">3</span>:
+              error(<span class="hljs-string">&quot;Malformed type definition&quot;</span>, typeDef)
+
+            <span class="hljs-comment"># Check if it's an object type with fields</span>
+            <span class="hljs-keyword">let</span> typeImpl = typeDef[<span class="hljs-number">2</span>]
+            <span class="hljs-keyword">if</span> typeImpl.kind == nnkObjectTy:
+              <span class="hljs-comment"># Object types have structure: ObjectTy[pragma, parent, RecList]</span>
+              <span class="hljs-keyword">if</span> typeImpl.len &gt;= <span class="hljs-number">3</span> <span class="hljs-keyword">and</span> typeImpl[<span class="hljs-number">2</span>].kind == nnkRecList:
+                <span class="hljs-keyword">if</span> typeImpl[<span class="hljs-number">2</span>].len &gt; <span class="hljs-number">0</span>:
+                  hasFields = <span class="hljs-literal">true</span>
+
+    <span class="hljs-comment"># Report errors if validation failed</span>
+    <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> foundTypeDef:
+      error(<span class="hljs-string">&quot;No type definition found in input. &quot;</span> &amp;
+            <span class="hljs-string">&quot;Expected: type MyType = object ...&quot;</span>, typedef)
+
+    <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> hasFields:
+      error(<span class="hljs-string">&quot;Type definition must have at least one field. &quot;</span> &amp;
+            <span class="hljs-string">&quot;Example: type MyType = object</span><span class="hljs-meta">\n</span><span class="hljs-string">  field1: int&quot;</span>, typedef)
+
     <span class="hljs-comment"># Parse the type definition to find the TypeDef section's node</span>
     <span class="hljs-comment"># We create the output's AST along parsing.</span>
     <span class="hljs-comment"># We will receive a statement list as the root of the AST</span>
@@ -1356,9 +1434,26 @@ nbCode:
         a: <span class="hljs-built_in">float32</span>
         b: <span class="hljs-built_in">string</span>
 
-nbText:<span class="hljs-string">&quot;&quot;&quot;
-Trying to parse a type ourselve is risky, since there are numerous easily forgettable possibilities (due to pragma expressions, cyclic types, and many kind of types: object, enum, type alias, etc..., case of fields, branching and conditionals inside the object, … ).
+nbCode:
+  typeMemoryRepr:
+    <span class="hljs-keyword">type</span> <span class="hljs-type">Person</span> = <span class="hljs-keyword">object</span>
+      name: <span class="hljs-built_in">string</span>
+      age: <span class="hljs-built_in">int</span>
+
+nbText: <span class="hljs-string">&quot;&quot;&quot;
+A macro is prone to user misuse. It is therefore crucial to add input validation. The following code should fail:
 &quot;&quot;&quot;</span>
+nbCodeSkip:
+  typeMemoryRepr:
+    <span class="hljs-keyword">const</span> x = <span class="hljs-number">5</span>  <span class="hljs-comment"># No type definition found in input. Expected: type MyType = object ...</span>
+
+  typeMemoryRepr:
+    <span class="hljs-keyword">type</span> <span class="hljs-type">Empty</span> = <span class="hljs-keyword">object</span> <span class="hljs-comment"># Type definition must have at least one field. Example: type MyType = object</span>
+   <span class="hljs-comment"># field1: int</span>
+
+<span class="hljs-comment"># nbText:&quot;&quot;&quot;</span>
+<span class="hljs-comment"># Trying to parse a type ourselve is risky, since there are numerous easily forgettable possibilities (due to pragma expressions, cyclic types, and many kind of types: object, enum, type alias, etc..., case of fields, branching and conditionals inside the object, … ).</span>
+<span class="hljs-comment"># &quot;&quot;&quot;</span>
 
 nbSection <span class="hljs-string">&quot;For loop&quot;</span>
 nbText:<span class="hljs-string">&quot;&quot;&quot;
@@ -1380,6 +1475,7 @@ To call these procedures in the generated code, one has to use a **symbol (bound
 &quot;&quot;&quot;</span>
 
 nbCode:
+  <span class="hljs-comment"># Andreas Rumpf &quot;Mastering Nim&quot;</span>
   <span class="hljs-keyword">macro</span> m(a: <span class="hljs-built_in">string</span>): <span class="hljs-built_in">untyped</span> =
     <span class="hljs-keyword">proc</span> helper(a: <span class="hljs-built_in">string</span>) = <span class="hljs-keyword">echo</span> a
     <span class="hljs-literal">result</span> = newCall(<span class="hljs-string">bindSym&quot;helper&quot;</span>, a)
