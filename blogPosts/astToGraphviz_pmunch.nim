@@ -5,7 +5,7 @@ var
   lastIndent = 0
   parents: seq[string]
 
-var test: string = readAll(open("ASTtree.txt"))
+var test: string = readAll(open("astTexts/ASTtree.txt"))
 test = test.strip(chars= {'\n'}) # Remove closing end of line
 
 echo "digraph {"

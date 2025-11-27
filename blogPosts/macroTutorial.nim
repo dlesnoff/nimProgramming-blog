@@ -706,7 +706,7 @@ nbCode:
       age: int
 
 nbText: """
-A macro is prone to user misuse. It is therefore crucial to add input validation. The following code should fail:
+A macro is prone to user misuse. It is therefore crucial to add input validation. The following macro snippets should fail:
 """
 nbCodeSkip:
   typeMemoryRepr:
@@ -722,9 +722,426 @@ nbCodeSkip:
 
 nbSection "For loop"
 nbText:"""
-
+The for loop may be difficult to understand from its dumped tree alone.
 """
 
+nbCode:
+  # Example 1: Simple for loop with range
+  dumpTree:
+    for item in 0..10:
+      echo item
+
+nbText: """
+```raw
+StmtList
+  ForStmt
+    Ident "i"
+    Infix
+      Ident ".."
+      IntLit 0
+      IntLit 10
+    StmtList
+      Command
+        Ident "echo"
+        Ident "i"
+```
+"""
+
+nbCode:
+  # Example 2: For loop iterating over array
+  dumpTree:
+    for item in [1, 2, 3]:
+      echo item
+
+  # Example 3: For loop with countdown
+  dumpTree:
+    for i in countdown(10, 0):
+      echo i
+
+  # Example 4: For loop with items iterator (explicit)
+  dumpTree:
+    for x in items([1, 2, 3]):
+      echo x
+
+  # Example 5: For loop with pairs (index, value)
+  dumpTree:
+    for i, val in [10, 20, 30]:
+      echo i, " -> ", val
+
+  # Example 6: For loop with multiple variables (tuple unpacking)
+  dumpTree:
+    for (a, b) in [(1, 2), (3, 4), (5, 6)]:
+      echo a, " and ", b
+
+  # Example 7: For loop with three variables
+  dumpTree:
+    for (x, y, z) in [(1, 2, 3), (4, 5, 6)]:
+      echo x, y, z
+
+  # Example 8: For loop over string
+  dumpTree:
+    for c in "hello":
+      echo c
+
+  # Example 9: For loop with mitems (mutable iterator)
+  var L = [1, 2, 3]
+  for item in mitems(L):
+    item = item * 2
+
+  # Example 10: Nested for loops
+  dumpTree:
+    for i in 0..2:
+      for j in 0..2:
+        echo i, ",", j
+
+  # Example 11: For loop with custom iterator call
+  dumpTree:
+    for line in lines("file.txt"):
+      echo line
+
+  # Example 12: For loop with inline iterator expression
+  dumpTree:
+    for x in @[1, 2, 3]:
+      echo x
+
+  # Example 13: Empty for loop body
+  dumpTree:
+    for i in 0..5:
+      discard
+
+  # Example 14: For loop with break/continue
+  dumpTree:
+    for i in 0..10:
+      if i == 5:
+        break
+      if i mod 2 == 0:
+        continue
+      echo i
+
+  # Example 15: For loop with multiple statements in body
+  dumpTree:
+    for i in 0..3:
+      let x = i * 2
+      let y = x + 1
+      echo y
+
+  # Example 16: For loop with backticks identifier
+  dumpTree:
+    for `item value` in [1, 2, 3]:
+      echo `item value`
+
+  # Example 17: For loop with qualified iterator
+  dumpTree:
+    for x in system.items([1, 2, 3]):
+      echo x
+
+  # Example 18: For loop using ..< (exclusive range)
+  dumpTree:
+    for i in 0..<5:
+      echo i
+
+  # Example 19: For loop with complex tuple pattern
+  # dumpTree:
+  #   for (i, (x, y)) in [(0, (1, 2)), (1, (3, 4))]:
+  #     echo i, x, y
+
+  # Example 20: For loop with type annotation (rare but valid)
+  # dumpTree:
+  #   for i: int in [1, 2, 3]:
+  #     echo i
+
+
+nbText:"""
+```raw
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident "item"
+    Bracket
+      IntLit 1
+      IntLit 2
+      IntLit 3
+    StmtList
+      Command
+        Ident "echo"
+        Ident "item"
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident "i"
+    Call
+      Ident "countdown"
+      IntLit 10
+      IntLit 0
+    StmtList
+      Command
+        Ident "echo"
+        Ident "i"
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident "x"
+    Call
+      Ident "items"
+      Bracket
+        IntLit 1
+        IntLit 2
+        IntLit 3
+    StmtList
+      Command
+        Ident "echo"
+        Ident "x"
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident "i"
+    Ident "val"
+    Bracket
+      IntLit 10
+      IntLit 20
+      IntLit 30
+    StmtList
+      Command
+        Ident "echo"
+        Ident "i"
+        StrLit " -> "
+        Ident "val"
+==========================================
+==========================================
+StmtList
+  ForStmt
+    VarTuple
+      Ident "a"
+      Ident "b"
+      Empty
+    Bracket
+      TupleConstr
+        IntLit 1
+        IntLit 2
+      TupleConstr
+        IntLit 3
+        IntLit 4
+      TupleConstr
+        IntLit 5
+        IntLit 6
+    StmtList
+      Command
+        Ident "echo"
+        Ident "a"
+        StrLit " and "
+        Ident "b"
+==========================================
+==========================================
+StmtList
+  ForStmt
+    VarTuple
+      Ident "x"
+      Ident "y"
+      Ident "z"
+      Empty
+    Bracket
+      TupleConstr
+        IntLit 1
+        IntLit 2
+        IntLit 3
+      TupleConstr
+        IntLit 4
+        IntLit 5
+        IntLit 6
+    StmtList
+      Command
+        Ident "echo"
+        Ident "x"
+        Ident "y"
+        Ident "z"
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident "c"
+    StrLit "hello"
+    StmtList
+      Command
+        Ident "echo"
+        Ident "c"
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident "i"
+    Infix
+      Ident ".."
+      IntLit 0
+      IntLit 2
+    StmtList
+      ForStmt
+        Ident "j"
+        Infix
+          Ident ".."
+          IntLit 0
+          IntLit 2
+        StmtList
+          Command
+            Ident "echo"
+            Ident "i"
+            StrLit ","
+            Ident "j"
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident "line"
+    Call
+      Ident "lines"
+      StrLit "file.txt"
+    StmtList
+      Command
+        Ident "echo"
+        Ident "line"
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident "x"
+    Prefix
+      Ident "@"
+      Bracket
+        IntLit 1
+        IntLit 2
+        IntLit 3
+    StmtList
+      Command
+        Ident "echo"
+        Ident "x"
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident "i"
+    Infix
+      Ident ".."
+      IntLit 0
+      IntLit 5
+    StmtList
+      DiscardStmt
+        Empty
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident "i"
+    Infix
+      Ident ".."
+      IntLit 0
+      IntLit 10
+    StmtList
+      IfStmt
+        ElifBranch
+          Infix
+            Ident "=="
+            Ident "i"
+            IntLit 5
+          StmtList
+            BreakStmt
+              Empty
+      IfStmt
+        ElifBranch
+          Infix
+            Ident "=="
+            Infix
+              Ident "mod"
+              Ident "i"
+              IntLit 2
+            IntLit 0
+          StmtList
+            ContinueStmt
+              Empty
+      Command
+        Ident "echo"
+        Ident "i"
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident "i"
+    Infix
+      Ident ".."
+      IntLit 0
+      IntLit 3
+    StmtList
+      LetSection
+        IdentDefs
+          Ident "x"
+          Empty
+          Infix
+            Ident "*"
+            Ident "i"
+            IntLit 2
+      LetSection
+        IdentDefs
+          Ident "y"
+          Empty
+          Infix
+            Ident "+"
+            Ident "x"
+            IntLit 1
+      Command
+        Ident "echo"
+        Ident "y"
+==========================================
+==========================================
+StmtList
+  ForStmt
+    AccQuoted
+      Ident "item"
+      Ident "value"
+    Bracket
+      IntLit 1
+      IntLit 2
+      IntLit 3
+    StmtList
+      Command
+        Ident "echo"
+        AccQuoted
+          Ident "item"
+          Ident "value"
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident "x"
+    Call
+      DotExpr
+        Ident "system"
+        Ident "items"
+      Bracket
+        IntLit 1
+        IntLit 2
+        IntLit 3
+    StmtList
+      Command
+        Ident "echo"
+        Ident "x"
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident "i"
+    Infix
+      Ident "..<"
+      IntLit 0
+      IntLit 5
+    StmtList
+      Command
+        Ident "echo"
+        Ident "i"
+==========================================
+```
+"""
 nbSection "`typed` Parameters"
 nbText:"""
 
