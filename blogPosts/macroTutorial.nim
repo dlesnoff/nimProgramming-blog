@@ -627,6 +627,37 @@ nbCode:
     result = quote do:
       `typedef`
 
+    # Find and validate the type definition
+    var foundTypeDef = false
+    var hasFields = false
+
+    for statement in typedef:
+      if statement.kind == nnkTypeSection:
+        for typeDef in statement:
+          if typeDef.kind == nnkTypeDef:
+            foundTypeDef = true
+
+            # Validate the structure: TypeDef should have at least 3 children
+            if typeDef.len < 3:
+              error("Malformed type definition", typeDef)
+
+            # Check if it's an object type with fields
+            let typeImpl = typeDef[2]
+            if typeImpl.kind == nnkObjectTy:
+              # Object types have structure: ObjectTy[pragma, parent, RecList]
+              if typeImpl.len >= 3 and typeImpl[2].kind == nnkRecList:
+                if typeImpl[2].len > 0:
+                  hasFields = true
+
+    # Report errors if validation failed
+    if not foundTypeDef:
+      error("No type definition found in input. " &
+            "Expected: type MyType = object ...", typedef)
+
+    if not hasFields:
+      error("Type definition must have at least one field. " &
+            "Example: type MyType = object\n  field1: int", typedef)
+
     # Parse the type definition to find the TypeDef section's node
     # We create the output's AST along parsing.
     # We will receive a statement list as the root of the AST
@@ -668,9 +699,26 @@ nbCode:
         a: float32
         b: string
 
-nbText:"""
-Trying to parse a type ourselve is risky, since there are numerous easily forgettable possibilities (due to pragma expressions, cyclic types, and many kind of types: object, enum, type alias, etc..., case of fields, branching and conditionals inside the object, … ).
+nbCode:
+  typeMemoryRepr:
+    type Person = object
+      name: string
+      age: int
+
+nbText: """
+A macro is prone to user misuse. It is therefore crucial to add input validation. The following code should fail:
 """
+nbCodeSkip:
+  typeMemoryRepr:
+    const x = 5  # No type definition found in input. Expected: type MyType = object ...
+
+  typeMemoryRepr:
+    type Empty = object # Type definition must have at least one field. Example: type MyType = object
+   # field1: int
+
+# nbText:"""
+# Trying to parse a type ourselve is risky, since there are numerous easily forgettable possibilities (due to pragma expressions, cyclic types, and many kind of types: object, enum, type alias, etc..., case of fields, branching and conditionals inside the object, … ).
+# """
 
 nbSection "For loop"
 nbText:"""
