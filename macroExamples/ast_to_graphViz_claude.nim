@@ -149,6 +149,7 @@ template astToImage*(basename: string, caption = "", format = "jpg", outputDir =
     let captionText = if caption == "": basename else: caption
     nbImage(url = imgPath, caption = captionText)
 
+
 # Example usage:
 when isMainModule:
   # Example 1: Simple usage
@@ -177,6 +178,14 @@ when isMainModule:
     proc myProc(x: int, y: string): bool =
       return x > 0
 
+  astToImage("type_forum_question", "Type with Root Obj", "jpg", "pictures"):
+    type
+      TestClass = ref object of RootObj
+        b = 10
+
+  # var a: TestClass
+  # echo $a.b
+
   # Example 5: Complex expression
-  astToImage("ast_ternary_expression", "AST ternary expression", "jpg", "pictures"):
-    let result = if x > 0: "positive" else: "negative"
+  # astToImage("ast_ternary_expression", "AST ternary expression", "jpg", "pictures"):
+  #   let result = if x > 0: "positive" else: "negative"
