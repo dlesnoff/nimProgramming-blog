@@ -1,11 +1,26 @@
 import std/[strutils, macros]
 import std/[enumerate, math]
 import nimib, nimoji
-
+from ../macroExamples/ast_to_graphViz_claude import generateGraph, toGraphViz
 nbInit
 
 # add a ToC
 var nbToc: NbBlock
+
+macro astToImage*(basename: string; caption = ""; format = "jpg"; outputDir = "pictures"; code: untyped): untyped =
+  result = quote do:
+    # Generate the GraphViz content
+    let graphVizContent = toGraphViz:
+      `code`
+    # Generate the image from the Dot file (GraphViz)
+    generateGraph(graphVizContent, `basename`, `format`, `outputDir`)
+    # In nimib context, display the image
+    when declared(nbImage):
+      let imgPath = `outputDir` & "/" & `basename` & "." & `format`
+      echo "imgPath: " & imgPath
+      let captionText = if `caption` == "": `basename` else: `caption`
+      nbImage(url = imgPath, caption = captionText)
+
 
 template addToc =
   newNbBlock("nbText", false, nb, nbToc, ""):
@@ -20,7 +35,7 @@ template nbSection(name:string) =
 nbText: hlMd"""
 <h1 style="text-align: center;">Nim Metaprogramming - Macro Tutorial</h1>
 
-This tutorial aims to be a _step-by-step_ introduction to the metaprogramming features of the Nim Language and to provide as much detail as possible to kickstart your craziest projects.
+This tutorial aims to be a _step-by-step_ introduction to the metaprogramming features of the Nim Language and to provide as much detail as possible to kickstart your most complex projects.
 There are already many resources on the Web, but I strive to provide more thorough details on the development process and to gather them all in one place.
 > :warning: This tutorial is still under heavy development.
 """.emojize
@@ -328,7 +343,12 @@ nbCode:
   dumpTree:
     echo 1
 
+astToImage("echo_ast", "Echo 1 AST", "jpg", "pictures"):
+    echo 1
+
 nbText:"""
+Note: Currently, the automatically generated picture tree adds one extra nnkStmtList node on top. Ignore it.
+
 By compiling this code, you will get the corresponding AST.
 This simple AST is made of four nodes:
 ```nim
@@ -413,7 +433,7 @@ We would like to detect the presence of holes in an object.
 
 The first step is to look at the AST of the input code we want to parse.
 
-One can look first at the most basic type definition possible, before trying to complexify the AST to get a feel of all the edge cases.
+One can look first at the most basic type definition possible, before trying to complexify the AST to get a feeling for the possible edge cases.
 """
 
 nbCode:
@@ -514,6 +534,12 @@ StmtList
             Empty
 ```
 """
+
+astToImage("typedef_second_example", "Second example of a type definition", "jpg", "pictures"):
+  type
+    Thing {.packed.} = object of RootObj
+      a: float32
+      b: string
 
 nbText:"""
 Notice how the name of the type went under the PragmaExpr section. We have to be careful about this when trying to parse the type.
@@ -725,11 +751,10 @@ nbText:"""
 The for loop may be difficult to understand from its dumped tree alone.
 """
 
-nbCode:
+nbCodeSkip:
   # Example 1: Simple for loop with range
-  dumpTree:
-    for item in 0..10:
-      echo item
+  for item in 0..10:
+    echo item
 
 nbText: """
 ```raw
@@ -745,6 +770,15 @@ StmtList
         Ident "echo"
         Ident "i"
 ```
+"""
+
+astToImage("for_loop_stmt_1", "For Loop Statement 1", "jpg", "pictures"):
+  for item in 0..10:
+    echo item
+
+nbText:"""
+The `nnkForStmt` has three childrens whose kind may vary.
+The first one correspond to the item element, the second to the range or the iterable being looped over, and finally the list of statements in the `for` block.
 """
 
 nbCode:

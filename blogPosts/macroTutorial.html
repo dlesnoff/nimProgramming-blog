@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en-us">
 <head>
-  <title>../blogPosts/macroTutorial.nim</title>
+  <title>macroTutorial.nim</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🐳</text></svg>">
   <meta content="text/html; charset=utf-8" http-equiv="content-type">
   <meta content="width=device-width, initial-scale=1" name="viewport">
@@ -48,14 +48,14 @@ figcaption {
 <body>
 <header>
 <div class="nb-box">
-  <span><a href="../macroExamples">🏡</a></span>
-  <span><code>../blogPosts/macroTutorial.nim</code></span>
+  <span><a href=".">🏡</a></span>
+  <span><code>macroTutorial.nim</code></span>
   <span><a href="https://github.com/dlesnoff/nimMacros.github.io"><svg aria-hidden="true" width="1.2em" height="1.2em" style="vertical-align: middle;" preserveAspectRatio="xMidYMid meet" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59c.4.07.55-.17.55-.38c0-.19-.01-.82-.01-1.49c-2.01.37-2.53-.49-2.69-.94c-.09-.23-.48-.94-.82-1.13c-.28-.15-.68-.52-.01-.53c.63-.01 1.08.58 1.23.82c.72 1.21 1.87.87 2.33.66c.07-.52.28-.87.51-1.07c-1.78-.2-3.64-.89-3.64-3.95c0-.87.31-1.59.82-2.15c-.08-.2-.36-1.02.08-2.12c0 0 .67-.21 2.2.82c.64-.18 1.32-.27 2-.27c.68 0 1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82c.44 1.1.16 1.92.08 2.12c.51.56.82 1.27.82 2.15c0 3.07-1.87 3.75-3.65 3.95c.29.25.54.73.54 1.48c0 1.07-.01 1.93-.01 2.2c0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" fill="#000"></path></svg></a></span>
 </div>
 <hr>
 </header><main>
 <h1 style="text-align: center;">Nim Metaprogramming - Macro Tutorial</h1>
-<p>This tutorial aims to be a <em>step-by-step</em> introduction to the metaprogramming features of the Nim Language and to provide as much detail as possible to kickstart your craziest projects.
+<p>This tutorial aims to be a <em>step-by-step</em> introduction to the metaprogramming features of the Nim Language and to provide as much detail as possible to kickstart your projects.
 There are already many resources on the Web, but I strive to provide more thorough details on the development process and to gather them all in one place.</p>
 <blockquote>
 <p>⚠️ This tutorial is still under heavy development.</p>
@@ -216,7 +216,7 @@ With <code>continue</code>, we go back to the beginning of the loop to ensure th
     <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;CPU Time [&quot;</span>, benchmarkName, <span class="hljs-string">&quot;] &quot;</span>, elapsed
 
 benchmark <span class="hljs-string">&quot;test1&quot;</span>:
-  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 200 microseconds, and 503 nanoseconds</pre>
+  sleep(<span class="hljs-number">100</span>)</code></pre><pre class="nb-output">CPU Time [test1] 100 milliseconds, 224 microseconds, and 464 nanoseconds</pre>
 <p>The code inside the <code>benchmark</code> code block will be enclosed by our template code.</p>
 <p>Since the code replacement is done at compile time, this transformation does not add additional runtime to our benchmarked code.
 On the contrary, a function or procedure for benchmarking would have add runtime due to the nested function calls.</p>
@@ -275,7 +275,7 @@ dumpTree:
 </code></pre>
 <p>We can better visualize the tree structure of the AST with the following picture.</p>
 <figure>
-<img src="../macroExamples/pictures/ASTtree.jpg" alt="Nim's Abstract Syntax Tree visualized with a tree">
+<img src="./pictures/ASTtree.jpg" alt="Nim's Abstract Syntax Tree visualized with a tree">
 <figcaption>Nim's Abstract Syntax Tree visualized with a tree</figcaption>
 </figure>
 <h3>Multiply by two macro</h3>
@@ -298,6 +298,11 @@ Let us breakdown this macro, shall we ?
 To understand how a macro work, we first may look at the AST given as input.</p>
 <pre><code class="nohighlight hljs nim">dumpTree:
   <span class="hljs-keyword">echo</span> <span class="hljs-number">1</span></code></pre>
+<figure>
+<img src="./pictures/echo_ast.jpg" alt="Echo 1 AST">
+<figcaption>Echo 1 AST</figcaption>
+</figure>
+<p>Note: Currently, the automatically generated picture tree adds one extra nnkStmtList node on top. Ignore it.</p>
 <p>By compiling this code, you will get the corresponding AST.
 This simple AST is made of four nodes:</p>
 <pre><code class="language-nim">StmtList
@@ -360,7 +365,7 @@ To deal with important chunks of memory, the processor stores an object and its 
 <p>We can pack a structure with the pragma <code>{.packed.}</code>, which removes this extra space. This has the disadvantage to slow down memory accesses.</p>
 <p>We would like to detect the presence of holes in an object.</p>
 <p>The first step is to look at the AST of the input code we want to parse.</p>
-<p>One can look first at the most basic type definition possible, before trying to complexify the AST to get a feel of all the edge cases.</p>
+<p>One can look first at the most basic type definition possible, before trying to complexify the AST to get a feeling for the possible edge cases.</p>
 <pre><code class="nohighlight hljs nim">dumpTree:
   <span class="hljs-keyword">type</span>
     <span class="hljs-type">Thing</span> = <span class="hljs-keyword">object</span>
@@ -433,6 +438,10 @@ Yet by adding some other informations we can get a better picture of the general
             Ident &quot;string&quot;
             Empty
 </code></pre>
+<figure>
+<img src="./pictures/typedef_second_example.jpg" alt="Second example of a type definition">
+<figcaption>Second example of a type definition</figcaption>
+</figure>
 <p>Notice how the name of the type went under the PragmaExpr section. We have to be careful about this when trying to parse the type.</p>
 <p>A macro does always the same steps:</p>
 <ol>
@@ -601,7 +610,7 @@ ptr Person(name: &quot;&quot;, age: 0)
 ptr &quot;&quot;
 8
 ptr 0</pre>
-<p>A macro is prone to user misuse. It is therefore crucial to add input validation. The following code should fail:</p>
+<p>A macro is prone to user misuse. It is therefore crucial to add input validation. The following macro snippets should fail:</p>
 <pre><code class="nohighlight hljs nim">typeMemoryRepr:
   <span class="hljs-keyword">const</span> x = <span class="hljs-number">5</span>  <span class="hljs-comment"># No type definition found in input. Expected: type MyType = object ...</span>
 
@@ -611,7 +620,416 @@ typeMemoryRepr:
 <p><a name = "for-loop"></a></p>
 <h2>For loop</h2>
 <hr />
+<p>The for loop may be difficult to understand from its dumped tree alone.</p>
+<pre><code class="nohighlight hljs nim"><span class="hljs-keyword">for</span> item <span class="hljs-keyword">in</span> <span class="hljs-number">0.</span>.<span class="hljs-number">10</span>:
+  <span class="hljs-keyword">echo</span> item</code></pre>
+<pre><code class="language-raw">StmtList
+  ForStmt
+    Ident &quot;i&quot;
+    Infix
+      Ident &quot;..&quot;
+      IntLit 0
+      IntLit 10
+    StmtList
+      Command
+        Ident &quot;echo&quot;
+        Ident &quot;i&quot;
+</code></pre>
+<figure>
+<img src="./pictures/for_loop_stmt_1.jpg" alt="For Loop Statement 1">
+<figcaption>For Loop Statement 1</figcaption>
+</figure>
+<p>The <code>nnkForStmt</code> has three childrens whose kind may vary.
+The first one correspond to the item element, the second to the range or the iterable being looped over, and finally the list of statements in the <code>for</code> block.</p>
+<pre><code class="nohighlight hljs nim"><span class="hljs-comment"># Example 2: For loop iterating over array</span>
+dumpTree:
+  <span class="hljs-keyword">for</span> item <span class="hljs-keyword">in</span> [<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>]:
+    <span class="hljs-keyword">echo</span> item
 
+<span class="hljs-comment"># Example 3: For loop with countdown</span>
+dumpTree:
+  <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-keyword">countdown</span>(<span class="hljs-number">10</span>, <span class="hljs-number">0</span>):
+    <span class="hljs-keyword">echo</span> i
+
+<span class="hljs-comment"># Example 4: For loop with items iterator (explicit)</span>
+dumpTree:
+  <span class="hljs-keyword">for</span> x <span class="hljs-keyword">in</span> items([<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>]):
+    <span class="hljs-keyword">echo</span> x
+
+<span class="hljs-comment"># Example 5: For loop with pairs (index, value)</span>
+dumpTree:
+  <span class="hljs-keyword">for</span> i, val <span class="hljs-keyword">in</span> [<span class="hljs-number">10</span>, <span class="hljs-number">20</span>, <span class="hljs-number">30</span>]:
+    <span class="hljs-keyword">echo</span> i, <span class="hljs-string">&quot; -&gt; &quot;</span>, val
+
+<span class="hljs-comment"># Example 6: For loop with multiple variables (tuple unpacking)</span>
+dumpTree:
+  <span class="hljs-keyword">for</span> (a, b) <span class="hljs-keyword">in</span> [(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>), (<span class="hljs-number">3</span>, <span class="hljs-number">4</span>), (<span class="hljs-number">5</span>, <span class="hljs-number">6</span>)]:
+    <span class="hljs-keyword">echo</span> a, <span class="hljs-string">&quot; and &quot;</span>, b
+
+<span class="hljs-comment"># Example 7: For loop with three variables</span>
+dumpTree:
+  <span class="hljs-keyword">for</span> (x, y, z) <span class="hljs-keyword">in</span> [(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>), (<span class="hljs-number">4</span>, <span class="hljs-number">5</span>, <span class="hljs-number">6</span>)]:
+    <span class="hljs-keyword">echo</span> x, y, z
+
+<span class="hljs-comment"># Example 8: For loop over string</span>
+dumpTree:
+  <span class="hljs-keyword">for</span> c <span class="hljs-keyword">in</span> <span class="hljs-string">&quot;hello&quot;</span>:
+    <span class="hljs-keyword">echo</span> c
+
+<span class="hljs-comment"># Example 9: For loop with mitems (mutable iterator)</span>
+<span class="hljs-keyword">var</span> <span class="hljs-type">L</span> = [<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>]
+<span class="hljs-keyword">for</span> item <span class="hljs-keyword">in</span> mitems(<span class="hljs-type">L</span>):
+  item = item * <span class="hljs-number">2</span>
+
+<span class="hljs-comment"># Example 10: Nested for loops</span>
+dumpTree:
+  <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-number">0.</span>.<span class="hljs-number">2</span>:
+    <span class="hljs-keyword">for</span> j <span class="hljs-keyword">in</span> <span class="hljs-number">0.</span>.<span class="hljs-number">2</span>:
+      <span class="hljs-keyword">echo</span> i, <span class="hljs-string">&quot;,&quot;</span>, j
+
+<span class="hljs-comment"># Example 11: For loop with custom iterator call</span>
+dumpTree:
+  <span class="hljs-keyword">for</span> line <span class="hljs-keyword">in</span> lines(<span class="hljs-string">&quot;file.txt&quot;</span>):
+    <span class="hljs-keyword">echo</span> line
+
+<span class="hljs-comment"># Example 12: For loop with inline iterator expression</span>
+dumpTree:
+  <span class="hljs-keyword">for</span> x <span class="hljs-keyword">in</span> @[<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>]:
+    <span class="hljs-keyword">echo</span> x
+
+<span class="hljs-comment"># Example 13: Empty for loop body</span>
+dumpTree:
+  <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-number">0.</span>.<span class="hljs-number">5</span>:
+    <span class="hljs-keyword">discard</span>
+
+<span class="hljs-comment"># Example 14: For loop with break/continue</span>
+dumpTree:
+  <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-number">0.</span>.<span class="hljs-number">10</span>:
+    <span class="hljs-keyword">if</span> i == <span class="hljs-number">5</span>:
+      <span class="hljs-keyword">break</span>
+    <span class="hljs-keyword">if</span> i <span class="hljs-keyword">mod</span> <span class="hljs-number">2</span> == <span class="hljs-number">0</span>:
+      <span class="hljs-keyword">continue</span>
+    <span class="hljs-keyword">echo</span> i
+
+<span class="hljs-comment"># Example 15: For loop with multiple statements in body</span>
+dumpTree:
+  <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-number">0.</span>.<span class="hljs-number">3</span>:
+    <span class="hljs-keyword">let</span> x = i * <span class="hljs-number">2</span>
+    <span class="hljs-keyword">let</span> y = x + <span class="hljs-number">1</span>
+    <span class="hljs-keyword">echo</span> y
+
+<span class="hljs-comment"># Example 16: For loop with backticks identifier</span>
+dumpTree:
+  <span class="hljs-keyword">for</span> `item value` <span class="hljs-keyword">in</span> [<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>]:
+    <span class="hljs-keyword">echo</span> `item value`
+
+<span class="hljs-comment"># Example 17: For loop with qualified iterator</span>
+dumpTree:
+  <span class="hljs-keyword">for</span> x <span class="hljs-keyword">in</span> system.items([<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>]):
+    <span class="hljs-keyword">echo</span> x
+
+<span class="hljs-comment"># Example 18: For loop using ..&lt; (exclusive range)</span>
+dumpTree:
+  <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-number">0.</span>.&lt;<span class="hljs-number">5</span>:
+    <span class="hljs-keyword">echo</span> i
+
+<span class="hljs-comment"># Example 19: For loop with complex tuple pattern</span>
+<span class="hljs-comment"># dumpTree:</span>
+<span class="hljs-comment">#   for (i, (x, y)) in [(0, (1, 2)), (1, (3, 4))]:</span>
+<span class="hljs-comment">#     echo i, x, y</span>
+
+<span class="hljs-comment"># Example 20: For loop with type annotation (rare but valid)</span>
+<span class="hljs-comment"># dumpTree:</span>
+<span class="hljs-comment">#   for i: int in [1, 2, 3]:</span>
+<span class="hljs-comment">#     echo i</span></code></pre>
+<pre><code class="language-raw">==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident &quot;item&quot;
+    Bracket
+      IntLit 1
+      IntLit 2
+      IntLit 3
+    StmtList
+      Command
+        Ident &quot;echo&quot;
+        Ident &quot;item&quot;
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident &quot;i&quot;
+    Call
+      Ident &quot;countdown&quot;
+      IntLit 10
+      IntLit 0
+    StmtList
+      Command
+        Ident &quot;echo&quot;
+        Ident &quot;i&quot;
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident &quot;x&quot;
+    Call
+      Ident &quot;items&quot;
+      Bracket
+        IntLit 1
+        IntLit 2
+        IntLit 3
+    StmtList
+      Command
+        Ident &quot;echo&quot;
+        Ident &quot;x&quot;
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident &quot;i&quot;
+    Ident &quot;val&quot;
+    Bracket
+      IntLit 10
+      IntLit 20
+      IntLit 30
+    StmtList
+      Command
+        Ident &quot;echo&quot;
+        Ident &quot;i&quot;
+        StrLit &quot; -&gt; &quot;
+        Ident &quot;val&quot;
+==========================================
+==========================================
+StmtList
+  ForStmt
+    VarTuple
+      Ident &quot;a&quot;
+      Ident &quot;b&quot;
+      Empty
+    Bracket
+      TupleConstr
+        IntLit 1
+        IntLit 2
+      TupleConstr
+        IntLit 3
+        IntLit 4
+      TupleConstr
+        IntLit 5
+        IntLit 6
+    StmtList
+      Command
+        Ident &quot;echo&quot;
+        Ident &quot;a&quot;
+        StrLit &quot; and &quot;
+        Ident &quot;b&quot;
+==========================================
+==========================================
+StmtList
+  ForStmt
+    VarTuple
+      Ident &quot;x&quot;
+      Ident &quot;y&quot;
+      Ident &quot;z&quot;
+      Empty
+    Bracket
+      TupleConstr
+        IntLit 1
+        IntLit 2
+        IntLit 3
+      TupleConstr
+        IntLit 4
+        IntLit 5
+        IntLit 6
+    StmtList
+      Command
+        Ident &quot;echo&quot;
+        Ident &quot;x&quot;
+        Ident &quot;y&quot;
+        Ident &quot;z&quot;
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident &quot;c&quot;
+    StrLit &quot;hello&quot;
+    StmtList
+      Command
+        Ident &quot;echo&quot;
+        Ident &quot;c&quot;
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident &quot;i&quot;
+    Infix
+      Ident &quot;..&quot;
+      IntLit 0
+      IntLit 2
+    StmtList
+      ForStmt
+        Ident &quot;j&quot;
+        Infix
+          Ident &quot;..&quot;
+          IntLit 0
+          IntLit 2
+        StmtList
+          Command
+            Ident &quot;echo&quot;
+            Ident &quot;i&quot;
+            StrLit &quot;,&quot;
+            Ident &quot;j&quot;
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident &quot;line&quot;
+    Call
+      Ident &quot;lines&quot;
+      StrLit &quot;file.txt&quot;
+    StmtList
+      Command
+        Ident &quot;echo&quot;
+        Ident &quot;line&quot;
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident &quot;x&quot;
+    Prefix
+      Ident &quot;@&quot;
+      Bracket
+        IntLit 1
+        IntLit 2
+        IntLit 3
+    StmtList
+      Command
+        Ident &quot;echo&quot;
+        Ident &quot;x&quot;
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident &quot;i&quot;
+    Infix
+      Ident &quot;..&quot;
+      IntLit 0
+      IntLit 5
+    StmtList
+      DiscardStmt
+        Empty
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident &quot;i&quot;
+    Infix
+      Ident &quot;..&quot;
+      IntLit 0
+      IntLit 10
+    StmtList
+      IfStmt
+        ElifBranch
+          Infix
+            Ident &quot;==&quot;
+            Ident &quot;i&quot;
+            IntLit 5
+          StmtList
+            BreakStmt
+              Empty
+      IfStmt
+        ElifBranch
+          Infix
+            Ident &quot;==&quot;
+            Infix
+              Ident &quot;mod&quot;
+              Ident &quot;i&quot;
+              IntLit 2
+            IntLit 0
+          StmtList
+            ContinueStmt
+              Empty
+      Command
+        Ident &quot;echo&quot;
+        Ident &quot;i&quot;
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident &quot;i&quot;
+    Infix
+      Ident &quot;..&quot;
+      IntLit 0
+      IntLit 3
+    StmtList
+      LetSection
+        IdentDefs
+          Ident &quot;x&quot;
+          Empty
+          Infix
+            Ident &quot;*&quot;
+            Ident &quot;i&quot;
+            IntLit 2
+      LetSection
+        IdentDefs
+          Ident &quot;y&quot;
+          Empty
+          Infix
+            Ident &quot;+&quot;
+            Ident &quot;x&quot;
+            IntLit 1
+      Command
+        Ident &quot;echo&quot;
+        Ident &quot;y&quot;
+==========================================
+==========================================
+StmtList
+  ForStmt
+    AccQuoted
+      Ident &quot;item&quot;
+      Ident &quot;value&quot;
+    Bracket
+      IntLit 1
+      IntLit 2
+      IntLit 3
+    StmtList
+      Command
+        Ident &quot;echo&quot;
+        AccQuoted
+          Ident &quot;item&quot;
+          Ident &quot;value&quot;
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident &quot;x&quot;
+    Call
+      DotExpr
+        Ident &quot;system&quot;
+        Ident &quot;items&quot;
+      Bracket
+        IntLit 1
+        IntLit 2
+        IntLit 3
+    StmtList
+      Command
+        Ident &quot;echo&quot;
+        Ident &quot;x&quot;
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident &quot;i&quot;
+    Infix
+      Ident &quot;..&lt;&quot;
+      IntLit 0
+      IntLit 5
+    StmtList
+      Command
+        Ident &quot;echo&quot;
+        Ident &quot;i&quot;
+==========================================
+</code></pre>
 <p><a name = "`typed`-parameters"></a></p>
 <h2><code>typed</code> Parameters</h2>
 <hr />
@@ -736,11 +1154,26 @@ In general, treeform projects source code are good Nim references</p>
 <pre><code class="nohighlight nim hljs"><span class="hljs-keyword">import</span> std/[strutils, macros]
 <span class="hljs-keyword">import</span> std/[enumerate, math]
 <span class="hljs-keyword">import</span> nimib, nimoji
-
+<span class="hljs-keyword">from</span> ../macroExamples/ast_to_graphViz_claude <span class="hljs-keyword">import</span> generateGraph, toGraphViz
 nbInit
 
 <span class="hljs-comment"># add a ToC</span>
 <span class="hljs-keyword">var</span> nbToc: <span class="hljs-type">NbBlock</span>
+
+<span class="hljs-keyword">macro</span> astToImage*(basename: <span class="hljs-built_in">string</span>; caption = <span class="hljs-string">&quot;&quot;</span>; format = <span class="hljs-string">&quot;jpg&quot;</span>; outputDir = <span class="hljs-string">&quot;pictures&quot;</span>; code: <span class="hljs-built_in">untyped</span>): <span class="hljs-built_in">untyped</span> =
+  <span class="hljs-literal">result</span> = quote <span class="hljs-keyword">do</span>:
+    <span class="hljs-comment"># Generate the GraphViz content</span>
+    <span class="hljs-keyword">let</span> graphVizContent = toGraphViz:
+      `code`
+    <span class="hljs-comment"># Generate the image from the Dot file (GraphViz)</span>
+    generateGraph(graphVizContent, `basename`, `format`, `outputDir`)
+    <span class="hljs-comment"># In nimib context, display the image</span>
+    <span class="hljs-keyword">when</span> <span class="hljs-keyword">declared</span>(nbImage):
+      <span class="hljs-keyword">let</span> imgPath = `outputDir` &amp; <span class="hljs-string">&quot;/&quot;</span> &amp; `basename` &amp; <span class="hljs-string">&quot;.&quot;</span> &amp; `format`
+      <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;imgPath: &quot;</span> &amp; imgPath
+      <span class="hljs-keyword">let</span> captionText = <span class="hljs-keyword">if</span> `caption` == <span class="hljs-string">&quot;&quot;</span>: `basename` <span class="hljs-keyword">else</span>: `caption`
+      nbImage(url = imgPath, caption = captionText)
+
 
 <span class="hljs-keyword">template</span> addToc =
   newNbBlock(<span class="hljs-string">&quot;nbText&quot;</span>, <span class="hljs-literal">false</span>, nb, nbToc, <span class="hljs-string">&quot;&quot;</span>):
@@ -755,7 +1188,7 @@ nbInit
 nbText: <span class="hljs-string">hlMd&quot;&quot;&quot;
 &lt;h1 style=&quot;text-align: center;&quot;&gt;Nim Metaprogramming - Macro Tutorial&lt;/h1&gt;
 
-This tutorial aims to be a _step-by-step_ introduction to the metaprogramming features of the Nim Language and to provide as much detail as possible to kickstart your craziest projects.
+This tutorial aims to be a _step-by-step_ introduction to the metaprogramming features of the Nim Language and to provide as much detail as possible to kickstart your projects.
 There are already many resources on the Web, but I strive to provide more thorough details on the development process and to gather them all in one place.
 &gt; :warning: This tutorial is still under heavy development.
 &quot;&quot;&quot;</span>.emojize
@@ -1063,7 +1496,12 @@ nbCode:
   dumpTree:
     <span class="hljs-keyword">echo</span> <span class="hljs-number">1</span>
 
+astToImage(<span class="hljs-string">&quot;echo_ast&quot;</span>, <span class="hljs-string">&quot;Echo 1 AST&quot;</span>, <span class="hljs-string">&quot;jpg&quot;</span>, <span class="hljs-string">&quot;pictures&quot;</span>):
+    <span class="hljs-keyword">echo</span> <span class="hljs-number">1</span>
+
 nbText:<span class="hljs-string">&quot;&quot;&quot;
+Note: Currently, the automatically generated picture tree adds one extra nnkStmtList node on top. Ignore it.
+
 By compiling this code, you will get the corresponding AST.
 This simple AST is made of four nodes:
 ```nim
@@ -1148,7 +1586,7 @@ We would like to detect the presence of holes in an object.
 
 The first step is to look at the AST of the input code we want to parse.
 
-One can look first at the most basic type definition possible, before trying to complexify the AST to get a feel of all the edge cases.
+One can look first at the most basic type definition possible, before trying to complexify the AST to get a feeling for the possible edge cases.
 &quot;&quot;&quot;</span>
 
 nbCode:
@@ -1249,6 +1687,12 @@ StmtList
             Empty
 ```
 &quot;&quot;&quot;</span>
+
+astToImage(<span class="hljs-string">&quot;typedef_second_example&quot;</span>, <span class="hljs-string">&quot;Second example of a type definition&quot;</span>, <span class="hljs-string">&quot;jpg&quot;</span>, <span class="hljs-string">&quot;pictures&quot;</span>):
+  <span class="hljs-keyword">type</span>
+    <span class="hljs-type">Thing</span> {.packed.} = <span class="hljs-keyword">object</span> <span class="hljs-keyword">of</span> <span class="hljs-type">RootObj</span>
+      a: <span class="hljs-built_in">float32</span>
+      b: <span class="hljs-built_in">string</span>
 
 nbText:<span class="hljs-string">&quot;&quot;&quot;
 Notice how the name of the type went under the PragmaExpr section. We have to be careful about this when trying to parse the type.
@@ -1441,7 +1885,7 @@ nbCode:
       age: <span class="hljs-built_in">int</span>
 
 nbText: <span class="hljs-string">&quot;&quot;&quot;
-A macro is prone to user misuse. It is therefore crucial to add input validation. The following code should fail:
+A macro is prone to user misuse. It is therefore crucial to add input validation. The following macro snippets should fail:
 &quot;&quot;&quot;</span>
 nbCodeSkip:
   typeMemoryRepr:
@@ -1457,9 +1901,434 @@ nbCodeSkip:
 
 nbSection <span class="hljs-string">&quot;For loop&quot;</span>
 nbText:<span class="hljs-string">&quot;&quot;&quot;
-
+The for loop may be difficult to understand from its dumped tree alone.
 &quot;&quot;&quot;</span>
 
+nbCodeSkip:
+  <span class="hljs-comment"># Example 1: Simple for loop with range</span>
+  <span class="hljs-keyword">for</span> item <span class="hljs-keyword">in</span> <span class="hljs-number">0.</span>.<span class="hljs-number">10</span>:
+    <span class="hljs-keyword">echo</span> item
+
+nbText: <span class="hljs-string">&quot;&quot;&quot;
+```raw
+StmtList
+  ForStmt
+    Ident &quot;i&quot;
+    Infix
+      Ident &quot;..&quot;
+      IntLit 0
+      IntLit 10
+    StmtList
+      Command
+        Ident &quot;echo&quot;
+        Ident &quot;i&quot;
+```
+&quot;&quot;&quot;</span>
+
+astToImage(<span class="hljs-string">&quot;for_loop_stmt_1&quot;</span>, <span class="hljs-string">&quot;For Loop Statement 1&quot;</span>, <span class="hljs-string">&quot;jpg&quot;</span>, <span class="hljs-string">&quot;pictures&quot;</span>):
+  <span class="hljs-keyword">for</span> item <span class="hljs-keyword">in</span> <span class="hljs-number">0.</span>.<span class="hljs-number">10</span>:
+    <span class="hljs-keyword">echo</span> item
+
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+The `nnkForStmt` has three childrens whose kind may vary.
+The first one correspond to the item element, the second to the range or the iterable being looped over, and finally the list of statements in the `for` block.
+&quot;&quot;&quot;</span>
+
+nbCode:
+  <span class="hljs-comment"># Example 2: For loop iterating over array</span>
+  dumpTree:
+    <span class="hljs-keyword">for</span> item <span class="hljs-keyword">in</span> [<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>]:
+      <span class="hljs-keyword">echo</span> item
+
+  <span class="hljs-comment"># Example 3: For loop with countdown</span>
+  dumpTree:
+    <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-keyword">countdown</span>(<span class="hljs-number">10</span>, <span class="hljs-number">0</span>):
+      <span class="hljs-keyword">echo</span> i
+
+  <span class="hljs-comment"># Example 4: For loop with items iterator (explicit)</span>
+  dumpTree:
+    <span class="hljs-keyword">for</span> x <span class="hljs-keyword">in</span> items([<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>]):
+      <span class="hljs-keyword">echo</span> x
+
+  <span class="hljs-comment"># Example 5: For loop with pairs (index, value)</span>
+  dumpTree:
+    <span class="hljs-keyword">for</span> i, val <span class="hljs-keyword">in</span> [<span class="hljs-number">10</span>, <span class="hljs-number">20</span>, <span class="hljs-number">30</span>]:
+      <span class="hljs-keyword">echo</span> i, <span class="hljs-string">&quot; -&gt; &quot;</span>, val
+
+  <span class="hljs-comment"># Example 6: For loop with multiple variables (tuple unpacking)</span>
+  dumpTree:
+    <span class="hljs-keyword">for</span> (a, b) <span class="hljs-keyword">in</span> [(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>), (<span class="hljs-number">3</span>, <span class="hljs-number">4</span>), (<span class="hljs-number">5</span>, <span class="hljs-number">6</span>)]:
+      <span class="hljs-keyword">echo</span> a, <span class="hljs-string">&quot; and &quot;</span>, b
+
+  <span class="hljs-comment"># Example 7: For loop with three variables</span>
+  dumpTree:
+    <span class="hljs-keyword">for</span> (x, y, z) <span class="hljs-keyword">in</span> [(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>), (<span class="hljs-number">4</span>, <span class="hljs-number">5</span>, <span class="hljs-number">6</span>)]:
+      <span class="hljs-keyword">echo</span> x, y, z
+
+  <span class="hljs-comment"># Example 8: For loop over string</span>
+  dumpTree:
+    <span class="hljs-keyword">for</span> c <span class="hljs-keyword">in</span> <span class="hljs-string">&quot;hello&quot;</span>:
+      <span class="hljs-keyword">echo</span> c
+
+  <span class="hljs-comment"># Example 9: For loop with mitems (mutable iterator)</span>
+  <span class="hljs-keyword">var</span> <span class="hljs-type">L</span> = [<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>]
+  <span class="hljs-keyword">for</span> item <span class="hljs-keyword">in</span> mitems(<span class="hljs-type">L</span>):
+    item = item * <span class="hljs-number">2</span>
+
+  <span class="hljs-comment"># Example 10: Nested for loops</span>
+  dumpTree:
+    <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-number">0.</span>.<span class="hljs-number">2</span>:
+      <span class="hljs-keyword">for</span> j <span class="hljs-keyword">in</span> <span class="hljs-number">0.</span>.<span class="hljs-number">2</span>:
+        <span class="hljs-keyword">echo</span> i, <span class="hljs-string">&quot;,&quot;</span>, j
+
+  <span class="hljs-comment"># Example 11: For loop with custom iterator call</span>
+  dumpTree:
+    <span class="hljs-keyword">for</span> line <span class="hljs-keyword">in</span> lines(<span class="hljs-string">&quot;file.txt&quot;</span>):
+      <span class="hljs-keyword">echo</span> line
+
+  <span class="hljs-comment"># Example 12: For loop with inline iterator expression</span>
+  dumpTree:
+    <span class="hljs-keyword">for</span> x <span class="hljs-keyword">in</span> @[<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>]:
+      <span class="hljs-keyword">echo</span> x
+
+  <span class="hljs-comment"># Example 13: Empty for loop body</span>
+  dumpTree:
+    <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-number">0.</span>.<span class="hljs-number">5</span>:
+      <span class="hljs-keyword">discard</span>
+
+  <span class="hljs-comment"># Example 14: For loop with break/continue</span>
+  dumpTree:
+    <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-number">0.</span>.<span class="hljs-number">10</span>:
+      <span class="hljs-keyword">if</span> i == <span class="hljs-number">5</span>:
+        <span class="hljs-keyword">break</span>
+      <span class="hljs-keyword">if</span> i <span class="hljs-keyword">mod</span> <span class="hljs-number">2</span> == <span class="hljs-number">0</span>:
+        <span class="hljs-keyword">continue</span>
+      <span class="hljs-keyword">echo</span> i
+
+  <span class="hljs-comment"># Example 15: For loop with multiple statements in body</span>
+  dumpTree:
+    <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-number">0.</span>.<span class="hljs-number">3</span>:
+      <span class="hljs-keyword">let</span> x = i * <span class="hljs-number">2</span>
+      <span class="hljs-keyword">let</span> y = x + <span class="hljs-number">1</span>
+      <span class="hljs-keyword">echo</span> y
+
+  <span class="hljs-comment"># Example 16: For loop with backticks identifier</span>
+  dumpTree:
+    <span class="hljs-keyword">for</span> `item value` <span class="hljs-keyword">in</span> [<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>]:
+      <span class="hljs-keyword">echo</span> `item value`
+
+  <span class="hljs-comment"># Example 17: For loop with qualified iterator</span>
+  dumpTree:
+    <span class="hljs-keyword">for</span> x <span class="hljs-keyword">in</span> system.items([<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>]):
+      <span class="hljs-keyword">echo</span> x
+
+  <span class="hljs-comment"># Example 18: For loop using ..&lt; (exclusive range)</span>
+  dumpTree:
+    <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-number">0.</span>.&lt;<span class="hljs-number">5</span>:
+      <span class="hljs-keyword">echo</span> i
+
+  <span class="hljs-comment"># Example 19: For loop with complex tuple pattern</span>
+  <span class="hljs-comment"># dumpTree:</span>
+  <span class="hljs-comment">#   for (i, (x, y)) in [(0, (1, 2)), (1, (3, 4))]:</span>
+  <span class="hljs-comment">#     echo i, x, y</span>
+
+  <span class="hljs-comment"># Example 20: For loop with type annotation (rare but valid)</span>
+  <span class="hljs-comment"># dumpTree:</span>
+  <span class="hljs-comment">#   for i: int in [1, 2, 3]:</span>
+  <span class="hljs-comment">#     echo i</span>
+
+
+nbText:<span class="hljs-string">&quot;&quot;&quot;
+```raw
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident &quot;item&quot;
+    Bracket
+      IntLit 1
+      IntLit 2
+      IntLit 3
+    StmtList
+      Command
+        Ident &quot;echo&quot;
+        Ident &quot;item&quot;
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident &quot;i&quot;
+    Call
+      Ident &quot;countdown&quot;
+      IntLit 10
+      IntLit 0
+    StmtList
+      Command
+        Ident &quot;echo&quot;
+        Ident &quot;i&quot;
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident &quot;x&quot;
+    Call
+      Ident &quot;items&quot;
+      Bracket
+        IntLit 1
+        IntLit 2
+        IntLit 3
+    StmtList
+      Command
+        Ident &quot;echo&quot;
+        Ident &quot;x&quot;
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident &quot;i&quot;
+    Ident &quot;val&quot;
+    Bracket
+      IntLit 10
+      IntLit 20
+      IntLit 30
+    StmtList
+      Command
+        Ident &quot;echo&quot;
+        Ident &quot;i&quot;
+        StrLit &quot; -&gt; &quot;
+        Ident &quot;val&quot;
+==========================================
+==========================================
+StmtList
+  ForStmt
+    VarTuple
+      Ident &quot;a&quot;
+      Ident &quot;b&quot;
+      Empty
+    Bracket
+      TupleConstr
+        IntLit 1
+        IntLit 2
+      TupleConstr
+        IntLit 3
+        IntLit 4
+      TupleConstr
+        IntLit 5
+        IntLit 6
+    StmtList
+      Command
+        Ident &quot;echo&quot;
+        Ident &quot;a&quot;
+        StrLit &quot; and &quot;
+        Ident &quot;b&quot;
+==========================================
+==========================================
+StmtList
+  ForStmt
+    VarTuple
+      Ident &quot;x&quot;
+      Ident &quot;y&quot;
+      Ident &quot;z&quot;
+      Empty
+    Bracket
+      TupleConstr
+        IntLit 1
+        IntLit 2
+        IntLit 3
+      TupleConstr
+        IntLit 4
+        IntLit 5
+        IntLit 6
+    StmtList
+      Command
+        Ident &quot;echo&quot;
+        Ident &quot;x&quot;
+        Ident &quot;y&quot;
+        Ident &quot;z&quot;
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident &quot;c&quot;
+    StrLit &quot;hello&quot;
+    StmtList
+      Command
+        Ident &quot;echo&quot;
+        Ident &quot;c&quot;
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident &quot;i&quot;
+    Infix
+      Ident &quot;..&quot;
+      IntLit 0
+      IntLit 2
+    StmtList
+      ForStmt
+        Ident &quot;j&quot;
+        Infix
+          Ident &quot;..&quot;
+          IntLit 0
+          IntLit 2
+        StmtList
+          Command
+            Ident &quot;echo&quot;
+            Ident &quot;i&quot;
+            StrLit &quot;,&quot;
+            Ident &quot;j&quot;
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident &quot;line&quot;
+    Call
+      Ident &quot;lines&quot;
+      StrLit &quot;file.txt&quot;
+    StmtList
+      Command
+        Ident &quot;echo&quot;
+        Ident &quot;line&quot;
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident &quot;x&quot;
+    Prefix
+      Ident &quot;@&quot;
+      Bracket
+        IntLit 1
+        IntLit 2
+        IntLit 3
+    StmtList
+      Command
+        Ident &quot;echo&quot;
+        Ident &quot;x&quot;
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident &quot;i&quot;
+    Infix
+      Ident &quot;..&quot;
+      IntLit 0
+      IntLit 5
+    StmtList
+      DiscardStmt
+        Empty
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident &quot;i&quot;
+    Infix
+      Ident &quot;..&quot;
+      IntLit 0
+      IntLit 10
+    StmtList
+      IfStmt
+        ElifBranch
+          Infix
+            Ident &quot;==&quot;
+            Ident &quot;i&quot;
+            IntLit 5
+          StmtList
+            BreakStmt
+              Empty
+      IfStmt
+        ElifBranch
+          Infix
+            Ident &quot;==&quot;
+            Infix
+              Ident &quot;mod&quot;
+              Ident &quot;i&quot;
+              IntLit 2
+            IntLit 0
+          StmtList
+            ContinueStmt
+              Empty
+      Command
+        Ident &quot;echo&quot;
+        Ident &quot;i&quot;
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident &quot;i&quot;
+    Infix
+      Ident &quot;..&quot;
+      IntLit 0
+      IntLit 3
+    StmtList
+      LetSection
+        IdentDefs
+          Ident &quot;x&quot;
+          Empty
+          Infix
+            Ident &quot;*&quot;
+            Ident &quot;i&quot;
+            IntLit 2
+      LetSection
+        IdentDefs
+          Ident &quot;y&quot;
+          Empty
+          Infix
+            Ident &quot;+&quot;
+            Ident &quot;x&quot;
+            IntLit 1
+      Command
+        Ident &quot;echo&quot;
+        Ident &quot;y&quot;
+==========================================
+==========================================
+StmtList
+  ForStmt
+    AccQuoted
+      Ident &quot;item&quot;
+      Ident &quot;value&quot;
+    Bracket
+      IntLit 1
+      IntLit 2
+      IntLit 3
+    StmtList
+      Command
+        Ident &quot;echo&quot;
+        AccQuoted
+          Ident &quot;item&quot;
+          Ident &quot;value&quot;
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident &quot;x&quot;
+    Call
+      DotExpr
+        Ident &quot;system&quot;
+        Ident &quot;items&quot;
+      Bracket
+        IntLit 1
+        IntLit 2
+        IntLit 3
+    StmtList
+      Command
+        Ident &quot;echo&quot;
+        Ident &quot;x&quot;
+==========================================
+==========================================
+StmtList
+  ForStmt
+    Ident &quot;i&quot;
+    Infix
+      Ident &quot;..&lt;&quot;
+      IntLit 0
+      IntLit 5
+    StmtList
+      Command
+        Ident &quot;echo&quot;
+        Ident &quot;i&quot;
+==========================================
+```
+&quot;&quot;&quot;</span>
 nbSection <span class="hljs-string">&quot;`typed` Parameters&quot;</span>
 nbText:<span class="hljs-string">&quot;&quot;&quot;
 
