@@ -1277,7 +1277,8 @@ There are plentiful of posts in the forum that are good references:
   5. [Variable injection](https://forum.nim-lang.org/t/10513)
   6. [Proc inspection](https://forum.nim-lang.org/t/9127)
   7. [doWhile improvement](https://forum.nim-lang.org/t/13511#82034)
-  8. etc … Please use the forum search bar with specific keywords like `macro`, `metaprogramming`, `generics`, `template`, …
+  8. [getType API](https://forum.nim-lang.org/t/13314)
+  9. etc … Use the forum search bar with specific keywords like `macro`, `metaprogramming`, `generics`, `template`, …
 
 Last but no least, there are three Nim books:
   1. [Nim In Action, ed. Manning](https://book.picheta.me) and [github repo](https://github.com/dom96/nim-in-action-code)
