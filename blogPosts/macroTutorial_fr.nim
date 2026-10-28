@@ -242,7 +242,6 @@ En effet, dans le code source C, apparaissent dans l'ordre:
   4. la condition (expression booléenne)
 
 Avec Nim, on a dans cet ordre:
-In Nim, we have in this order:
   1. le mot-clé `doWhile`
   2. la condition
   3. le bloc d'instruction
